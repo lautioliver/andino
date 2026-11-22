@@ -121,7 +121,7 @@ export function PachaFlow() {
           <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-bg via-bg/40 to-transparent" />
           <div className="relative mx-auto w-full max-w-[1120px] px-4 pb-8 md:px-6 md:pb-12">
             <div className="flex flex-wrap gap-x-6 gap-y-2">
-              <Badge tone="earth">Pacha</Badge>
+              <Badge tone="earth">De día</Badge>
               {photo?.isDemo && <Badge>Ejemplo precargado</Badge>}
             </div>
             <h1 className="display mt-4 text-[clamp(3.25rem,12vw,7.5rem)]">{place.name}</h1>
@@ -184,7 +184,7 @@ export function PachaFlow() {
     <section className="pt-8 md:pt-16">
       {inputs}
       <header className="max-w-[18ch]">
-        <Badge tone="earth">Pacha · La Tierra</Badge>
+        <Badge tone="earth">De día</Badge>
         <h1 className="display mt-5 text-[clamp(3rem,10vw,6.5rem)]">¿Qué estás viendo?</h1>
       </header>
       <p className="lead mt-6 max-w-[45ch] text-text-muted">

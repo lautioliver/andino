@@ -117,7 +117,7 @@ export function CieloExplorer() {
   return (
     <section className="pt-8 md:pt-16">
       <header>
-        <Badge tone="sky">Cielo Andino · El universo</Badge>
+        <Badge tone="sky">De noche</Badge>
         <h1 className="display mt-5 max-w-[14ch] text-[clamp(2.75rem,9vw,6rem)]">
           {place ? (
             <>
