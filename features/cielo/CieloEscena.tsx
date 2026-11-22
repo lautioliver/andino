@@ -33,8 +33,6 @@ import { computeSky, type SkyObjectId, sunAltitudeDeg } from "./motor";
 const VIAJE_MAX = 12 * 60;
 const LUZ = { dia: "De día", crepusculo: "Crepúsculo", noche: "Noche cerrada" } as const;
 const MESES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
-/** Alto de la barra de navegación móvil de AppShell (min-h-12 + borde). */
-const NAV_MOVIL = 49;
 /** Duraciones de docs/experiencia-astroturismo.md: 300 ms paneles, 800 ms girar el cielo. */
 const MS_HOJA = 300;
 const MS_GIRO = 800;
@@ -335,8 +333,8 @@ export function CieloEscena() {
   const etiqueta = "text-[11px] font-medium tracking-[0.18em] text-text-muted uppercase";
 
   return (
-    // En el celular ocupa toda la pantalla (la navegación queda abajo); en escritorio, debajo del encabezado.
-    <div className="fixed inset-0 overflow-hidden bg-bg md:top-[53px]">
+    // Ocupa el espacio entre el encabezado y la navegación de AppShell (en escritorio, hasta abajo).
+    <div className="fixed inset-x-0 top-[calc(3.5rem+env(safe-area-inset-top))] bottom-[calc(3.5rem+env(safe-area-inset-bottom))] overflow-hidden bg-bg md:bottom-0">
       <ViewTransition name={VT_TIERRA_CIELO} share={VT_TIERRA_CIELO} default="none">
         <div
           ref={contenedorRef}
@@ -367,7 +365,7 @@ export function CieloEscena() {
       </ViewTransition>
 
       {/* Encabezado: flota sobre el cielo, sin caja. */}
-      <header className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-4 px-5 pt-[max(1.25rem,env(safe-area-inset-top))] md:px-8 md:pt-7">
+      <header className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between gap-4 px-5 pt-5 md:px-8 md:pt-7">
         <div className="min-w-0">
           <p className="text-[11px] font-medium tracking-[0.18em] text-sand uppercase">El cielo desde</p>
           <h1 className="mt-1 font-display text-[34px] leading-[38px] font-bold tracking-tight md:text-[44px] md:leading-[48px]">
@@ -392,10 +390,9 @@ export function CieloEscena() {
         </Link>
       </header>
 
-      {/* Hoja inferior: sólida, sin vidrio; la sombra la separa del cielo. Lo que baja queda recortado sobre la navegación. */}
+      {/* Hoja inferior: sólida, sin vidrio; la sombra la separa del cielo. Lo que baja queda recortado por el borde de la escena. */}
       <div
-        className="pointer-events-none absolute inset-x-0 top-0 overflow-hidden md:bottom-0"
-        style={{ bottom: movil ? `calc(${NAV_MOVIL}px + env(safe-area-inset-bottom))` : undefined }}
+        className="pointer-events-none absolute inset-0 overflow-hidden"
       >
         <section
           ref={hojaRef}
