@@ -5,6 +5,7 @@ import type { AndinoPlace } from "@/shared/types";
 import { LinkButton } from "@/shared/ui/Button";
 import { PasosStarlink } from "@/features/satelites/PasosStarlink";
 import { MejorNoche } from "@/features/cuando/MejorNoche";
+import { TuSigno } from "@/features/signo/TuSigno";
 import { fechaDeLaNoche, nocheEn, type Noche } from "./noche";
 
 // La fecha depende del reloj del visitante: en el servidor (o al prerender) no hay "esta noche".
@@ -77,6 +78,8 @@ export function EstaNoche({ place }: { place: AndinoPlace }) {
           <LinkButton variant="sky" href={noche.href} className="mt-8">
             Mirar el cielo completo
           </LinkButton>
+
+          <TuSigno place={place} fecha={noche.fecha} />
         </>
       )}
     </section>
