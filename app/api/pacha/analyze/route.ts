@@ -1,15 +1,11 @@
-import { APICallError } from "ai";
 import { analizarFoto } from "@/features/pacha/analizar";
+import { errorDeIA, errorJSON as error } from "@/features/pacha/errorDeIA";
 
 export const maxDuration = 30;
 
 // El cliente reduce la foto antes de mandarla; esto es solo la guarda del servidor.
 const MAX_BYTES = 4 * 1024 * 1024;
 const TIPOS = ["image/jpeg", "image/png", "image/webp"];
-
-function error(status: number, message: string) {
-  return Response.json({ error: message }, { status });
-}
 
 export async function POST(request: Request) {
   let form: FormData;
@@ -28,11 +24,6 @@ export async function POST(request: Request) {
     const result = await analizarFoto(imagen, archivo.type, request.signal);
     return Response.json(result);
   } catch (e) {
-    const nombre = e instanceof Error ? e.name : "";
-    if (nombre === "AbortError" || nombre === "TimeoutError" || /timeout/i.test(String(e))) {
-      return error(504, "El reconocimiento tardó demasiado.");
-    }
-    console.error("[pacha/analyze]", APICallError.isInstance(e) ? `${e.statusCode} ${e.message}` : e);
-    return error(502, "El reconocimiento no está disponible ahora.");
+    return errorDeIA("pacha/analyze", e);
   }
 }

@@ -176,8 +176,8 @@ andino/
 - [ ] AND-01: PWA mobile-first con navegación Tierra/Cielo.
 - [ ] AND-02: Captura/carga de imagen y estados de error.
 - [ ] AND-03: Dataset curado de 3–5 puntos del recorrido.
-- [ ] AND-04: Respuesta multimodal con fuentes y declaración de incertidumbre.
-- [ ] AND-05: Preguntas de seguimiento contextual.
+- [x] AND-04: Respuesta multimodal con fuentes y declaración de incertidumbre.
+- [x] AND-05: Preguntas de seguimiento contextual.
 - [ ] AND-06: Selector de lugar y fecha/hora para Cielo Andino.
 - [ ] AND-07: Cálculo comprobable de posiciones de 3–5 objetos celestes.
 - [ ] AND-08: Vista de cielo legible en móvil.

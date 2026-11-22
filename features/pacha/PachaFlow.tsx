@@ -12,6 +12,7 @@ import { SourceList } from "@/shared/ui/SourceList";
 import { StatusMessage } from "@/shared/ui/StatusMessage";
 import { EstaNoche } from "./EstaNoche";
 import { fichas } from "./fichas";
+import { Preguntas } from "./Preguntas";
 import { reconocer, type Reconocimiento } from "./reconocer";
 
 const ACCEPTED = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
@@ -151,6 +152,8 @@ export function PachaFlow() {
                 ))}
               </div>
             </details>
+
+            <Preguntas key={place.id} place={place} sugerencias={ia?.followUpSuggestions} />
 
             <EstaNoche place={place} />
 
