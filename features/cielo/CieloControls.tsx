@@ -2,7 +2,8 @@ import { places } from "@/data/places";
 import type { PlaceId } from "@/shared/types";
 import { HORA_EJEMPLO } from "./cielo";
 
-const campo = "min-h-12 w-full rounded-control border border-border bg-surface-raised px-3 text-text";
+// Campos editoriales: sin caja, solo filete inferior.
+const campo = "min-h-12 w-full border-0 border-b border-border bg-transparent px-0 text-lg text-text [color-scheme:dark] focus:border-sky";
 
 export function LocationSelector({
   value,
@@ -13,9 +14,9 @@ export function LocationSelector({
 }) {
   return (
     <label className="block">
-      <span className="text-sm text-text-muted">Lugar</span>
+      <span className="eyebrow text-text-muted">Lugar</span>
       <select
-        className={`${campo} mt-1`}
+        className={`${campo} mt-1 appearance-none`}
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value as PlaceId)}
       >
@@ -47,8 +48,8 @@ export function DateTimePicker({
 }) {
   return (
     <fieldset>
-      <legend className="text-sm text-text-muted">Fecha y hora (Argentina, UTC−3)</legend>
-      <div className="mt-1 grid gap-3 min-[360px]:grid-cols-2">
+      <legend className="eyebrow text-text-muted">Fecha y hora · Argentina, UTC−3</legend>
+      <div className="mt-1 grid gap-6 min-[360px]:grid-cols-2">
         <input
           type="date"
           aria-label="Fecha"
@@ -65,7 +66,7 @@ export function DateTimePicker({
         />
       </div>
       {esEjemplo && (
-        <p className="mt-2 inline-block rounded-full bg-surface-raised px-3 py-1 text-xs text-sand">
+        <p className="mt-3 text-sm text-sand">
           Ejemplo: hoy a las {HORA_EJEMPLO}. Cambialo para ver otro momento.
         </p>
       )}
