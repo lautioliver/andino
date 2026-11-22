@@ -88,9 +88,9 @@ ANDINO
 
 - Marca ANDINO y claim «Explorá la Tierra. Descubrí el universo». El símbolo aprobado es de **Pacha**, no reemplaza automáticamente la identidad madre ANDINO.
 - Fotografía principal del paisaje jujeño.
-- CTA primario `Explorar un paisaje` → `/explorar`.
-- CTA secundario `Descubrir el cielo` → `/cielo`.
-- Texto breve que explique las dos experiencias; no introducir un onboarding largo.
+- Un solo CTA primario `Elegí un lugar` → `/explorar`. Cielo se alcanza desde el lugar (y desde la navegación), no como segundo producto.
+- Recorrido «Un lugar, de día y de noche» en tres pasos (elegí/fotografiá → conocé su historia → mirá su cielo); no introducir un onboarding largo.
+- Cada destino muestra una línea calculada de su noche («Esta noche: Luna llena, Saturno y Sirio»).
 
 ### 4.2 Pacha — Captura
 
@@ -108,7 +108,7 @@ ANDINO
 - Explicación breve (primero 2–4 frases), sección expandible `Conocer más`.
 - Fuentes visibles: nombre, referencia/enlace si existe.
 - Campo `Preguntale a Pacha...` con pregunta de seguimiento.
-- CTA contextual `Ver el cielo desde acá` que transfiere la ubicación a Cielo.
+- Sección «Esta noche en {lugar}»: puesta del sol, fase de la Luna y objetos sobre el horizonte a las 22:00, calculados con el motor de Cielo y con la advertencia de cerros y nubes. Cierra con `Mirar el cielo completo` → `/cielo?placeId=…&fecha=…&hora=22:00`.
 - Si la IA no puede identificar con confianza: «No puedo reconocerlo con seguridad» y selector de destino.
 
 ### 4.4 Cielo Andino
@@ -174,7 +174,7 @@ ANDINO
 
 ## 7. Movimiento y transición Tierra → Cielo
 
-**Momento distintivo de la demo:** desde el resultado de Pacha, el CTA `Ver el cielo desde acá` abre Cielo Andino con el mismo lugar seleccionado. Aplicar transición corta (200–350ms) entre acentos terracota y celeste; un pequeño cambio de gradiente es suficiente.
+**Momento distintivo de la demo:** desde el resultado de Pacha, la sección «Esta noche» y su CTA `Mirar el cielo completo` abren Cielo Andino con el mismo lugar seleccionado. Aplicar transición corta (200–350ms) entre acentos terracota y celeste; un pequeño cambio de gradiente es suficiente.
 
 - Usar animaciones de `transform` y `opacity`, evitando efectos pesados.
 - Respetar `prefers-reduced-motion`.
@@ -387,7 +387,7 @@ Construir la experiencia turística que recibe una imagen, permite confirmar un 
 - [ ] Respuesta estructurada: `candidatePlaceId?`, `confidenceLabel`, `summary`, `sourceUrls[]`, `followUpSuggestions[]`.
 - [ ] Si no hay confianza suficiente, pedir elección manual; nunca inventar identificación exacta.
 - [ ] Pregunta de seguimiento en el mismo contexto, sin persistir fotos por defecto.
-- [ ] CTA `Ver el cielo desde acá` → `/cielo?placeId=...`.
+- [x] Sección «Esta noche» con CTA `Mirar el cielo completo` → `/cielo?placeId=...&fecha=...&hora=...`.
 
 #### L3 — Integración y estabilidad (P0)
 - [ ] Revisar PR de Cielo y asegurar que los IDs de lugares coinciden.
@@ -417,7 +417,7 @@ interface PachaResult {
 2. JPG/PNG válido → resultado con fuentes; archivo inválido → error claro.
 3. Foto ambigua → selector manual de destino.
 4. Pregunta de seguimiento funciona con el contexto disponible.
-5. Clic en «Ver el cielo desde acá» abre Cielo con el `placeId` correcto.
+5. Clic en «Mirar el cielo completo» abre Cielo con el `placeId`, la fecha y la hora de la ficha.
 6. Si la API falla, existe una demo precargada identificada como ejemplo.
 7. `npm run build` pasa y la app está desplegada.
 

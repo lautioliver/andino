@@ -6,11 +6,13 @@ import { useEffect, useRef, useState } from "react";
 import { getPlace, places } from "@/data/places";
 import type { PlaceId } from "@/shared/types";
 import { Badge } from "@/shared/ui/Badge";
-import { Button, LinkButton } from "@/shared/ui/Button";
+import { Button } from "@/shared/ui/Button";
 import { PhotoCredit } from "@/shared/ui/PhotoCredit";
 import { SourceList } from "@/shared/ui/SourceList";
 import { StatusMessage } from "@/shared/ui/StatusMessage";
+import { EstaNoche } from "./EstaNoche";
 import { fichas } from "./fichas";
+import { reconocer, type Reconocimiento } from "./reconocer";
 
 const ACCEPTED = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
 const MAX_MB = 10;
@@ -27,6 +29,8 @@ export function PachaFlow() {
   const place = getPlace(params.get("placeId"));
   const [photo, setPhoto] = useState<Photo | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [reco, setReco] = useState<Reconocimiento | null>(null);
+  const recoAbort = useRef<AbortController | null>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -35,6 +39,20 @@ export function PachaFlow() {
       if (photo?.isObjectUrl) URL.revokeObjectURL(photo.url);
     };
   }, [photo]);
+
+  useEffect(() => () => recoAbort.current?.abort(), []);
+
+  function analizar(file: File) {
+    recoAbort.current?.abort();
+    const ctrl = new AbortController();
+    recoAbort.current = ctrl;
+    setReco({ estado: "analizando" });
+    reconocer(file, ctrl.signal)
+      .then((r) => {
+        if (!ctrl.signal.aborted) setReco(r);
+      })
+      .catch(() => {});
+  }
 
   function choosePlace(id: PlaceId) {
     router.push(`/explorar?placeId=${id}`, { scroll: true });
@@ -54,16 +72,21 @@ export function PachaFlow() {
     }
     setError(null);
     setPhoto({ url: URL.createObjectURL(file), isDemo: false, isObjectUrl: true });
+    analizar(file);
     if (place) router.push("/explorar");
   }
 
   function pickDemo(id: PlaceId) {
+    recoAbort.current?.abort();
+    setReco(null);
     setError(null);
     setPhoto({ url: fichas[id].photo.src, isDemo: true, isObjectUrl: false });
     choosePlace(id);
   }
 
   function reset() {
+    recoAbort.current?.abort();
+    setReco(null);
     setPhoto(null);
     setError(null);
     router.push("/explorar");
@@ -81,6 +104,7 @@ export function PachaFlow() {
     const ficha = fichas[place.id];
     const shown = photo ?? { url: ficha.photo.src, isDemo: false, isObjectUrl: false };
     const isUserPhoto = photo && !photo.isDemo;
+    const ia = isUserPhoto && reco?.estado === "listo" && reco.result.candidatePlaceId === place.id ? reco.result : null;
     return (
       <article>
         {inputs}
@@ -110,6 +134,12 @@ export function PachaFlow() {
             <p className="eyebrow text-text-muted">
               {isUserPhoto ? "Tu foto · no se guarda" : <PhotoCredit credit={ficha.photo.credit} url={ficha.photo.creditUrl} />}
             </p>
+            {ia && (
+              <p className="mt-6 border-l-2 border-earth pl-4 text-text/85">
+                <span className="eyebrow block text-earth">En tu foto · IA, confianza {ia.confidenceLabel}</span>
+                <span className="mt-2 block">{ia.summary}</span>
+              </p>
+            )}
             <p className="headline mt-6 text-[1.625rem] leading-[1.3] md:text-[2rem]">{ficha.summary}</p>
             <details className="group mt-8 rule pt-4">
               <summary className="link-arrow cursor-pointer list-none text-earth [&::-webkit-details-marker]:hidden">
@@ -122,22 +152,20 @@ export function PachaFlow() {
               </div>
             </details>
 
-            <div className="mt-12 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-8">
-              <LinkButton variant="sky" href={`/cielo?placeId=${place.id}`}>
-                Ver el cielo desde acá
-              </LinkButton>
-              <Button variant="ghost" onClick={() => router.push("/explorar")}>
-                No es este lugar
-              </Button>
-            </div>
+            <EstaNoche place={place} />
+
+            <Button variant="ghost" className="mt-6" onClick={() => router.push("/explorar")}>
+              No es este lugar
+            </Button>
           </div>
 
           <aside className="space-y-8 lg:pt-14">
             <div className="rule pt-4">
               <p className="eyebrow text-text-muted">Cómo lo sabemos</p>
               <p className="mt-3 text-sm leading-6 text-text-muted">
-                Elegiste el lugar vos. El texto sale de las fuentes de abajo y está en revisión editorial: no es una respuesta
-                generada por IA.
+                {ia
+                  ? "Reconocimos el lugar con IA y lo confirmaste vos. La nota sobre tu foto la escribió la IA; la ficha sale de las fuentes de abajo y está en revisión editorial."
+                  : "Elegiste el lugar vos. El texto sale de las fuentes de abajo y está en revisión editorial: no es una respuesta generada por IA."}
               </p>
             </div>
             <SourceList sources={ficha.sources} />
@@ -177,9 +205,7 @@ export function PachaFlow() {
             <Image src={photo.url} alt="Vista previa de tu foto" fill className="object-cover" unoptimized />
           </div>
           <div className="space-y-4">
-            <StatusMessage title="¿Qué lugar es?">
-              El reconocimiento automático todavía no está activo. Elegí abajo el lugar de tu foto para continuar.
-            </StatusMessage>
+            <Sugerencia reco={reco} onConfirm={choosePlace} />
             <Button variant="ghost" onClick={() => fileRef.current?.click()}>
               Cambiar imagen
             </Button>
@@ -242,5 +268,38 @@ export function PachaFlow() {
         </section>
       )}
     </section>
+  );
+}
+
+function Sugerencia({ reco, onConfirm }: { reco: Reconocimiento | null; onConfirm: (id: PlaceId) => void }) {
+  if (!reco || reco.estado === "analizando") {
+    return <StatusMessage title="Mirando tu foto…">Buscamos qué lugar de la Quebrada es. Tarda unos segundos.</StatusMessage>;
+  }
+  if (reco.estado === "error") {
+    return (
+      <StatusMessage title="No pudimos reconocer el lugar">
+        {reco.mensaje} Elegí abajo el lugar de tu foto para continuar.
+      </StatusMessage>
+    );
+  }
+  const { result } = reco;
+  const candidato = getPlace(result.candidatePlaceId);
+  if (!candidato) {
+    return (
+      <StatusMessage title="No reconocimos un lugar del recorrido">
+        {result.summary} Si sabés dónde la sacaste, elegilo abajo.
+      </StatusMessage>
+    );
+  }
+  return (
+    <div className="space-y-4">
+      <div className="border-l-2 border-earth py-1 pl-4" role="status">
+        <p className="eyebrow text-earth">IA · confianza {result.confidenceLabel}</p>
+        <p className="headline mt-2 text-3xl">¿Es {candidato.name}?</p>
+        <p className="mt-2 text-sm leading-6 text-text-muted">{result.summary}</p>
+      </div>
+      <Button onClick={() => onConfirm(candidato.id)}>Sí, es {candidato.name}</Button>
+      <p className="text-sm text-text-muted">Si no es, elegí el lugar abajo.</p>
+    </div>
   );
 }

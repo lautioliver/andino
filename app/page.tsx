@@ -1,11 +1,33 @@
 import Image from "next/image";
 import Link from "next/link";
 import { places } from "@/data/places";
+import { NocheBreve } from "@/features/pacha/EstaNoche";
 import { fichas } from "@/features/pacha/fichas";
 import { LinkButton } from "@/shared/ui/Button";
 import { PhotoCredit } from "@/shared/ui/PhotoCredit";
 
 const hero = fichas.purmamarca.photo;
+
+const pasos = [
+  {
+    momento: "De día",
+    titulo: "Elegí o fotografiá un lugar",
+    texto: "Un destino de la Quebrada o una foto que sacaste en el camino.",
+    tono: "text-earth",
+  },
+  {
+    momento: "De día",
+    titulo: "Conocé su historia",
+    texto: "Qué estás viendo, cómo se formó y por qué importa, con la fuente de cada dato.",
+    tono: "text-earth",
+  },
+  {
+    momento: "De noche",
+    titulo: "Mirá su cielo",
+    texto: "Desde ese mismo lugar: la Luna, los planetas y las estrellas, calculados para esta noche.",
+    tono: "text-sky",
+  },
+];
 
 export default function Home() {
   return (
@@ -20,14 +42,10 @@ export default function Home() {
             Explorá la Tierra. <em className="text-sky">Descubrí el universo.</em>
           </h1>
           <p className="lead mt-6 max-w-[42ch] text-text/90">
-            Fotografiá un paisaje para conocer su historia, con fuentes. Después mirá qué hay en el cielo desde ese mismo
-            lugar.
+            Cada lugar de Jujuy tiene dos historias: la que ves de día y la que aparece arriba cuando baja el sol.
           </p>
-          <div className="mt-8 flex flex-wrap items-center gap-x-8 gap-y-2">
-            <LinkButton href="/explorar">Explorar un paisaje</LinkButton>
-            <LinkButton href="/cielo" variant="ghost">
-              Descubrir el cielo
-            </LinkButton>
+          <div className="mt-8">
+            <LinkButton href="/explorar">Elegí un lugar</LinkButton>
           </div>
           <div className="mt-8">
             <PhotoCredit credit={`${hero.credit} — Cerro de los Siete Colores`} url={hero.creditUrl} />
@@ -35,28 +53,22 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Dos capítulos */}
-      <section className="grid gap-12 py-16 md:grid-cols-2 md:gap-16 md:py-24">
-        <article className="rule pt-6">
-          <p className="eyebrow text-earth">01 · Pacha</p>
-          <h2 className="headline mt-4 text-4xl md:text-5xl">La Tierra</h2>
-          <p className="mt-4 max-w-[45ch] text-text-muted">
-            Sacá una foto o elegí un destino. Te contamos qué estás viendo con información curada y la fuente de cada dato.
-          </p>
-          <Link href="/explorar" className="link-arrow mt-4 text-earth">
-            ¿Qué estás viendo?
-          </Link>
-        </article>
-        <article className="rule pt-6">
-          <p className="eyebrow text-sky">02 · Cielo Andino</p>
-          <h2 className="headline mt-4 text-4xl md:text-5xl">El universo</h2>
-          <p className="mt-4 max-w-[45ch] text-text-muted">
-            Elegí un lugar, una fecha y una hora. Calculamos la posición real de la Luna, los planetas y algunas estrellas.
-          </p>
-          <Link href="/cielo" className="link-arrow mt-4 text-sky">
-            Ver el cielo
-          </Link>
-        </article>
+      {/* Un recorrido: el lugar de día y de noche */}
+      <section aria-labelledby="recorrido" className="py-16 md:py-24">
+        <h2 id="recorrido" className="headline max-w-[18ch] text-4xl md:text-5xl">
+          Un lugar, de día y de noche
+        </h2>
+        <ol className="mt-10 grid gap-10 md:grid-cols-3 md:gap-12">
+          {pasos.map((paso, i) => (
+            <li key={paso.titulo} className="rule pt-6">
+              <p className={`eyebrow ${paso.tono}`}>
+                {String(i + 1).padStart(2, "0")} · {paso.momento}
+              </p>
+              <h3 className="headline mt-4 text-2xl md:text-3xl">{paso.titulo}</h3>
+              <p className="mt-3 max-w-[40ch] text-text-muted">{paso.texto}</p>
+            </li>
+          ))}
+        </ol>
       </section>
 
       {/* Destinos */}
@@ -85,6 +97,7 @@ export default function Home() {
                   <p className="eyebrow mt-4 text-text-muted">{String(i + 1).padStart(2, "0")}</p>
                   <h3 className="headline mt-1 text-2xl group-hover:text-earth">{p.name}</h3>
                   <p className="mt-1 text-sm text-text-muted">{f.region}</p>
+                  <NocheBreve place={p} />
                 </Link>
               </li>
             );
