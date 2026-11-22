@@ -60,6 +60,8 @@ interface Props {
   nombreLugar: string;
   /** Muestra la Yacana, la llama del cielo andino (ojos y nombre en arena). */
   yacana?: boolean;
+  /** Avisa cuando «Apuntá» se enciende o se apaga: el explorador pasa al cielo de este momento. */
+  onApuntar?: (activa: boolean) => void;
 }
 
 interface Precalculo {
@@ -94,7 +96,7 @@ const prefiereMenosMovimiento = () =>
  * Todo lo que se dibuja está calculado para el lugar y el instante; nada es decorativo.
  * Para lectores de pantalla, la lista de objetos de la página es el control accesible.
  */
-export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, onSelect, nombreLugar, yacana = false }: Props) {
+export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, onSelect, nombreLugar, yacana = false, onApuntar }: Props) {
   const contenedorRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [tamanio, setTamanio] = useState({ ancho: 0, alto: 0 });
@@ -108,6 +110,14 @@ export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, 
     setAz(v.az);
     setAlt(Math.min(80, Math.max(5, v.alt)));
   });
+  const apuntando = brujula.estado === "activa";
+  const onApuntarRef = useRef(onApuntar);
+  useEffect(() => {
+    onApuntarRef.current = onApuntar;
+  }, [onApuntar]);
+  useEffect(() => {
+    onApuntarRef.current?.(apuntando);
+  }, [apuntando]);
   const fov = tamanio.ancho < 640 ? 80 : 100;
 
   const pre = useMemo(() => precalcular(location, datetimeISO), [location, datetimeISO]);
@@ -127,8 +137,10 @@ export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, 
     return () => ro.disconnect();
   }, []);
 
-  // Al elegir un objeto desde la lista, giramos suavemente hacia él.
+  // Al elegir un objeto desde la lista, giramos suavemente hacia él. Apuntando, manda el teléfono:
+  // si no, el cielo en vivo (que se recalcula cada minuto) volvería a girar hacia el objeto elegido.
   useEffect(() => {
+    if (apuntando) return;
     const o = objetos.find((x) => x.id === selectedId && x.isAboveHorizon);
     if (!o) return;
     const destinoAlt = Math.min(70, Math.max(15, o.altitudeDeg));
@@ -146,7 +158,7 @@ export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, 
     };
     raf = requestAnimationFrame(paso);
     return () => cancelAnimationFrame(raf);
-  }, [selectedId, objetos]);
+  }, [selectedId, objetos, apuntando]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
