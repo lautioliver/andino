@@ -20,6 +20,7 @@ import {
   recortarPoligono,
 } from "./firmamento";
 import type { SkyLocation } from "./motor";
+import { useBrujula } from "./useBrujula";
 
 type Punto = [number, number];
 interface Catalogo {
@@ -97,6 +98,11 @@ export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, 
     return visible ? visible.azimuthDeg : 180;
   });
   const [alt, setAlt] = useState(40);
+  // «Apuntá»: con la brújula encendida, el cielo sigue a la cámara de atrás del teléfono.
+  const brujula = useBrujula((v) => {
+    setAz(v.az);
+    setAlt(Math.min(80, Math.max(5, v.alt)));
+  });
   const fov = tamanio.ancho < 640 ? 80 : 100;
 
   const pre = useMemo(() => precalcular(location, datetimeISO), [location, datetimeISO]);
@@ -318,6 +324,7 @@ export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, 
     const dy = e.clientY - a.y;
     if (Math.hypot(dx, dy) > 6) a.movio = true;
     if (!a.movio) return;
+    if (brujula.estado === "activa") brujula.apagar();
     const gradosPorPx = fov / tamanio.ancho;
     setAz((((a.az - dx * gradosPorPx) % 360) + 360) % 360);
     setAlt(Math.min(80, Math.max(5, a.alt + dy * gradosPorPx)));
@@ -368,14 +375,35 @@ export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, 
           <button
             key={c.label}
             type="button"
-            onClick={() => setAz(c.az)}
+            onClick={() => {
+              brujula.apagar();
+              setAz(c.az);
+            }}
             aria-label={`Mirar al ${rumbo(c.az)}`}
             className="eyebrow min-h-11 min-w-11 bg-bg/80 text-text aria-pressed:text-sky"
           >
             {c.label}
           </button>
         ))}
+        {brujula.disponible ? (
+          <button
+            type="button"
+            onClick={brujula.estado === "activa" ? brujula.apagar : brujula.encender}
+            aria-pressed={brujula.estado === "activa"}
+            className="eyebrow min-h-11 bg-bg/80 px-3 text-text aria-pressed:text-sky"
+          >
+            {brujula.estado === "activa" ? "Apuntando" : "Apuntá"}
+          </button>
+        ) : null}
       </div>
+
+      {brujula.estado === "sin-brujula" || brujula.estado === "denegada" ? (
+        <p role="status" className="absolute inset-x-0 bottom-16 mx-auto w-fit max-w-[90%] bg-bg/80 px-3 py-2 text-center text-sm text-text-muted">
+          {brujula.estado === "denegada"
+            ? "Sin permiso para usar la brújula. Girá el cielo con el dedo."
+            : "Este dispositivo no informa hacia dónde está el norte. Girá el cielo con el dedo."}
+        </p>
+      ) : null}
     </div>
   );
 }
