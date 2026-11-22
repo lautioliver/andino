@@ -124,7 +124,7 @@ Lo que antes era Pacha: ya no es un producto aparte, es la forma de llegar a la 
 - **Apuntá:** con permiso de orientación, el cielo sigue al celular (brújula y giroscopio). **Plan B siempre disponible:** girar el cielo con el dedo. Si la brújula no es confiable en el dispositivo, se muestra solo el plan B; nunca se simula orientación. Funciona también de día (dónde está la Luna, por dónde saldrá una constelación).
 - **Qué significa**, al tocar un objeto o figura: nombre, tipo, posición, explicación y fuente.
   - Constelaciones occidentales principales visibles.
-  - **Cielo andino:** constelaciones oscuras de la Vía Láctea (por ejemplo la Yacana), con autor y obra de la fuente. Visualmente distintas de las occidentales; nunca una encima de la otra como si fueran equivalentes.
+  - **Cielo andino:** constelaciones oscuras de la Vía Láctea (por ejemplo la Yacana), con autor y obra de la fuente ([`fuentes-cielo-andino.md`](./fuentes-cielo-andino.md)) y dónde está documentada: Perú y norte de Chile, no Jujuy. Visualmente distintas de las occidentales; nunca una encima de la otra como si fueran equivalentes.
   - **Tu signo en el cielo:** el usuario elige su signo y se resalta la constelación en su posición real esa noche, con la diferencia respecto de las fechas del horóscopo. Sin predicciones ni lenguaje esotérico.
 - Indicador «Posiciones calculadas para la fecha y hora seleccionadas»; **no** prometer visibilidad real si no se consideran clima, obstáculos y contaminación lumínica.
 - CTA `Volver al lugar` conservando el lugar.

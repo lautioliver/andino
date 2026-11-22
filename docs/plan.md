@@ -66,7 +66,7 @@ Con geolocalización y brújula del teléfono, el viajero apunta al cielo y ve q
 ### 4.3 Qué significa — constelaciones, cielo andino y tu signo (P0 acotado)
 
 - **Constelaciones occidentales** principales visibles esa noche.
-- **Cielo andino:** las constelaciones oscuras de la Vía Láctea (por ejemplo la Yacana, la llama). Fuentes académicas de Perú y Bolivia, citadas con autor y obra. No equiparamos automáticamente figuras occidentales con andinas ni atribuimos relatos a comunidades sin respaldo; para una versión pública, revisión de referentes culturales.
+- **Cielo andino:** las constelaciones oscuras de la Vía Láctea (por ejemplo la Yacana, la llama). Fuentes citadas con autor y obra en [`fuentes-cielo-andino.md`](./fuentes-cielo-andino.md). **Atribución:** la Yacana está documentada en Huarochirí (Perú, hacia 1600), en comunidades quechuas de Cusco y en el río Loa (Atacama, Chile); no encontramos registros en Jujuy ni en la Puna argentina. Se presenta como «tradición andina documentada en Perú y el norte de Chile, en un cielo que también se ve desde Jujuy», nunca como saber de las comunidades jujeñas. No equiparamos automáticamente figuras occidentales con andinas ni atribuimos relatos a comunidades sin respaldo; para una versión pública, revisión de referentes culturales.
 - **Tu signo en el cielo:** dónde está *de verdad* la constelación de tu signo esa noche (posición real, incluida la diferencia con las fechas del horóscopo). **Sin predicciones.** Es una puerta de entrada para el perfil espiritual, contada como astronomía.
 
 ### 4.4 La ficha del punto de observación (antes, Pacha)
@@ -248,7 +248,7 @@ andino/
 
 **1:05–1:45 — Apuntá:** el celular al cielo (o el plan B con el dedo); aparece lo que hay en esa dirección, incluido un paso de Starlink si coincide.
 
-**1:45–2:30 — Qué significa:** la Yacana en la Vía Láctea, con su fuente; y «tu signo en el cielo» para alguien del jurado: dónde está de verdad esta noche. Astronomía, no predicciones.
+**1:45–2:30 — Qué significa:** la Yacana en la Vía Láctea, con su fuente y dónde está documentada (Perú y norte de Chile, no Jujuy); y «tu signo en el cielo» para alguien del jurado: dónde está de verdad esta noche. Astronomía, no predicciones.
 
 **2:30–3:00 — Cierre:** visión del estado del territorio en tiempo real y quiénes podrían usarlo (hospedajes, operadores, turismo provincial; no confirmados). «ANDINO: tu mejor noche de cielo en Jujuy».
 
@@ -261,7 +261,8 @@ andino/
 - [ ] Elegir motor astronómico y validar cálculos.
 - [ ] Confirmar si habrá un dispositivo para probar orientación por sensores.
 - [ ] Hacer y registrar las 5 conversaciones con viajeros (sección 3).
-- [ ] Elegir las fuentes del cielo andino (Perú y Bolivia) y citarlas con autor y obra.
+- [x] Elegir las fuentes del cielo andino y citarlas con autor y obra ([`fuentes-cielo-andino.md`](./fuentes-cielo-andino.md)).
+- [ ] Consultar a investigadores del NOA o a comunidades de Jujuy antes de afirmar algo local sobre el cielo andino.
 - [ ] Validar el giro a astroturismo con `jehp23` y coordinar «Cuándo» y «Apuntá» con su trabajo en curso.
 
 ---
