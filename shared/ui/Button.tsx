@@ -3,16 +3,16 @@ import type { ComponentProps } from "react";
 
 type Variant = "earth" | "sky" | "ghost";
 
-const base =
-  "inline-flex min-h-12 items-center justify-center gap-2 rounded-control px-5 font-medium transition-colors disabled:opacity-50";
+// Editorial: bloques sólidos de esquina mínima para la acción principal; texto con flecha para lo secundario.
+const solid = "inline-flex min-h-12 items-center justify-center gap-3 rounded-[4px] px-6 text-[15px] font-semibold tracking-wide transition-colors disabled:opacity-50";
 const variants: Record<Variant, string> = {
-  earth: "bg-earth text-bg hover:bg-sand",
-  sky: "border border-sky text-sky hover:bg-surface-raised",
-  ghost: "border border-border text-text hover:bg-surface-raised",
+  earth: `${solid} bg-earth text-bg hover:bg-sand`,
+  sky: `${solid} bg-sky text-bg hover:bg-text`,
+  ghost: "link-arrow text-text disabled:opacity-50",
 };
 
 export function buttonClass(variant: Variant = "earth", extra = "") {
-  return `${base} ${variants[variant]} ${extra}`;
+  return `${variants[variant]} ${extra}`;
 }
 
 export function Button({ variant = "earth", className = "", ...props }: ComponentProps<"button"> & { variant?: Variant }) {

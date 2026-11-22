@@ -11,7 +11,6 @@ import { PhotoCredit } from "@/shared/ui/PhotoCredit";
 import { SourceList } from "@/shared/ui/SourceList";
 import { StatusMessage } from "@/shared/ui/StatusMessage";
 import { fichas } from "./fichas";
-import { PlaceCard } from "./PlaceCard";
 
 const ACCEPTED = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
 const MAX_MB = 10;
@@ -83,96 +82,111 @@ export function PachaFlow() {
     const shown = photo ?? { url: ficha.photo.src, isDemo: false, isObjectUrl: false };
     const isUserPhoto = photo && !photo.isDemo;
     return (
-      <article className="space-y-6">
+      <article>
         {inputs}
-        <div className="overflow-hidden rounded-hero border border-border bg-surface">
-          <div className="relative aspect-[4/3] w-full">
-            <Image
-              src={shown.url}
-              alt={isUserPhoto ? "Tu foto" : ficha.photo.alt}
-              fill
-              sizes="(max-width: 1120px) 100vw, 1120px"
-              className="object-cover"
-              unoptimized={shown.isObjectUrl}
-              priority
-            />
-          </div>
-          <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2">
-            {isUserPhoto ? <span className="text-xs text-text-muted">Tu foto (no se guarda)</span> : <PhotoCredit credit={ficha.photo.credit} url={ficha.photo.creditUrl} />}
-            {photo?.isDemo && <Badge>Ejemplo precargado</Badge>}
-          </div>
-        </div>
-
-        <header className="space-y-2">
-          <p className="text-sm text-sand">{ficha.region}</p>
-          <h1 className="font-display text-[28px] leading-[34px] font-bold">{place.name}</h1>
-          <div className="flex flex-wrap gap-2">
-            <Badge tone="earth">Lugar elegido por vos</Badge>
-            <Badge>Contenido curado · en revisión</Badge>
+        <header className="bleed relative flex min-h-[min(72svh,620px)] items-end md:min-h-[min(78svh,760px)]">
+          <Image
+            src={shown.url}
+            alt={isUserPhoto ? "Tu foto" : ficha.photo.alt}
+            fill
+            sizes="100vw"
+            className="object-cover"
+            unoptimized={shown.isObjectUrl}
+            priority
+          />
+          <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-bg via-bg/40 to-transparent" />
+          <div className="relative mx-auto w-full max-w-[1120px] px-4 pb-8 md:px-6 md:pb-12">
+            <div className="flex flex-wrap gap-x-6 gap-y-2">
+              <Badge tone="earth">Pacha</Badge>
+              {photo?.isDemo && <Badge>Ejemplo precargado</Badge>}
+            </div>
+            <h1 className="display mt-4 text-[clamp(3.25rem,12vw,7.5rem)]">{place.name}</h1>
+            <p className="mt-3 text-text/85">{ficha.region}</p>
           </div>
         </header>
 
-        <p className="max-w-[65ch] text-base leading-6">{ficha.summary}</p>
+        <div className="grid gap-12 py-10 md:py-16 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-20">
+          <div className="max-w-[65ch]">
+            <p className="eyebrow text-text-muted">
+              {isUserPhoto ? "Tu foto · no se guarda" : <PhotoCredit credit={ficha.photo.credit} url={ficha.photo.creditUrl} />}
+            </p>
+            <p className="headline mt-6 text-[1.625rem] leading-[1.3] md:text-[2rem]">{ficha.summary}</p>
+            <details className="group mt-8 rule pt-4">
+              <summary className="link-arrow cursor-pointer list-none text-earth [&::-webkit-details-marker]:hidden">
+                Conocer más
+              </summary>
+              <div className="lead mt-4 space-y-5 text-text/85">
+                {ficha.more.map((p) => (
+                  <p key={p}>{p}</p>
+                ))}
+              </div>
+            </details>
 
-        <details className="max-w-[65ch] rounded-card border border-border bg-surface p-4">
-          <summary className="cursor-pointer font-medium">Conocer más</summary>
-          <div className="mt-3 space-y-3 text-text-muted">
-            {ficha.more.map((p) => (
-              <p key={p}>{p}</p>
-            ))}
+            <div className="mt-12 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-8">
+              <LinkButton variant="sky" href={`/cielo?placeId=${place.id}`}>
+                Ver el cielo desde acá
+              </LinkButton>
+              <Button variant="ghost" onClick={() => router.push("/explorar")}>
+                No es este lugar
+              </Button>
+            </div>
           </div>
-        </details>
 
-        <SourceList sources={ficha.sources} />
-
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <LinkButton variant="sky" href={`/cielo?placeId=${place.id}`}>
-            Ver el cielo desde acá
-          </LinkButton>
-          <Button variant="ghost" onClick={() => router.push("/explorar")}>
-            No es este lugar
-          </Button>
-          <Button variant="ghost" onClick={reset}>
-            Explorar otro paisaje
-          </Button>
+          <aside className="space-y-8 lg:pt-14">
+            <div className="rule pt-4">
+              <p className="eyebrow text-text-muted">Cómo lo sabemos</p>
+              <p className="mt-3 text-sm leading-6 text-text-muted">
+                Elegiste el lugar vos. El texto sale de las fuentes de abajo y está en revisión editorial: no es una respuesta
+                generada por IA.
+              </p>
+            </div>
+            <SourceList sources={ficha.sources} />
+            <Button variant="ghost" onClick={reset}>
+              Explorar otro paisaje
+            </Button>
+          </aside>
         </div>
       </article>
     );
   }
 
   // ---------- Captura / confirmación ----------
+  const hasUserPhoto = photo && !photo.isDemo;
   return (
-    <section className="space-y-6">
+    <section className="pt-8 md:pt-16">
       {inputs}
-      <header className="space-y-2">
-        <p className="flex items-center gap-2 text-sm font-medium text-earth">
-          <Image src="/brand/pacha-mark.svg" alt="" width={24} height={24} />
-          Pacha
-        </p>
-        <h1 className="font-display text-[28px] leading-[34px] font-bold">¿Qué estás viendo?</h1>
-        <p className="max-w-[65ch] text-text-muted">Sacá una foto del paisaje o elegí un destino para conocer su historia, con fuentes.</p>
+      <header className="max-w-[18ch]">
+        <Badge tone="earth">Pacha · La Tierra</Badge>
+        <h1 className="display mt-5 text-[clamp(3rem,10vw,6.5rem)]">¿Qué estás viendo?</h1>
       </header>
+      <p className="lead mt-6 max-w-[45ch] text-text-muted">
+        Sacá una foto del paisaje o elegí un destino para conocer su historia, con fuentes.
+      </p>
 
       {error && (
-        <StatusMessage tone="error" title="No pudimos usar esa imagen">
-          {error}
-        </StatusMessage>
-      )}
-
-      {photo && !photo.isDemo ? (
-        <div className="space-y-4">
-          <div className="relative aspect-[4/3] w-full overflow-hidden rounded-hero border border-border bg-surface">
-            <Image src={photo.url} alt="Vista previa de tu foto" fill className="object-cover" unoptimized />
-          </div>
-          <Button variant="ghost" onClick={() => fileRef.current?.click()}>
-            Cambiar imagen
-          </Button>
-          <StatusMessage title="¿Qué lugar es?">
-            El reconocimiento automático todavía no está activo. Elegí el lugar de tu foto para continuar.
+        <div className="mt-8">
+          <StatusMessage tone="error" title="No pudimos usar esa imagen">
+            {error}
           </StatusMessage>
         </div>
+      )}
+
+      {hasUserPhoto ? (
+        <div className="mt-10 grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:items-end md:gap-12">
+          <div className="relative aspect-[4/5] w-full overflow-hidden md:aspect-[4/3]">
+            <Image src={photo.url} alt="Vista previa de tu foto" fill className="object-cover" unoptimized />
+          </div>
+          <div className="space-y-4">
+            <StatusMessage title="¿Qué lugar es?">
+              El reconocimiento automático todavía no está activo. Elegí abajo el lugar de tu foto para continuar.
+            </StatusMessage>
+            <Button variant="ghost" onClick={() => fileRef.current?.click()}>
+              Cambiar imagen
+            </Button>
+          </div>
+        </div>
       ) : (
-        <div className="flex flex-col gap-3 sm:flex-row">
+        <div className="mt-10 flex flex-wrap items-center gap-x-8 gap-y-2">
           <Button onClick={() => cameraRef.current?.click()}>Tomar una foto</Button>
           <Button variant="ghost" onClick={() => fileRef.current?.click()}>
             Subir imagen
@@ -180,37 +194,47 @@ export function PachaFlow() {
         </div>
       )}
 
-      <section aria-labelledby="destinos" className="space-y-3">
-        <h2 id="destinos" className="font-display text-[22px] leading-7 font-bold">
-          {photo ? "Elegí el lugar" : "O elegí un destino"}
-        </h2>
-        <ul className="grid gap-3 md:grid-cols-3">
-          {places.map((p) => (
-            <li key={p.id}>
-              <PlaceCard place={p} onSelect={() => choosePlace(p.id)} />
+      <section aria-labelledby="destinos" className="mt-16 md:mt-24">
+        <div className="rule flex items-baseline justify-between pt-4">
+          <h2 id="destinos" className="headline text-3xl md:text-4xl">
+            {hasUserPhoto ? "Elegí el lugar" : "O elegí un destino"}
+          </h2>
+          <p className="eyebrow hidden text-text-muted sm:block">{places.length} lugares</p>
+        </div>
+        <ul className="mt-6 grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-3 md:gap-x-6">
+          {places.map((p, i) => (
+            <li key={p.id} className={i === 0 ? "col-span-2 md:col-span-1" : ""}>
+              <button type="button" onClick={() => choosePlace(p.id)} className="group block w-full text-left">
+                <div className={`relative overflow-hidden ${i === 0 ? "aspect-[16/10] md:aspect-[4/5]" : "aspect-[4/5]"}`}>
+                  <Image
+                    src={fichas[p.id].photo.src}
+                    alt=""
+                    fill
+                    sizes="(max-width: 768px) 50vw, 360px"
+                    className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                  />
+                </div>
+                <span className="headline mt-3 block text-xl group-hover:text-earth md:text-2xl">{p.name}</span>
+                <span className="mt-1 block text-sm text-text-muted">{fichas[p.id].region.split(" · ")[1]}</span>
+              </button>
             </li>
           ))}
         </ul>
       </section>
 
       {!photo && (
-        <section aria-labelledby="ejemplos" className="space-y-3">
-          <div className="flex items-center gap-2">
-            <h2 id="ejemplos" className="font-display text-lg font-bold">
-              Ejemplos para la demo
+        <section aria-labelledby="ejemplos" className="mt-16 md:mt-24">
+          <div className="rule pt-4">
+            <h2 id="ejemplos" className="eyebrow text-text-muted">
+              Para la demo · Ejemplos precargados
             </h2>
-            <Badge>Ejemplo precargado</Badge>
+            <p className="mt-2 max-w-[55ch] text-sm text-text-muted">Funcionan sin conexión y se marcan como ejemplo en el resultado.</p>
           </div>
-          <ul className="grid grid-cols-3 gap-3">
+          <ul className="mt-4 flex flex-wrap gap-x-8 gap-y-1">
             {places.map((p) => (
               <li key={p.id}>
-                <button
-                  type="button"
-                  onClick={() => pickDemo(p.id)}
-                  className="relative block aspect-square w-full overflow-hidden rounded-card border border-border hover:border-earth"
-                >
-                  <Image src={fichas[p.id].photo.src} alt={`Ejemplo: ${p.name}`} fill sizes="33vw" className="object-cover" />
-                  <span className="absolute inset-x-0 bottom-0 bg-bg/80 px-2 py-1 text-xs">{p.name}</span>
+                <button type="button" onClick={() => pickDemo(p.id)} className="link-arrow text-sand">
+                  {p.name}
                 </button>
               </li>
             ))}
