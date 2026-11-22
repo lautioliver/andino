@@ -107,7 +107,7 @@ Al terminar el recorrido: **una postal del cielo de esa noche**, con el nombre d
 |---|---|---|
 | Horas del día y la noche | astronomy-engine (`SearchRiseSet`, `SearchAltitude`) | Módulo puro con tests: ocaso, crepúsculos, noche cerrada, Luna |
 | Inicio según el momento | `CieloAhora` del PR #10 | Los tres estados y la línea «Esta noche» |
-| Escena de Cielo | Prototipo `/prototipo` | Pasarlo a `/cielo` y arreglar la Vía Láctea y la hoja |
+| Escena de Cielo | Prototipo `/prototipo` | Hecho en `/cielo` (paso 2): Vía Láctea desenfocada, hoja que se arrastra y encuadre sobre la hoja |
 | Atardecer | Color del cielo ya calculado | Aparición ordenada de estrellas y cuenta regresiva |
 | Recorrido | Motor y fichas actuales | Elección de paradas, «puños», textos nuevos con fuente |
 | Postal | Canvas | Exportar imagen |
