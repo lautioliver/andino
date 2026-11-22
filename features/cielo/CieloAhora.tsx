@@ -36,7 +36,7 @@ export function CieloAhora({ place }: { place: AndinoPlace }) {
       <div className="absolute inset-0">
         <CieloDeFondo location={place} datetimeISO={iso} az={RUMBO_AZ} />
       </div>
-      <p className="absolute top-4 left-4 right-4 w-fit rounded-full bg-bg/70 px-3 py-1 text-xs text-text-muted">
+      <p className="absolute top-4 left-4 right-4 w-fit rounded-control bg-bg/70 px-3 py-1 text-xs text-text-muted">
         {place.name} ahora, al {rumbo(RUMBO_AZ)} ·{" "}
         <span className="font-medium text-text tabular-nums">{iso.slice(11, 16)}</span> · {LUZ[luz]}
       </p>
