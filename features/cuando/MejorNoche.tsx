@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useLang } from "@/shared/i18n/lang";
 import type { AndinoPlace } from "@/shared/types";
 import { LinkButton } from "@/shared/ui/Button";
 import { queryCielo } from "@/features/cielo/cielo";
@@ -8,8 +9,9 @@ import { fechasDesde, hora, mejorNoche, type NocheDeCielo } from "./cuando";
 
 const DURACIONES = [3, 7, 14] as const;
 
-const diaLargo = new Intl.DateTimeFormat("es-AR", { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" });
-const diaCorto = new Intl.DateTimeFormat("es-AR", { timeZone: "UTC", weekday: "short", day: "numeric" });
+const loc = (en: boolean) => (en ? "en-US" : "es-AR");
+const diaLargo = (en: boolean) => new Intl.DateTimeFormat(loc(en), { timeZone: "UTC", weekday: "long", day: "numeric", month: "long" });
+const diaCorto = (en: boolean) => new Intl.DateTimeFormat(loc(en), { timeZone: "UTC", weekday: "short", day: "numeric" });
 const dia = (fecha: string, f: Intl.DateTimeFormat) => f.format(new Date(`${fecha}T12:00:00Z`));
 
 function duracion(minutos: number): string {
@@ -31,6 +33,7 @@ function hrefDelMedio(placeId: string, n: NocheDeCielo): string | null {
 
 /** «Cuándo»: de las próximas noches, cuál tiene más cielo oscuro. `fecha` es la de esta noche. */
 export function MejorNoche({ place, fecha }: { place: AndinoPlace; fecha: string }) {
+  const en = useLang() === "en";
   const [noches, setNoches] = useState<(typeof DURACIONES)[number]>(7);
   const { noches: lista, mejor } = useMemo(
     () => mejorNoche(place, fechasDesde(fecha, noches)),
@@ -42,8 +45,8 @@ export function MejorNoche({ place, fecha }: { place: AndinoPlace; fecha: string
   return (
     <div className="card mt-8 p-5 md:p-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <p className="eyebrow text-text-muted">Cuándo</p>
-        <div role="group" aria-label="Noches de tu viaje" className="flex gap-1 rounded-control bg-inset p-1 text-sm">
+        <p className="eyebrow text-text-muted">{en ? "When" : "Cuándo"}</p>
+        <div role="group" aria-label={en ? "Nights of your trip" : "Noches de tu viaje"} className="flex gap-1 rounded-control bg-inset p-1 text-sm">
           {DURACIONES.map((d) => (
             <button
               key={d}
@@ -52,7 +55,7 @@ export function MejorNoche({ place, fecha }: { place: AndinoPlace; fecha: string
               onClick={() => setNoches(d)}
               className={`min-h-10 rounded-[6px] px-3 font-medium ${d === noches ? "bg-surface text-violeta-ink shadow-sm" : "text-text-muted hover:text-text"}`}
             >
-              {d} noches
+              {d} {en ? "nights" : "noches"}
             </button>
           ))}
         </div>
@@ -61,26 +64,40 @@ export function MejorNoche({ place, fecha }: { place: AndinoPlace; fecha: string
       {mejor?.franja ? (
         <p className="lead mt-4 text-text/85">
           {mejor.fecha === fecha ? (
+            en ? (
+              <>
+                <span className="text-violeta-ink">Tonight</span> is the best of the next {noches}
+              </>
+            ) : (
+              <>
+                <span className="text-violeta-ink">Esta noche</span> es la mejor de las próximas {noches}
+              </>
+            )
+          ) : en ? (
             <>
-              <span className="text-violeta-ink">Esta noche</span> es la mejor de las próximas {noches}
+              The best of the next {noches} is <span className="text-violeta-ink">{dia(mejor.fecha, diaLargo(en))}</span>
             </>
           ) : (
             <>
-              La mejor de las próximas {noches} es la del <span className="text-violeta-ink">{dia(mejor.fecha, diaLargo)}</span>
+              La mejor de las próximas {noches} es la del <span className="text-violeta-ink">{dia(mejor.fecha, diaLargo(en))}</span>
             </>
           )}
-          : cielo oscuro y sin Luna de {hora(mejor.franja.desde)} a {hora(mejor.franja.hasta)} ({duracion(mejor.minutosOscuros)}).
+          {en
+            ? `: dark sky with no Moon from ${hora(mejor.franja.desde)} to ${hora(mejor.franja.hasta)} (${duracion(mejor.minutosOscuros)}).`
+            : `: cielo oscuro y sin Luna de ${hora(mejor.franja.desde)} a ${hora(mejor.franja.hasta)} (${duracion(mejor.minutosOscuros)}).`}
         </p>
       ) : (
         <p className="lead mt-4 text-text/85">
-          En las próximas {noches} noches la Luna ilumina el cielo todo el tiempo que está oscuro. Probá con un viaje más largo.
+          {en
+            ? `Over the next ${noches} nights the Moon lights up the sky whenever it's dark. Try a longer trip.`
+            : `En las próximas ${noches} noches la Luna ilumina el cielo todo el tiempo que está oscuro. Probá con un viaje más largo.`}
         </p>
       )}
 
-      <ol className="mt-6" aria-label="Horas de cielo oscuro por noche">
+      <ol className="mt-6" aria-label={en ? "Hours of dark sky per night" : "Horas de cielo oscuro por noche"}>
         {lista.map((n) => (
           <li key={n.fecha} className="grid grid-cols-[5.5rem_1fr_auto] border-t border-border-subtle items-center gap-4 py-2 text-sm">
-            <span className={n === mejor ? "font-semibold text-violeta-ink" : "text-text-muted"}>{dia(n.fecha, diaCorto)}</span>
+            <span className={n === mejor ? "font-semibold text-violeta-ink" : "text-text-muted"}>{dia(n.fecha, diaCorto(en))}</span>
             <span className="h-2 overflow-hidden rounded-full bg-arena" aria-hidden="true">
               <span
                 className={`block h-full rounded-full ${n === mejor ? "bg-gradient-to-r from-puna to-violeta" : "bg-violeta/40"}`}
@@ -88,21 +105,24 @@ export function MejorNoche({ place, fecha }: { place: AndinoPlace; fecha: string
               />
             </span>
             <span className="text-right tabular-nums text-text-muted">
-              {n.franja ? `${hora(n.franja.desde)}–${hora(n.franja.hasta)}` : "con Luna"}
-              <span className="sr-only">, Luna al {Math.round(n.lunaIluminada * 100)} %</span>
+              {n.franja ? `${hora(n.franja.desde)}–${hora(n.franja.hasta)}` : en ? "Moonlit" : "con Luna"}
+              <span className="sr-only">
+                , {en ? "Moon at" : "Luna al"} {Math.round(n.lunaIluminada * 100)} %
+              </span>
             </span>
           </li>
         ))}
       </ol>
 
       <p className="mt-4 text-sm leading-6 text-text-muted">
-        Cuenta como oscuro cuando terminó el crepúsculo (Sol a más de 18° bajo el horizonte) y la Luna no está arriba
-        o está casi nueva. No tiene en cuenta nubes ni cerros.
+        {en
+          ? "It counts as dark once twilight is over (Sun more than 18° below the horizon) and the Moon is down or almost new. Clouds and mountains aren't taken into account."
+          : "Cuenta como oscuro cuando terminó el crepúsculo (Sol a más de 18° bajo el horizonte) y la Luna no está arriba o está casi nueva. No tiene en cuenta nubes ni cerros."}
       </p>
 
       {href && mejor && mejor.fecha !== fecha ? (
         <LinkButton variant="ghost" href={href} className="mt-2">
-          Ver el cielo de esa noche
+          {en ? "See that night's sky" : "Ver el cielo de esa noche"}
         </LinkButton>
       ) : null}
     </div>

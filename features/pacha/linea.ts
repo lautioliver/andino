@@ -30,6 +30,15 @@ const TITULOS: Record<TipoEvento, string> = {
   alba: "Empieza a clarear",
 };
 
+/** Títulos en inglés, por tipo de evento (la línea se calcula en español). */
+export const TITULOS_EN: Record<TipoEvento, string> = {
+  puesta: "Sunset",
+  oscuro: "Dark sky",
+  "salida-luna": "Moonrise",
+  "puesta-luna": "Moonset",
+  alba: "Dawn breaks",
+};
+
 const PASO_MIN = 5;
 
 function alturaLuna(observer: Observer, fecha: Date): number {

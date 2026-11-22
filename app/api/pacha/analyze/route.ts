@@ -21,7 +21,8 @@ export async function POST(request: Request) {
 
   try {
     const imagen = new Uint8Array(await archivo.arrayBuffer());
-    const result = await analizarFoto(imagen, archivo.type, request.signal);
+    const lang = form.get("lang") === "en" ? "en" : "es";
+    const result = await analizarFoto(imagen, archivo.type, lang, request.signal);
     return Response.json(result);
   } catch (e) {
     return errorDeIA("pacha/analyze", e);

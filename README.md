@@ -1,9 +1,9 @@
 # ANDINO
 
-**Tu mejor noche de cielo en Jujuy.** PWA de turismo inteligente y astroturismo para Jujuy, hecha para la Cursor Hackathon Jujuy.
+**Tu mejor noche de cielo en Jujuy.** PWA de turismo inteligente y astroturismo para Jujuy, hecha para la Cursor Hackathon Jujuy. Pensada para los pasajeros del **Tren Solar de la Quebrada**: cubre sus seis paradas (Volcán, Tumbaya, Purmamarca, Posta de Hornillos, Maimará y Tilcara), en español y en inglés.
 
-- **Pacha** (`/explorar`): foto de un paisaje → explicación con fuentes → pregunta de seguimiento. Responsable: `lautioliver`.
-- **Cielo Andino** (`/cielo`): lugar + fecha/hora → objetos celestes calculados. Motor y pantalla de `jehp23`; desde la v4 lo lleva `lautioliver`.
+- **Pacha** (`/explorar`): foto desde el tren o en una parada → qué es el lugar, su territorio y su historia, con fuentes → pregunta de seguimiento. Responsable: `lautioliver`.
+- **Cielo Andino** (`/cielo`): el cielo de ahora, en vivo, para apuntar con el teléfono; o lugar + fecha/hora → objetos celestes calculados. Motor y pantalla de `jehp23`; desde la v4 lo lleva `lautioliver`.
 
 Documentación: [`docs/plan.md`](docs/plan.md) (plan del proyecto) y [`docs/design.md`](docs/design.md) (diseño, contratos e implementación; fuente de verdad).
 
@@ -24,7 +24,7 @@ features/pacha  lautioliver
 features/cielo  motor y pantalla de jehp23; desde la v4, lautioliver
 features/cuando lautioliver
 features/signo  lautioliver
-shared/         contratos (types.ts) y UI base — coordinar antes de cambiar
+shared/         contratos (types.ts), UI base e idioma (i18n/lang.ts) — coordinar antes de cambiar
 data/           dataset compartido (places.ts) — coordinar antes de cambiar
 docs/           plan.md y design.md
 ```

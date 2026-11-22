@@ -1,9 +1,12 @@
+"use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { getPlace, places } from "@/data/places";
-import { fichas } from "@/features/pacha/fichas";
+import { fichaEn, fichas } from "@/features/pacha/fichas";
 import { HORA_NOCHE } from "@/features/pacha/noche";
 import { CieloDePortada, NocheEnLinea } from "@/features/pacha/Portada";
+import { useLang, useT } from "@/shared/i18n/lang";
 import { LinkButton } from "@/shared/ui/Button";
 
 const lugarPortada = getPlace("purmamarca")!;
@@ -13,7 +16,40 @@ function primeraFrase(texto: string) {
   return texto.split(/(?<=\.)\s/)[0];
 }
 
+const textos = {
+  es: {
+    estaNoche: "Esta noche",
+    titulo1: "Tu mejor",
+    tituloAcento: "noche de cielo",
+    titulo2: "en Jujuy.",
+    bajada: "Qué estás viendo por la ventana y qué hay en el cielo, en cada parada del recorrido. Sacá una foto y te contamos el lugar.",
+    cta: "Reconocer un lugar",
+    explorar: "Explorar este cielo",
+    fondo: (h: string, l: string) => `El fondo no es una foto: es el cielo calculado para hoy a las ${h} desde ${l}.`,
+    laNoche: "La noche en",
+    destinos: "Las paradas del recorrido",
+    tren: "Tren Solar de la Quebrada",
+    ver: "Ver el lugar",
+  },
+  en: {
+    estaNoche: "Tonight",
+    titulo1: "Your best",
+    tituloAcento: "night under the sky",
+    titulo2: "in Jujuy.",
+    bajada: "What you're seeing out the window and what's in the sky, at every stop along the route. Take a photo and we'll tell you about the place.",
+    cta: "Recognize a place",
+    explorar: "Explore this sky",
+    fondo: (h: string, l: string) => `The background isn't a photo: it's the sky calculated for today at ${h} from ${l}.`,
+    laNoche: "The night in",
+    destinos: "The stops along the route",
+    tren: "Tren Solar de la Quebrada",
+    ver: "See the place",
+  },
+};
+
 export default function Home() {
+  const t = useT(textos);
+  const lang = useLang();
   return (
     <>
       {/* Portada: el cielo calculado de esta noche, no una foto. */}
@@ -24,26 +60,26 @@ export default function Home() {
         <div aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-t from-bg via-bg/70 via-35% to-transparent" />
         <div className="relative mx-auto w-full max-w-[1120px] px-4 pb-12 md:px-6 md:pb-20">
           <p className="eyebrow text-puna-ink">
-            Esta noche · {lugarPortada.name} · {HORA_NOCHE}
+            {t.estaNoche} · {lugarPortada.name} · {HORA_NOCHE}
           </p>
-          <h1 className="display mt-4 max-w-[11ch] text-[clamp(3rem,10.5vw,7.5rem)]">
-            Tu mejor <em className="acento">noche de cielo</em> en Jujuy.
+          <h1 className="display mt-4 max-w-[12ch] text-[clamp(2.75rem,9.5vw,7rem)]">
+            {t.titulo1} <em className="acento">{t.tituloAcento}</em> {t.titulo2}
           </h1>
-          <p className="lead mt-6 max-w-[38ch] text-text/85">Cuándo salir, adónde mirar y qué estás viendo, calculado para el lugar donde estás.</p>
+          <p className="lead mt-6 max-w-[38ch] text-text/85">{t.bajada}</p>
           <div className="mt-8 flex flex-wrap items-center gap-x-8 gap-y-2">
-            <LinkButton href="/explorar">Elegí un lugar</LinkButton>
+            <LinkButton href="/explorar">{t.cta}</LinkButton>
             <LinkButton variant="ghost" href={`/cielo?placeId=${lugarPortada.id}`}>
-              Explorar este cielo
+              {t.explorar}
             </LinkButton>
           </div>
-          <p className="mt-10 text-xs text-text-muted">El fondo no es una foto: es el cielo calculado para hoy a las {HORA_NOCHE} desde {lugarPortada.name}.</p>
+          <p className="mt-10 text-xs text-text-muted">{t.fondo(HORA_NOCHE, lugarPortada.name)}</p>
         </div>
       </section>
 
       {/* La noche, de la puesta del sol al alba */}
       <section aria-labelledby="la-noche" className="py-16 md:py-28">
         <h2 id="la-noche" className="eyebrow text-violeta-ink">
-          La noche en {lugarPortada.name}
+          {t.laNoche} {lugarPortada.name}
         </h2>
         <div className="mt-4">
           <NocheEnLinea place={lugarPortada} />
@@ -54,39 +90,36 @@ export default function Home() {
       <section aria-labelledby="destinos" className="rule pt-6 pb-8">
         <div className="flex items-baseline justify-between">
           <h2 id="destinos" className="headline text-4xl md:text-5xl">
-            Desde dónde mirar
+            {t.destinos}
           </h2>
-          <p className="eyebrow hidden text-text-muted sm:block">Quebrada de Humahuaca</p>
+          <p className="eyebrow hidden text-text-muted sm:block">{t.tren}</p>
         </div>
-        <ul className="mt-10 grid gap-14 md:grid-cols-12 md:gap-x-6 md:gap-y-16">
+        <ol className="mt-10 grid gap-12 sm:grid-cols-2 sm:gap-x-6 lg:grid-cols-3 lg:gap-y-14">
           {places.map((p, i) => {
-            const f = fichas[p.id];
-            const grande = i === 0;
+            const f = fichaEn(fichas[p.id], lang);
             return (
-              <li key={p.id} className={grande ? "md:col-span-12" : "md:col-span-6"}>
-                <Link href={`/explorar?placeId=${p.id}`} className={`group block ${grande ? "lg:grid lg:grid-cols-12 lg:items-end lg:gap-6" : ""}`}>
-                  <div className={`bleed relative overflow-hidden md:mx-0 md:w-auto md:rounded-card ${grande ? "aspect-[4/3] md:aspect-[16/9] lg:col-span-8 lg:aspect-[16/10]" : "aspect-[4/3] md:aspect-[5/4]"}`}>
+              <li key={p.id}>
+                <Link href={`/explorar?placeId=${p.id}`} className="group block">
+                  <div className="relative aspect-[4/3] overflow-hidden rounded-card">
                     <Image
                       src={f.photo.src}
                       alt={f.photo.alt}
                       fill
-                      sizes={grande ? "(max-width: 768px) 100vw, 740px" : "(max-width: 768px) 100vw, 550px"}
+                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 360px"
                       className="object-cover transition-transform duration-700 group-hover:scale-[1.02]"
                     />
                   </div>
-                  <div className={grande ? "lg:col-span-4 lg:pb-2" : ""}>
-                    <p className="eyebrow mt-5 text-text-muted">
-                      {String(i + 1).padStart(2, "0")} · {f.region.split(" · ")[1]}
-                    </p>
-                    <h3 className={`display mt-2 group-hover:text-puna-ink ${grande ? "text-5xl lg:text-6xl" : "text-4xl lg:text-5xl"}`}>{p.name}</h3>
-                    <p className="mt-3 max-w-[48ch] leading-7 text-text-muted">{primeraFrase(f.summary)}</p>
-                    <span className="link-arrow mt-2 text-puna-ink">Ver el lugar</span>
-                  </div>
+                  <p className="eyebrow mt-5 text-text-muted">
+                    {String(i + 1).padStart(2, "0")} · {f.region.split(" · ")[1]}
+                  </p>
+                  <h3 className="display mt-2 text-3xl group-hover:text-puna-ink lg:text-4xl">{p.name}</h3>
+                  <p className="mt-3 max-w-[48ch] leading-7 text-text-muted">{primeraFrase(f.summary)}</p>
+                  <span className="link-arrow mt-2 text-puna-ink">{t.ver}</span>
                 </Link>
               </li>
             );
           })}
-        </ul>
+        </ol>
       </section>
     </>
   );

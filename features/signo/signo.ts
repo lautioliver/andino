@@ -52,6 +52,12 @@ const CONSTELACIONES_DEL_SOL: Record<string, string> = {
   Oph: "Ofiuco",
 };
 
+/** Nombres en inglés por constelación IAU (signos y Ofiuco). */
+export const NOMBRES_EN: Record<string, string> = {
+  Ari: "Aries", Tau: "Taurus", Gem: "Gemini", Cnc: "Cancer", Leo: "Leo", Vir: "Virgo",
+  Lib: "Libra", Sco: "Scorpius", Sgr: "Sagittarius", Cap: "Capricornus", Aqr: "Aquarius", Psc: "Pisces", Oph: "Ophiuchus",
+};
+
 export function getSigno(id: string | null | undefined): Signo | undefined {
   return SIGNOS.find((s) => s.id === id);
 }

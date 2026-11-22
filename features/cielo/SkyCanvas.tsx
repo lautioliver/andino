@@ -3,8 +3,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import catalogoJSON from "@/data/cielo/catalogo.json";
 import type { SkyObjectKind } from "@/data/astronomy";
+import { useLang } from "@/shared/i18n/lang";
 import type { SkyObject } from "@/shared/types";
 import { YACANA } from "./andino";
+import { nombreObjeto } from "@/data/astronomy";
 import { rumbo } from "./cielo";
 import {
   aHorizonte,
@@ -48,6 +50,9 @@ const CARDINALES = [
   { label: "O", az: 270 },
   { label: "NO", az: 315 },
 ];
+
+/** Cardinales en inglés: solo cambia el oeste (O → W). */
+const cardinalEn = (label: string) => label.replace("O", "W");
 
 type Objeto = SkyObject & { kind: SkyObjectKind };
 
@@ -101,6 +106,13 @@ const prefiereMenosMovimiento = () =>
  */
 export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, onSelect, nombreLugar, modo = "interactivo", yacana = false, onApuntar }: Props) {
   const contenedorRef = useRef<HTMLDivElement>(null);
+  const lang = useLang();
+  const en = lang === "en";
+  // El lienzo se dibuja en un bucle: lee el idioma de una ref para no reiniciarlo.
+  const langRef = useRef(lang);
+  useEffect(() => {
+    langRef.current = lang;
+  }, [lang]);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [tamanio, setTamanio] = useState({ ancho: 0, alto: 0 });
   // De fondo, la cámara mira al objeto más alto y lo deja en la franja de arriba, lejos del texto de la portada.
@@ -283,7 +295,7 @@ export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, 
         if (a && b && a.y < horizonteY) {
           ctx.font = `500 10px ${fuente}`;
           ctx.fillStyle = `rgba(${SAND}, ${0.7 * guia})`;
-          ctx.fillText("ojos de la Yacana", (a.x + b.x) / 2, Math.min(a.y, b.y) - 14);
+          ctx.fillText(langRef.current === "en" ? "eyes of the Yacana" : "ojos de la Yacana", (a.x + b.x) / 2, Math.min(a.y, b.y) - 14);
         }
         const e = s.pre.yacana.etiqueta;
         const q = e.alt >= 4 ? proyectar(cam, e.alt, e.az) : null;
@@ -323,7 +335,7 @@ export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, 
         const q = proyectar(cam, -4, c.az);
         if (!q || q.x < 0 || q.x > ancho) continue;
         ctx.fillStyle = `rgba(${c.label.length === 1 ? SAND : MUTED}, ${c.label.length === 1 ? 0.95 : 0.6})`;
-        ctx.fillText(c.label, q.x, q.y + 6);
+        ctx.fillText(langRef.current === "en" ? cardinalEn(c.label) : c.label, q.x, q.y + 6);
       }
 
       // 6. Luna, planetas y estrellas destacadas: tocables.
@@ -350,7 +362,7 @@ export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, 
           ctx.stroke();
         }
         ctx.fillStyle = `rgba(${TEXT}, ${elegido ? 1 : 0.85})`;
-        ctx.fillText(o.name, q.x + radio + (elegido ? 11 : 6), q.y + 4);
+        ctx.fillText(nombreObjeto(o.id, o.name, langRef.current), q.x + radio + (elegido ? 11 : 6), q.y + 4);
       }
       objetivos.current = nuevos;
     };
@@ -423,7 +435,7 @@ export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, 
           ref={canvasRef}
           className="block h-full w-full"
           role="img"
-          aria-label={`Cielo calculado para esta noche desde ${nombreLugar}, mirando hacia el ${rumbo(az)}.`}
+          aria-label={en ? `Sky calculated for tonight from ${nombreLugar}, facing ${rumbo(az, lang)}.` : `Cielo calculado para esta noche desde ${nombreLugar}, mirando hacia el ${rumbo(az)}.`}
         />
       </div>
     );
@@ -435,7 +447,7 @@ export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, 
         ref={contenedorRef}
         tabIndex={0}
         role="group"
-        aria-label={`Cielo desde ${nombreLugar}. Usá las flechas para girar.`}
+        aria-label={en ? `Sky from ${nombreLugar}. Use the arrow keys to turn.` : `Cielo desde ${nombreLugar}. Usá las flechas para girar.`}
         className="h-[62svh] max-h-[720px] min-h-[380px] w-full cursor-grab touch-none select-none outline-offset-[-2px] active:cursor-grabbing"
         onKeyDown={alTeclear}
         onPointerDown={alPresionar}
@@ -449,17 +461,18 @@ export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, 
           ref={canvasRef}
           className="block h-full w-full"
           role="img"
-          aria-label={`Cielo calculado desde ${nombreLugar}, mirando hacia el ${rumbo(az)}. Arrastrá para girar.`}
+          aria-label={en ? `Sky calculated from ${nombreLugar}, facing ${rumbo(az, lang)}. Drag to turn.` : `Cielo calculado desde ${nombreLugar}, mirando hacia el ${rumbo(az)}. Arrastrá para girar.`}
         />
       </div>
 
       {/* Barra bajo el cielo: hacia dónde mirás y los cuatro rumbos. Nada flota sobre las estrellas. */}
       <div className="mx-auto flex max-w-[1120px] items-center justify-between gap-4 border-b border-border px-4 md:px-6">
         <p className="min-w-0 py-3 text-sm text-text-muted" aria-live="polite">
-          Mirando al <span className="text-text">{rumbo(az)}</span>
-          <span className="hidden sm:inline"> · arrastrá o usá las flechas para girar</span>
+          {en ? "Facing " : "Mirando al "}
+          <span className="text-text">{rumbo(az, lang)}</span>
+          <span className="hidden sm:inline">{en ? " · drag or use the arrow keys to turn" : " · arrastrá o usá las flechas para girar"}</span>
         </p>
-        <div role="group" aria-label="Mirar hacia" className="flex shrink-0">
+        <div role="group" aria-label={en ? "Look toward" : "Mirar hacia"} className="flex shrink-0">
           {CARDINALES.filter((c) => c.label.length === 1).map((c, i) => (
             <button
               key={c.label}
@@ -468,11 +481,11 @@ export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, 
                 brujula.apagar();
                 setAz(c.az);
               }}
-              aria-label={`Mirar al ${rumbo(c.az)}`}
+              aria-label={en ? `Look ${rumbo(c.az, lang)}` : `Mirar al ${rumbo(c.az)}`}
               aria-pressed={brujula.estado !== "activa" && i === cardinalActivo}
               className={cardinal}
             >
-              {c.label}
+              {en ? cardinalEn(c.label) : c.label}
             </button>
           ))}
           {brujula.disponible ? (
@@ -482,7 +495,7 @@ export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, 
               aria-pressed={brujula.estado === "activa"}
               className={`${cardinal} ml-2 px-2 text-violeta-ink`}
             >
-              {brujula.estado === "activa" ? "Apuntando" : "Apuntá"}
+              {brujula.estado === "activa" ? (en ? "Pointing" : "Apuntando") : en ? "Point" : "Apuntá"}
             </button>
           ) : null}
         </div>
@@ -491,8 +504,12 @@ export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, 
       {brujula.estado === "sin-brujula" || brujula.estado === "denegada" ? (
         <p role="status" className="mx-auto max-w-[1120px] px-4 py-3 text-sm text-text-muted md:px-6">
           {brujula.estado === "denegada"
-            ? "Sin permiso para usar la brújula. Girá el cielo con el dedo."
-            : "Este dispositivo no informa hacia dónde está el norte. Girá el cielo con el dedo."}
+            ? en
+              ? "No permission to use the compass. Turn the sky with your finger."
+              : "Sin permiso para usar la brújula. Girá el cielo con el dedo."
+            : en
+              ? "This device doesn't report where north is. Turn the sky with your finger."
+              : "Este dispositivo no informa hacia dónde está el norte. Girá el cielo con el dedo."}
         </p>
       ) : null}
     </div>

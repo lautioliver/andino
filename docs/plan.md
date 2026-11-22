@@ -35,7 +35,7 @@ Una PWA que acompaña al viajero que llega a la Quebrada y la Puna a vivir el ci
 
 ## 3. Validación: 5 conversaciones con viajeros
 
-Antes de presentar, el equipo habla con **5 viajeros** (en el Tren Solar, en Purmamarca, Tilcara o Humahuaca). Conversaciones cortas, sin guion cerrado:
+Antes de presentar, el equipo habla con **5 viajeros** (en el Tren Solar o en sus paradas). Conversaciones cortas, sin guion cerrado:
 
 1. ¿Viniste, entre otras cosas, por el cielo? ¿Ya saliste a mirarlo?
 2. ¿Cómo elegiste la noche y la hora? ¿Sabías cómo estaba la Luna?
@@ -47,7 +47,7 @@ Antes de presentar, el equipo habla con **5 viajeros** (en el Tren Solar, en Pur
 
 ## 4. El producto en 3 pasos
 
-El punto de observación es el eje: cada paso trabaja sobre un lugar concreto (Purmamarca, Tilcara, Humahuaca y los que se sumen).
+El punto de observación es el eje: cada paso trabaja sobre un lugar concreto (las seis paradas del Tren Solar: Volcán, Tumbaya, Purmamarca, Posta de Hornillos, Maimará y Tilcara).
 
 ### 4.1 Cuándo — la mejor noche del viaje (P0)
 

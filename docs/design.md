@@ -72,6 +72,10 @@ Desde el 22/11/2026 ANDINO usa la identidad de Abra en modo claro, completa: pal
 - Mapas estelares calculados: distinguir visualización ilustrativa de observación real.
 - Motivos culturales: no utilizar iconografía ceremonial o patrones de comunidades sin investigación y autorización pertinente.
 
+### Idiomas
+
+Toda la interfaz está en español e inglés (relevamiento con el Tren Solar, 22/11/2026: el personal tiene que explicarles los lugares en persona a los pasajeros que hablan inglés). El idioma arranca con el del teléfono, se cambia con el selector ES/EN del encabezado y se recuerda en el navegador (`shared/i18n/lang.ts`). Las fichas tienen sus textos en inglés (`en`), sin datos nuevos, y la IA responde en el idioma elegido. Los nombres de lugar quedan en español.
+
 ## 3. Estructura de navegación (MVP)
 
 ```text
@@ -315,7 +319,7 @@ Entregar una PWA móvil demostrable en el tren: **punto de observación → mejo
 ### Contrato compartido (cerrar en los primeros 30 min)
 
 ```ts
-export type PlaceId = 'purmamarca' | 'tilcara' | 'humahuaca'; // ajustar al dataset curado
+export type PlaceId = 'volcan' | 'tumbaya' | 'purmamarca' | 'hornillos' | 'maimara' | 'tilcara'; // paradas del Tren Solar
 export interface AndinoPlace {
   id: string;
   name: string;

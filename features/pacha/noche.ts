@@ -2,6 +2,7 @@
 // Las posiciones salen del motor de Cielo (features/cielo, de jehp23); acá solo se resumen
 // para la ficha y el Inicio. Nada se inventa: si un objeto está bajo el horizonte, no se nombra.
 import { Body, Illumination, MakeTime, MoonPhase, Observer, SearchRiseSet } from "astronomy-engine";
+import { nombreObjeto } from "@/data/astronomy";
 import type { AndinoPlace } from "@/shared/types";
 import { buildDatetimeISO, describirAltura, fechaArgentina, HORA_EJEMPLO, queryCielo, rumbo } from "@/features/cielo/cielo";
 import { computeSky } from "@/features/cielo/motor";
@@ -36,8 +37,10 @@ const horaArgentina = new Intl.DateTimeFormat("es-AR", {
   hourCycle: "h23",
 });
 
-function fase(grados: number): string {
-  const nombres = [
+const FASES_EN = ["New Moon", "Waxing crescent", "First quarter", "Waxing gibbous", "Full Moon", "Waning gibbous", "Last quarter", "Waning crescent"];
+
+function fase(grados: number, lang: "es" | "en"): string {
+  const nombres = lang === "en" ? FASES_EN : [
     "Luna nueva",
     "Luna creciente",
     "Cuarto creciente",
@@ -50,7 +53,7 @@ function fase(grados: number): string {
   return nombres[Math.round((((grados % 360) + 360) % 360) / 45) % 8];
 }
 
-export function nocheEn(place: AndinoPlace, fecha: string): Noche {
+export function nocheEn(place: AndinoPlace, fecha: string, lang: "es" | "en" = "es"): Noche {
   const location = { latitude: place.latitude, longitude: place.longitude };
   const datetimeISO = buildDatetimeISO(fecha, HORA_NOCHE);
   const time = MakeTime(new Date(datetimeISO));
@@ -64,14 +67,18 @@ export function nocheEn(place: AndinoPlace, fecha: string): Noche {
   const visibles = sky
     .filter((o) => o.id !== "luna" && o.isAboveHorizon)
     .sort((a, b) => b.altitudeDeg - a.altitudeDeg)
-    .map((o) => ({ id: o.id, name: o.name, donde: `hacia el ${rumbo(o.azimuthDeg)}, ${describirAltura(o.altitudeDeg)}` }));
+    .map((o) => ({
+      id: o.id,
+      name: nombreObjeto(o.id, o.name, lang),
+      donde: `${lang === "en" ? "to the" : "hacia el"} ${rumbo(o.azimuthDeg, lang)}, ${describirAltura(o.altitudeDeg, lang)}`,
+    }));
 
   return {
     fecha,
     hora: HORA_NOCHE,
     puestaDeSol: puesta ? horaArgentina.format(puesta.date) : null,
     luna: {
-      fase: fase(MoonPhase(time)),
+      fase: fase(MoonPhase(time), lang),
       iluminada: Math.round(Illumination(Body.Moon, time).phase_fraction * 100),
       visible: luna?.isAboveHorizon ?? false,
     },

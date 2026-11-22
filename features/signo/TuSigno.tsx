@@ -1,10 +1,11 @@
 "use client";
 
 import { useId, useMemo, useState } from "react";
+import { useLang } from "@/shared/i18n/lang";
 import type { AndinoPlace } from "@/shared/types";
 import { LinkButton } from "@/shared/ui/Button";
 import { describirAltura, queryCielo, rumbo } from "@/features/cielo/cielo";
-import { mejorMomento, tuCumpleEnElCielo } from "./signo";
+import { mejorMomento, NOMBRES_EN, tuCumpleEnElCielo } from "./signo";
 
 const FECHA = /^\d{4}-\d{2}-\d{2}$/;
 
@@ -30,6 +31,8 @@ function fechaYHora(datetimeISO: string): { fecha: string; hora: string } {
  */
 export function TuSigno({ place, fecha }: { place: AndinoPlace; fecha: string }) {
   const id = useId();
+  const lang = useLang();
+  const en = lang === "en";
   const [cumple, setCumple] = useState("");
 
   const resultado = useMemo(() => {
@@ -38,12 +41,14 @@ export function TuSigno({ place, fecha }: { place: AndinoPlace; fecha: string })
     const momento = mejorMomento(cielo.horoscopo.id, place, fecha);
     return { ...cielo, momento: momento ? { ...momento, ...fechaYHora(momento.datetimeISO) } : null };
   }, [cumple, place, fecha]);
+  const signo = resultado ? (en ? NOMBRES_EN[resultado.horoscopo.constelacion] : resultado.horoscopo.nombre) : "";
+  const sol = resultado ? (en ? (NOMBRES_EN[resultado.sol.id] ?? resultado.sol.nombre) : resultado.sol.nombre) : "";
 
   return (
     <div className="mt-12 rounded-card border border-border bg-surface-subtle p-5 md:p-6">
-      <p className="eyebrow text-text-muted">Tu signo en el cielo</p>
+      <p className="eyebrow text-text-muted">{en ? "Your sign in the sky" : "Tu signo en el cielo"}</p>
       <label htmlFor={id} className="lead mt-4 block text-text/85">
-        ¿Cuándo es tu cumpleaños?
+        {en ? "When is your birthday?" : "¿Cuándo es tu cumpleaños?"}
       </label>
       <input
         id={id}
@@ -56,39 +61,41 @@ export function TuSigno({ place, fecha }: { place: AndinoPlace; fecha: string })
       {resultado ? (
         <div className="mt-6 grid gap-4" aria-live="polite">
           <p className="lead text-text/85">
-            Según el horóscopo sos <span className="text-violeta-ink">{resultado.horoscopo.nombre}</span>.{" "}
+            {en ? "According to the horoscope you're " : "Según el horóscopo sos "}
+            <span className="text-violeta-ink">{signo}</span>.{" "}
             {resultado.coinciden ? (
-              <>Ese día el Sol estaba, de verdad, en la constelación de {resultado.sol.nombre}.</>
+              en ? (
+                <>On that day the Sun really was in the constellation {sol}.</>
+              ) : (
+                <>Ese día el Sol estaba, de verdad, en la constelación de {sol}.</>
+              )
             ) : (
               <>
-                Pero ese día el Sol estaba en la constelación de <span className="text-violeta-ink">{resultado.sol.nombre}</span>.
+                {en ? "But on that day the Sun was in the constellation " : "Pero ese día el Sol estaba en la constelación de "}
+                <span className="text-violeta-ink">{sol}</span>.
               </>
             )}
           </p>
           <p className="lead text-text/85">
-            {resultado.momento ? (
-              <>
-                Esta noche, el mejor momento para buscar {resultado.horoscopo.nombre} es a las {resultado.momento.hora}:
-                hacia el {rumbo(resultado.momento.posicion.az)}, {describirAltura(resultado.momento.posicion.alt)}.
-              </>
-            ) : (
-              <>
-                Esta noche {resultado.horoscopo.nombre} no sube lo suficiente con el cielo oscuro: está del lado del
-                Sol. Se ve mejor en otra época del año.
-              </>
-            )}
+            {resultado.momento
+              ? en
+                ? `Tonight, the best time to look for ${signo} is at ${resultado.momento.hora}: to the ${rumbo(resultado.momento.posicion.az, lang)}, ${describirAltura(resultado.momento.posicion.alt, lang)}.`
+                : `Esta noche, el mejor momento para buscar ${signo} es a las ${resultado.momento.hora}: hacia el ${rumbo(resultado.momento.posicion.az)}, ${describirAltura(resultado.momento.posicion.alt)}.`
+              : en
+                ? `Tonight ${signo} doesn't rise high enough while the sky is dark: it's on the Sun's side. It's best seen at another time of year.`
+                : `Esta noche ${signo} no sube lo suficiente con el cielo oscuro: está del lado del Sol. Se ve mejor en otra época del año.`}
           </p>
           <p className="text-sm leading-6 text-text-muted">
-            Las fechas del horóscopo se fijaron hace unos 2.000 años. Desde entonces el eje de la Tierra se corrió
-            (la precesión) y hoy el Sol pasa por cada constelación, en promedio, casi un mes más tarde. Además, cruza una
-            decimotercera, Ofiuco. Esto es astronomía: no hace predicciones.
+            {en
+              ? "The horoscope dates were set about 2,000 years ago. Since then Earth's axis has shifted (precession), and today the Sun passes through each constellation almost a month later on average. It also crosses a thirteenth one, Ophiuchus. This is astronomy: it makes no predictions."
+              : "Las fechas del horóscopo se fijaron hace unos 2.000 años. Desde entonces el eje de la Tierra se corrió (la precesión) y hoy el Sol pasa por cada constelación, en promedio, casi un mes más tarde. Además, cruza una decimotercera, Ofiuco. Esto es astronomía: no hace predicciones."}
           </p>
           {resultado.momento ? (
             <LinkButton
               variant="ghost"
               href={`/cielo${queryCielo(place.id, { fecha: resultado.momento.fecha, hora: resultado.momento.hora })}`}
             >
-              Ver el cielo a esa hora
+              {en ? "See the sky at that time" : "Ver el cielo a esa hora"}
             </LinkButton>
           ) : null}
         </div>

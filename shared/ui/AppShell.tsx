@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Suspense, type ReactNode } from "react";
-import { BottomNav, TopNav } from "./NavLinks";
+import { LangToggle } from "./LangToggle";
+import { BottomNav, Pie, TopNav } from "./NavLinks";
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
@@ -11,14 +12,17 @@ export function AppShell({ children }: { children: ReactNode }) {
             <span aria-hidden className="size-2.5 rounded-full bg-gradient-to-br from-puna to-violeta" />
             Andino
           </Link>
-          <Suspense>
-            <TopNav />
-          </Suspense>
+          <div className="flex items-center gap-3 md:gap-6">
+            <Suspense>
+              <TopNav />
+            </Suspense>
+            <LangToggle />
+          </div>
         </nav>
       </header>
       <main className="mx-auto w-full max-w-[1120px] flex-1 px-4 pb-16 md:px-6">{children}</main>
       <footer className="mx-auto w-full max-w-[1120px] px-4 pb-28 text-xs text-text-muted md:px-6 md:pb-8">
-        <p className="rule pt-4">ANDINO · Cursor Hackathon Jujuy · Sin afiliación con SpaceX.</p>
+        <Pie />
       </footer>
       <nav
         aria-label="Principal móvil"

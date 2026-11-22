@@ -13,7 +13,8 @@ export async function POST(request: Request) {
   if (pregunta.length > MAX_PREGUNTA) return errorJSON(413, `La pregunta puede tener hasta ${MAX_PREGUNTA} caracteres.`);
 
   try {
-    return Response.json(await responder(place, pregunta, request.signal));
+    const lang = body?.lang === "en" ? "en" : "es";
+    return Response.json(await responder(place, pregunta, lang, request.signal));
   } catch (e) {
     return errorDeIA("pacha/ask", e);
   }
