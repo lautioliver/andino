@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import catalogoJSON from "@/data/cielo/catalogo.json";
 import type { SkyObjectKind } from "@/data/astronomy";
 import type { SkyObject } from "@/shared/types";
+import { YACANA } from "./andino";
 import { rumbo } from "./cielo";
 import {
   aHorizonte,
@@ -57,6 +58,8 @@ interface Props {
   selectedId: string | null;
   onSelect: (id: string) => void;
   nombreLugar: string;
+  /** Muestra la Yacana, la llama del cielo andino (ojos y nombre en arena). */
+  yacana?: boolean;
 }
 
 interface Precalculo {
@@ -64,12 +67,13 @@ interface Precalculo {
   lineas: { alt: number; az: number }[][];
   etiquetas: { nombre: string; alt: number; az: number }[];
   viaLactea: { nivel: number; poligonos: { alt: number; az: number }[][] }[];
+  yacana: { ojos: { alt: number; az: number }[]; etiqueta: { alt: number; az: number } };
 }
 
 /** Posiciones de todo el catálogo para un instante y lugar: se calcula una vez, no por cuadro. */
 function precalcular(location: SkyLocation, datetimeISO: string): Precalculo {
   const m = matrizHorizonte(location, datetimeISO);
-  const h = ([ar, dec]: Punto) => aHorizonte(m, ar, dec);
+  const h = ([ar, dec]: readonly [number, number]) => aHorizonte(m, ar, dec);
   return {
     estrellas: catalogo.estrellas.map(([ar, dec, mag, bv], i) => {
       const [r, g, b] = colorEstrella(bv);
@@ -78,6 +82,7 @@ function precalcular(location: SkyLocation, datetimeISO: string): Precalculo {
     lineas: catalogo.constelaciones.flatMap((c) => c.lineas.map((linea) => linea.map(h))),
     etiquetas: catalogo.constelaciones.map((c) => ({ nombre: c.nombre, ...h(c.etiqueta) })),
     viaLactea: catalogo.viaLactea.map((n) => ({ nivel: n.nivel, poligonos: n.poligonos.map((p) => p.map(h)) })),
+    yacana: { ojos: YACANA.ojos.map(h), etiqueta: h(YACANA.etiqueta) },
   };
 }
 
@@ -89,7 +94,7 @@ const prefiereMenosMovimiento = () =>
  * Todo lo que se dibuja está calculado para el lugar y el instante; nada es decorativo.
  * Para lectores de pantalla, la lista de objetos de la página es el control accesible.
  */
-export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, onSelect, nombreLugar }: Props) {
+export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, onSelect, nombreLugar, yacana = false }: Props) {
   const contenedorRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [tamanio, setTamanio] = useState({ ancho: 0, alto: 0 });
@@ -153,7 +158,7 @@ export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, 
     let raf = 0;
 
     const dibujar = (t: number) => {
-      const s = { pre, az, alt, fov, solAlt, objetos, selectedId, tamanio };
+      const s = { pre, az, alt, fov, solAlt, objetos, selectedId, tamanio, yacana };
       const { ancho, alto } = s.tamanio;
       if (ancho === 0 || alto === 0) return;
       const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -239,6 +244,34 @@ export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, 
         }
       }
 
+      // 4b. Yacana (docs/fuentes-cielo-andino.md): es una figura oscura de la Vía Láctea, no un dibujo de
+      // estrellas. Solo sus ojos (α y β Cen) y su nombre, en arena y sin líneas, para no confundirla con las occidentales.
+      if (s.yacana && oscuro > 0) {
+        ctx.strokeStyle = `rgba(${SAND}, ${0.8 * oscuro})`;
+        ctx.lineWidth = 1.25;
+        const ojos = s.pre.yacana.ojos.filter((o) => o.alt > 0).map((o) => proyectar(cam, o.alt, o.az));
+        for (const q of ojos) {
+          if (!q) continue;
+          ctx.beginPath();
+          ctx.arc(q.x, q.y, 8, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        const [a, b] = ojos;
+        ctx.textAlign = "center";
+        if (a && b && a.y < horizonteY) {
+          ctx.font = `500 10px ${fuente}`;
+          ctx.fillStyle = `rgba(${SAND}, ${0.7 * oscuro})`;
+          ctx.fillText("ojos de la Yacana", (a.x + b.x) / 2, Math.min(a.y, b.y) - 14);
+        }
+        const e = s.pre.yacana.etiqueta;
+        const q = e.alt >= 4 ? proyectar(cam, e.alt, e.az) : null;
+        if (q && q.x > -60 && q.x < ancho + 60 && q.y > 0 && q.y < horizonteY) {
+          ctx.font = `italic 500 15px ${fuente}`;
+          ctx.fillStyle = `rgba(${SAND}, ${0.9 * oscuro})`;
+          ctx.fillText("Yacana", q.x, q.y);
+        }
+      }
+
       // 5. Suelo: todo lo que está bajo el horizonte, con el borde en arena.
       ctx.beginPath();
       let primero = true;
@@ -308,7 +341,7 @@ export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, 
     else raf = requestAnimationFrame(bucle);
     // Con movimiento reducido se redibuja solo cuando cambia algo (este efecto se vuelve a correr).
     return () => cancelAnimationFrame(raf);
-  }, [pre, az, alt, fov, solAlt, objetos, selectedId, tamanio]);
+  }, [pre, az, alt, fov, solAlt, objetos, selectedId, tamanio, yacana]);
 
   // Arrastrar para girar; un toque corto elige el objeto más cercano.
   const arrastre = useRef<{ x: number; y: number; az: number; alt: number; movio: boolean } | null>(null);
