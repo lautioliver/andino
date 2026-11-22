@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useSyncExternalStore } from "react";
+import { salirHaciaElCielo } from "@/shared/tierraCielo";
 import type { AndinoPlace } from "@/shared/types";
 import { LinkButton } from "@/shared/ui/Button";
 import { fechaDeLaNoche, nocheEn, type Noche } from "./noche";
@@ -26,7 +27,7 @@ function lista(nombres: string[]): string {
 }
 
 /** Sección de la ficha: el segundo acto del lugar. */
-export function EstaNoche({ place }: { place: AndinoPlace }) {
+export function EstaNoche({ place, fotoDeSalida = null }: { place: AndinoPlace; fotoDeSalida?: string | null }) {
   const noche = useNoche(place);
 
   return (
@@ -67,7 +68,12 @@ export function EstaNoche({ place }: { place: AndinoPlace }) {
             quebrada ni las nubes: lo que está muy bajo puede quedar tapado.
           </p>
 
-          <LinkButton variant="sky" href={noche.href} className="mt-8">
+          <LinkButton
+            variant="sky"
+            href={noche.href}
+            className="mt-8"
+            onClick={() => fotoDeSalida && salirHaciaElCielo({ placeId: place.id, src: fotoDeSalida })}
+          >
             Mirar el cielo completo
           </LinkButton>
         </>

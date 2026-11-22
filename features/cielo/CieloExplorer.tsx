@@ -1,12 +1,14 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
+import { useEffect, useMemo, useState, ViewTransition } from "react";
 import { SKY_OBJECT_INFO } from "@/data/astronomy";
 import { getPlace } from "@/data/places";
 import type { PlaceId } from "@/shared/types";
 import { Badge } from "@/shared/ui/Badge";
 import { Button, LinkButton } from "@/shared/ui/Button";
+import { olvidarFotoDeLlegada, useFotoDeLlegada, VT_TIERRA_CIELO } from "@/shared/tierraCielo";
 import { StatusMessage } from "@/shared/ui/StatusMessage";
 import { CelestialObjectCard } from "./CelestialObjectCard";
 import { DateTimePicker, LocationSelector } from "./CieloControls";
@@ -60,6 +62,8 @@ export function CieloExplorer() {
   // Viaje en el tiempo: minutos sumados a la fecha y hora elegidas; no se guarda en la URL.
   const [desfase, setDesfase] = useState(0);
   const [viajando, setViajando] = useState(false);
+  // Si se llega desde Pacha, la foto del lugar arranca sobre el cielo y se funde con él.
+  const llegada = useFotoDeLlegada(placeId);
 
   const resultado = useMemo(() => calcular(placeId, fecha, hora, desfase), [placeId, fecha, hora, desfase]);
 
@@ -145,17 +149,28 @@ export function CieloExplorer() {
       )}
 
       {resultado && (
-        <div className="bleed mt-10 md:mt-14">
-          <SkyCanvas
-            location={resultado.place}
-            datetimeISO={resultado.iso}
-            solAlt={resultado.solAlt}
-            objetos={resultado.objetos}
-            selectedId={selectedId}
-            onSelect={elegirDesdeMapa}
-            nombreLugar={resultado.place.name}
-          />
-        </div>
+        <ViewTransition name={VT_TIERRA_CIELO} share={VT_TIERRA_CIELO} default="none">
+          <div className="bleed relative mt-10 overflow-hidden md:mt-14">
+            <SkyCanvas
+              location={resultado.place}
+              datetimeISO={resultado.iso}
+              solAlt={resultado.solAlt}
+              objetos={resultado.objetos}
+              selectedId={selectedId}
+              onSelect={elegirDesdeMapa}
+              nombreLugar={resultado.place.name}
+            />
+            {llegada && (
+              <div
+                key={llegada.src}
+                className="fundir-en-cielo pointer-events-none absolute inset-0"
+                onAnimationEnd={olvidarFotoDeLlegada}
+              >
+                <Image src={llegada.src} alt="" fill sizes="100vw" className="object-cover" />
+              </div>
+            )}
+          </div>
+        </ViewTransition>
       )}
 
       {resultado && (

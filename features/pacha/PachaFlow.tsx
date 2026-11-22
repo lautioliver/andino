@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, ViewTransition } from "react";
 import { getPlace, places } from "@/data/places";
 import type { PlaceId } from "@/shared/types";
 import { Badge } from "@/shared/ui/Badge";
@@ -10,6 +10,7 @@ import { Button } from "@/shared/ui/Button";
 import { PhotoCredit } from "@/shared/ui/PhotoCredit";
 import { SourceList } from "@/shared/ui/SourceList";
 import { StatusMessage } from "@/shared/ui/StatusMessage";
+import { VT_TIERRA_CIELO } from "@/shared/tierraCielo";
 import { EstaNoche } from "./EstaNoche";
 import { fichas } from "./fichas";
 import { Preguntas } from "./Preguntas";
@@ -110,15 +111,20 @@ export function PachaFlow() {
       <article>
         {inputs}
         <header className="bleed relative flex min-h-[min(72svh,620px)] items-end md:min-h-[min(78svh,760px)]">
-          <Image
-            src={shown.url}
-            alt={isUserPhoto ? "Tu foto" : ficha.photo.alt}
-            fill
-            sizes="100vw"
-            className="object-cover"
-            unoptimized={shown.isObjectUrl}
-            priority
-          />
+          {/* Tierra → Cielo: esta foto y el cielo de /cielo son el mismo elemento para la transición. */}
+          <ViewTransition name={VT_TIERRA_CIELO} share={VT_TIERRA_CIELO} default="none">
+            <div className="absolute inset-0">
+              <Image
+                src={shown.url}
+                alt={isUserPhoto ? "Tu foto" : ficha.photo.alt}
+                fill
+                sizes="100vw"
+                className="object-cover"
+                unoptimized={shown.isObjectUrl}
+                priority
+              />
+            </div>
+          </ViewTransition>
           <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-bg via-bg/40 to-transparent" />
           <div className="relative mx-auto w-full max-w-[1120px] px-4 pb-8 md:px-6 md:pb-12">
             <div className="flex flex-wrap gap-x-6 gap-y-2">
@@ -155,7 +161,7 @@ export function PachaFlow() {
 
             <Preguntas key={place.id} place={place} sugerencias={ia?.followUpSuggestions} />
 
-            <EstaNoche place={place} />
+            <EstaNoche place={place} fotoDeSalida={shown.isObjectUrl ? null : shown.url} />
 
             <Button variant="ghost" className="mt-6" onClick={() => router.push("/explorar")}>
               No es este lugar
