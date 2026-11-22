@@ -2,7 +2,7 @@
 // estaba el Sol el día de tu cumpleaños. Astronomía, sin predicciones (docs/plan.md §4.3).
 //
 // Lógica pura, sin DOM ni imports relativos de valor: los tests corren este .ts directo con node.
-// La interfaz queda para cuando se acuerde con jehp23 dónde va (ficha o recorrido del cielo).
+// La interfaz está en TuSigno.tsx, dentro de «De noche» en la ficha.
 import { Body, Constellation, EquatorFromVector, GeoVector, HorizonFromVector, MakeTime, Observer, Rotation_EQJ_HOR, RotateVector, Spherical, VectorFromSphere } from "astronomy-engine";
 
 export type SignoId =

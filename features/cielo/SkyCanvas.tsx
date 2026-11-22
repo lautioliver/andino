@@ -20,6 +20,7 @@ import {
   recortarPoligono,
 } from "./firmamento";
 import type { SkyLocation } from "./motor";
+import { useBrujula } from "./useBrujula";
 
 type Punto = [number, number];
 interface Catalogo {
@@ -102,6 +103,11 @@ export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, 
   );
   const [az, setAz] = useState(() => destacado?.azimuthDeg ?? 180);
   const [alt, setAlt] = useState(() => (modo === "fondo" && destacado ? Math.max(5, Math.min(80, destacado.altitudeDeg - 25)) : 40));
+  // «Apuntá»: con la brújula encendida, el cielo sigue a la cámara de atrás del teléfono.
+  const brujula = useBrujula((v) => {
+    setAz(v.az);
+    setAlt(Math.min(80, Math.max(5, v.alt)));
+  });
   const fov = tamanio.ancho < 640 ? 80 : 100;
 
   const pre = useMemo(() => precalcular(location, datetimeISO), [location, datetimeISO]);
@@ -323,6 +329,7 @@ export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, 
     const dy = e.clientY - a.y;
     if (Math.hypot(dx, dy) > 6) a.movio = true;
     if (!a.movio) return;
+    if (brujula.estado === "activa") brujula.apagar();
     const gradosPorPx = fov / tamanio.ancho;
     setAz((((a.az - dx * gradosPorPx) % 360) + 360) % 360);
     setAlt(Math.min(80, Math.max(5, a.alt + dy * gradosPorPx)));
@@ -351,8 +358,11 @@ export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, 
     else if (e.key === "ArrowDown") setAlt((a) => Math.max(5, a - 5));
     else return;
     e.preventDefault();
+    brujula.apagar();
   }
 
+  const cardinal =
+    "eyebrow -mb-px min-h-12 min-w-11 border-b-2 border-transparent text-text-muted transition-colors hover:text-text aria-pressed:border-sky aria-pressed:text-text";
   // Cardinal más cercano a la mirada: marca el botón activo.
   const cardinalActivo = Math.round((((az % 360) + 360) % 360) / 90) % 4;
 
@@ -404,16 +414,37 @@ export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, 
             <button
               key={c.label}
               type="button"
-              onClick={() => setAz(c.az)}
+              onClick={() => {
+                brujula.apagar();
+                setAz(c.az);
+              }}
               aria-label={`Mirar al ${rumbo(c.az)}`}
-              aria-pressed={i === cardinalActivo}
-              className="eyebrow -mb-px min-h-12 min-w-11 border-b-2 border-transparent text-text-muted transition-colors hover:text-text aria-pressed:border-sky aria-pressed:text-text"
+              aria-pressed={brujula.estado !== "activa" && i === cardinalActivo}
+              className={cardinal}
             >
               {c.label}
             </button>
           ))}
+          {brujula.disponible ? (
+            <button
+              type="button"
+              onClick={brujula.estado === "activa" ? brujula.apagar : brujula.encender}
+              aria-pressed={brujula.estado === "activa"}
+              className={`${cardinal} ml-2 px-2 text-sky`}
+            >
+              {brujula.estado === "activa" ? "Apuntando" : "Apuntá"}
+            </button>
+          ) : null}
         </div>
       </div>
+
+      {brujula.estado === "sin-brujula" || brujula.estado === "denegada" ? (
+        <p role="status" className="mx-auto max-w-[1120px] px-4 pt-3 text-sm text-text-muted md:px-6">
+          {brujula.estado === "denegada"
+            ? "Sin permiso para usar la brújula. Girá el cielo con el dedo."
+            : "Este dispositivo no informa hacia dónde está el norte. Girá el cielo con el dedo."}
+        </p>
+      ) : null}
     </div>
   );
 }

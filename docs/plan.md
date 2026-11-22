@@ -3,7 +3,7 @@
 > Versión 4 · 22 de noviembre de 2026  
 > **Enfoque:** astroturismo en la Quebrada y la Puna de Jujuy  
 > **Tagline:** «Tu mejor noche de cielo en Jujuy»  
-> **Equipo:** `lautioliver` (Desarrollador 1, ficha del lugar e integración) y `jehp23` (Desarrollador 2, motor del cielo y demo)  
+> **Equipo:** `lautioliver` (todo el desarrollo desde la v4) y `jehp23` (motor del cielo, pantalla Cielo y horas de la noche, hasta la v3)  
 > **Contexto:** hackathon en el Tren Solar, con temática vinculada a Cursor y la comunidad espacial/SpaceX mencionada por el equipo. No implica patrocinio, integración ni colaboración oficial de SpaceX.
 
 > **Por qué cambió el plan (v3 → v4):** los mentores señalaron que la versión anterior no tenía un problema real ni un nicho claro; lo único que les interesó fue el cielo. Dejamos de ser «turismo inteligente en general» y nos enfocamos en una persona y un problema concretos. El Gobierno provincial deja de ser el cliente objetivo de la demo.
@@ -66,7 +66,7 @@ Con geolocalización y brújula del teléfono, el viajero apunta al cielo y ve q
 ### 4.3 Qué significa — constelaciones, cielo andino y tu signo (P0 acotado)
 
 - **Constelaciones occidentales** principales visibles esa noche.
-- **Cielo andino:** las constelaciones oscuras de la Vía Láctea (por ejemplo la Yacana, la llama). Fuentes académicas de Perú y Bolivia, citadas con autor y obra. No equiparamos automáticamente figuras occidentales con andinas ni atribuimos relatos a comunidades sin respaldo; para una versión pública, revisión de referentes culturales.
+- **Cielo andino:** las constelaciones oscuras de la Vía Láctea (por ejemplo la Yacana, la llama). Fuentes citadas con autor y obra en [`fuentes-cielo-andino.md`](./fuentes-cielo-andino.md). **Atribución:** la Yacana está documentada en Huarochirí (Perú, hacia 1600), en comunidades quechuas de Cusco y en el río Loa (Atacama, Chile); no encontramos registros en Jujuy ni en la Puna argentina. Se presenta como «tradición andina documentada en Perú y el norte de Chile, en un cielo que también se ve desde Jujuy», nunca como saber de las comunidades jujeñas. No equiparamos automáticamente figuras occidentales con andinas ni atribuimos relatos a comunidades sin respaldo; para una versión pública, revisión de referentes culturales.
 - **Tu signo en el cielo:** dónde está *de verdad* la constelación de tu signo esa noche (posición real, incluida la diferencia con las fechas del horóscopo). **Sin predicciones.** Es una puerta de entrada para el perfil espiritual, contada como astronomía.
 
 ### 4.4 La ficha del punto de observación (antes, Pacha)
@@ -156,6 +156,8 @@ flowchart TD
 
 ## 9. Organización de desarrollo — dos personas
 
+> **Reparto desde la v4 (22/11/2026):** `jehp23` no siguió después del giro a astroturismo; sus PR #15 y #20 se cerraron sin mergear y las ramas quedan intactas. Desde entonces `lautioliver` lleva todo el desarrollo: «Cuándo» (#24, sobre las horas de la noche que escribió `jehp23` en #15), «Tu signo» (#25) y «Apuntá» (#26). Lo que escribió `jehp23` (motor del cielo, pantalla Cielo, cielo inmersivo) se mantiene con su crédito. La tabla y el cronograma de abajo son el reparto original de la v3 y quedan como registro.
+
 **Principio:** dividir por funcionalidades completas (*vertical slices*), no por frontend/backend. Cada desarrollador implementa interfaz, lógica y pruebas de su módulo; ambos comparten contratos mínimos y revisan los cambios críticos.
 
 | Responsabilidad | Desarrollador 1 — `lautioliver` | Desarrollador 2 — `jehp23` |
@@ -175,7 +177,9 @@ andino/
 │   └── cielo/page.tsx
 ├── features/
 │   ├── pacha/           # lautioliver
-│   └── cielo/           # jehp23
+│   ├── cielo/           # motor y pantalla de jehp23 (v3); desde la v4, lautioliver
+│   ├── cuando/          # lautioliver
+│   └── signo/           # lautioliver
 ├── shared/              # contratos acordados
 ├── data/                # fichas y ejemplos de demo
 └── docs/plan.md
@@ -248,7 +252,7 @@ andino/
 
 **1:05–1:45 — Apuntá:** el celular al cielo (o el plan B con el dedo); aparece lo que hay en esa dirección, incluido un paso de Starlink si coincide.
 
-**1:45–2:30 — Qué significa:** la Yacana en la Vía Láctea, con su fuente; y «tu signo en el cielo» para alguien del jurado: dónde está de verdad esta noche. Astronomía, no predicciones.
+**1:45–2:30 — Qué significa:** la Yacana en la Vía Láctea, con su fuente y dónde está documentada (Perú y norte de Chile, no Jujuy); y «tu signo en el cielo» para alguien del jurado: dónde está de verdad esta noche. Astronomía, no predicciones.
 
 **2:30–3:00 — Cierre:** visión del estado del territorio en tiempo real y quiénes podrían usarlo (hospedajes, operadores, turismo provincial; no confirmados). «ANDINO: tu mejor noche de cielo en Jujuy».
 
@@ -261,8 +265,9 @@ andino/
 - [ ] Elegir motor astronómico y validar cálculos.
 - [ ] Confirmar si habrá un dispositivo para probar orientación por sensores.
 - [ ] Hacer y registrar las 5 conversaciones con viajeros (sección 3).
-- [ ] Elegir las fuentes del cielo andino (Perú y Bolivia) y citarlas con autor y obra.
-- [ ] Validar el giro a astroturismo con `jehp23` y coordinar «Cuándo» y «Apuntá» con su trabajo en curso.
+- [x] Elegir las fuentes del cielo andino y citarlas con autor y obra ([`fuentes-cielo-andino.md`](./fuentes-cielo-andino.md)).
+- [ ] Consultar a investigadores del NOA o a comunidades de Jujuy antes de afirmar algo local sobre el cielo andino.
+- [x] Reparto después del giro: `jehp23` no siguió; `lautioliver` lleva «Cuándo», «Apuntá» y «Qué significa» (ver sección 9).
 
 ---
 
