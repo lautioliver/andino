@@ -11,20 +11,20 @@ const hero = fichas.purmamarca.photo;
 const pasos = [
   {
     momento: "De día",
-    titulo: "Elegí o fotografiá un lugar",
-    texto: "Un destino de la Quebrada o una foto que sacaste en el camino.",
+    titulo: "Elegí desde dónde mirar",
+    texto: "Un pueblo de la Quebrada o una foto que sacaste en el camino.",
     tono: "text-earth",
   },
   {
-    momento: "De día",
-    titulo: "Conocé su historia",
-    texto: "Qué estás viendo, cómo se formó y por qué importa, con la fuente de cada dato.",
-    tono: "text-earth",
+    momento: "Al caer el sol",
+    titulo: "Sabé cuándo salir",
+    texto: "A qué hora se pone el sol, cómo está la Luna y qué satélites pasan esta noche.",
+    tono: "text-sand",
   },
   {
     momento: "De noche",
-    titulo: "Mirá su cielo",
-    texto: "Desde ese mismo lugar: la Luna, los planetas y las estrellas, calculados para esta noche.",
+    titulo: "Entendé lo que ves",
+    texto: "El cielo real desde ese lugar: la Luna, los planetas, las estrellas y sus constelaciones.",
     tono: "text-sky",
   },
 ];
@@ -39,10 +39,10 @@ export default function Home() {
         <div className="relative mx-auto w-full max-w-[1120px] px-4 pb-10 md:px-6 md:pb-16">
           <p className="eyebrow text-sand">Jujuy · Quebrada de Humahuaca</p>
           <h1 className="display mt-4 max-w-[12ch] text-[clamp(3rem,11vw,7rem)]">
-            Explorá la Tierra. <em className="text-sky">Descubrí el universo.</em>
+            Tu mejor <em className="text-sky">noche de cielo</em> en Jujuy.
           </h1>
           <p className="lead mt-6 max-w-[42ch] text-text/90">
-            Cada lugar de Jujuy tiene dos historias: la que ves de día y la que aparece arriba cuando baja el sol.
+            A qué hora oscurece, cómo está la Luna y qué estás viendo, calculado para el lugar donde estás.
           </p>
           <div className="mt-8">
             <LinkButton href="/explorar">Elegí un lugar</LinkButton>
@@ -56,7 +56,7 @@ export default function Home() {
       {/* Un recorrido: el lugar de día y de noche */}
       <section aria-labelledby="recorrido" className="py-16 md:py-24">
         <h2 id="recorrido" className="headline max-w-[18ch] text-4xl md:text-5xl">
-          Un lugar, de día y de noche
+          Tu noche, en tres pasos
         </h2>
         <ol className="mt-10 grid gap-10 md:grid-cols-3 md:gap-12">
           {pasos.map((paso, i) => (

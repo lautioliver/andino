@@ -13,8 +13,8 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  title: "ANDINO — Explorá la Tierra. Descubrí el universo.",
-  description: "Jujuy, de la Tierra al universo: paisajes con fuentes y el cielo calculado para el mismo lugar.",
+  title: "ANDINO — Tu mejor noche de cielo en Jujuy",
+  description: "Cuándo salir, adónde mirar y qué estás viendo en el cielo de la Quebrada, calculado para el lugar donde estás.",
 };
 
 export const viewport: Viewport = {

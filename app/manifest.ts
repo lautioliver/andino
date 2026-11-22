@@ -2,9 +2,9 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "ANDINO — Explorá la Tierra. Descubrí el universo.",
+    name: "ANDINO — Tu mejor noche de cielo en Jujuy",
     short_name: "ANDINO",
-    description: "Paisajes de Jujuy con fuentes y el cielo calculado para el mismo lugar.",
+    description: "Cuándo salir, adónde mirar y qué estás viendo en el cielo de la Quebrada.",
     lang: "es-AR",
     start_url: "/",
     display: "standalone",
