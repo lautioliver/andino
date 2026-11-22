@@ -201,10 +201,10 @@ export function PachaFlow() {
 
       {hasUserPhoto ? (
         <div className="mt-10 grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:items-end md:gap-12">
-          <div className="relative aspect-[4/5] w-full overflow-hidden md:aspect-[4/3]">
+          <div className="relative aspect-[3/2] w-full overflow-hidden md:aspect-[4/3]">
             <Image src={photo.url} alt="Vista previa de tu foto" fill className="object-cover" unoptimized />
           </div>
-          <div className="space-y-4">
+          <div className="order-first space-y-4 md:order-none">
             <Sugerencia reco={reco} onConfirm={choosePlace} />
             <Button variant="ghost" onClick={() => fileRef.current?.click()}>
               Cambiar imagen
