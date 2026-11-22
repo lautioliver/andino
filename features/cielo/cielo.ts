@@ -10,6 +10,33 @@ export function buildDatetimeISO(fecha: string, hora: string): string {
   return `${fecha}T${hora}:00${ZONA_ARGENTINA}`;
 }
 
+const FECHA = /^\d{4}-\d{2}-\d{2}$/;
+const HORA = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+/** Lee ?fecha=YYYY-MM-DD&hora=HH:MM de la URL; si falta o no es válido, devuelve null. */
+export function momentoDesdeURL(fecha: string | null, hora: string | null): { fecha: string; hora: string } | null {
+  if (!fecha || !hora || !FECHA.test(fecha) || !HORA.test(hora)) return null;
+  if (Number.isNaN(new Date(buildDatetimeISO(fecha, hora)).getTime())) return null;
+  return { fecha, hora };
+}
+
+/** Query de /cielo: el lugar siempre; fecha y hora solo si no son el ejemplo. */
+export function queryCielo(placeId: string, momento: { fecha: string; hora: string } | null): string {
+  const q = new URLSearchParams({ placeId });
+  if (momento) {
+    q.set("fecha", momento.fecha);
+    q.set("hora", momento.hora);
+  }
+  return `?${q}`;
+}
+
+/**
+ * Escenario de la demo, verificado contra JPL Horizons (Luna, Júpiter, Saturno) y un cálculo
+ * independiente (Sirio, Acrux): desde Purmamarca, los cinco objetos quedan a más de 10° sobre
+ * el horizonte, con el Sol a −38° (noche cerrada). Ver docs/demo-cielo.md.
+ */
+export const DEMO_CIELO = { placeId: "purmamarca", fecha: "2026-11-23", hora: "03:00" } as const;
+
 /** Fecha de hoy en Argentina, "YYYY-MM-DD", para el valor inicial de ejemplo. */
 export function fechaArgentina(ahora: Date): string {
   return new Intl.DateTimeFormat("en-CA", { timeZone: "America/Argentina/Jujuy" }).format(ahora);

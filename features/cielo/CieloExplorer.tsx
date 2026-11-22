@@ -5,10 +5,20 @@ import { useMemo, useState } from "react";
 import { SKY_OBJECT_INFO } from "@/data/astronomy";
 import { getPlace } from "@/data/places";
 import type { PlaceId } from "@/shared/types";
+import { Button, LinkButton } from "@/shared/ui/Button";
 import { StatusMessage } from "@/shared/ui/StatusMessage";
 import { CelestialObjectCard } from "./CelestialObjectCard";
 import { DateTimePicker, LocationSelector } from "./CieloControls";
-import { buildDatetimeISO, fechaArgentina, HORA_EJEMPLO, luzDelCielo, rumbo } from "./cielo";
+import {
+  buildDatetimeISO,
+  DEMO_CIELO,
+  fechaArgentina,
+  HORA_EJEMPLO,
+  luzDelCielo,
+  momentoDesdeURL,
+  queryCielo,
+  rumbo,
+} from "./cielo";
 import { computeSky, type SkyObjectId, sunAltitudeDeg } from "./motor";
 import { SkyMap } from "./SkyMap";
 
@@ -28,9 +38,11 @@ function calcular(placeId: PlaceId | null, fecha: string, hora: string) {
 export function CieloExplorer() {
   const searchParams = useSearchParams();
   const [placeId, setPlaceId] = useState<PlaceId | null>(() => getPlace(searchParams.get("placeId"))?.id ?? null);
-  const [fecha, setFecha] = useState(() => fechaArgentina(new Date()));
-  const [hora, setHora] = useState(HORA_EJEMPLO);
-  const [esEjemplo, setEsEjemplo] = useState(true);
+  // ?fecha=&hora= permiten compartir un momento concreto (por ejemplo, el de la demo).
+  const [momentoInicial] = useState(() => momentoDesdeURL(searchParams.get("fecha"), searchParams.get("hora")));
+  const [fecha, setFecha] = useState(() => momentoInicial?.fecha ?? fechaArgentina(new Date()));
+  const [hora, setHora] = useState(momentoInicial?.hora ?? HORA_EJEMPLO);
+  const [esEjemplo, setEsEjemplo] = useState(momentoInicial === null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   const resultado = useMemo(() => calcular(placeId, fecha, hora), [placeId, fecha, hora]);
@@ -38,10 +50,14 @@ export function CieloExplorer() {
   const seleccionado = resultado?.objetos.find((o) => o.id === selectedId) ?? null;
   const ningunoVisible = resultado !== null && resultado.objetos.every((o) => !o.isAboveHorizon);
 
+  // Deja lugar y momento en la URL: se puede compartir y recargar sin perder el contexto.
+  function actualizarURL(id: PlaceId | null, momento: { fecha: string; hora: string } | null) {
+    if (id) window.history.replaceState(null, "", queryCielo(id, momento));
+  }
+
   function elegirLugar(id: PlaceId) {
     setPlaceId(id);
-    // Deja el lugar en la URL para compartir y para volver a Pacha con el mismo contexto.
-    window.history.replaceState(null, "", `?placeId=${id}`);
+    actualizarURL(id, esEjemplo ? null : momentoDesdeURL(fecha, hora));
   }
 
   // Desde el mapa, la ficha queda fuera de pantalla en el celular: la traemos a la vista.
@@ -54,6 +70,16 @@ export function CieloExplorer() {
     setFecha(nuevaFecha);
     setHora(nuevaHora);
     setEsEjemplo(false);
+    actualizarURL(placeId, momentoDesdeURL(nuevaFecha, nuevaHora));
+  }
+
+  function verNocheDeDemo() {
+    const id = DEMO_CIELO.placeId;
+    setPlaceId(id);
+    setFecha(DEMO_CIELO.fecha);
+    setHora(DEMO_CIELO.hora);
+    setEsEjemplo(false);
+    actualizarURL(id, DEMO_CIELO);
   }
 
   return (
@@ -133,6 +159,17 @@ export function CieloExplorer() {
           </div>
         </div>
       )}
+
+      <div className="flex flex-col gap-3 sm:flex-row">
+        {place && (
+          <LinkButton variant="earth" href={`/explorar?placeId=${place.id}`}>
+            Volver al paisaje
+          </LinkButton>
+        )}
+        <Button variant="ghost" onClick={verNocheDeDemo}>
+          Ver la noche de la demo
+        </Button>
+      </div>
 
       <p className="max-w-[65ch] text-xs text-text-muted">
         Que un objeto esté sobre el horizonte no garantiza verlo: también influyen las nubes, la luz de la Luna y de las

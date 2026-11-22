@@ -81,3 +81,54 @@ describe("luz del cielo", () => {
     assert.equal(luzDelCielo(sunAltitudeDeg(PURMAMARCA, "2026-11-22T22:00:00-03:00")), "noche");
   });
 });
+
+describe("URL de /cielo", async () => {
+  const { momentoDesdeURL, queryCielo } = await import("./cielo.ts");
+
+  it("acepta fecha y hora válidas", () => {
+    assert.deepEqual(momentoDesdeURL("2026-11-23", "03:00"), { fecha: "2026-11-23", hora: "03:00" });
+  });
+
+  it("rechaza faltantes o inválidos", () => {
+    assert.equal(momentoDesdeURL(null, "03:00"), null);
+    assert.equal(momentoDesdeURL("2026-11-23", null), null);
+    assert.equal(momentoDesdeURL("23/11/2026", "03:00"), null);
+    assert.equal(momentoDesdeURL("2026-11-23", "25:00"), null);
+    assert.equal(momentoDesdeURL("2026-13-40", "03:00"), null);
+  });
+
+  it("arma la query con o sin momento", () => {
+    assert.equal(queryCielo("tilcara", null), "?placeId=tilcara");
+    assert.equal(queryCielo("tilcara", { fecha: "2026-11-23", hora: "03:00" }), "?placeId=tilcara&fecha=2026-11-23&hora=03%3A00");
+  });
+});
+
+describe("escenario de demo", async () => {
+  const { DEMO_CIELO } = await import("./cielo.ts");
+  const { computeSky } = await import("./motor.ts");
+  const { getPlace } = await import("../../data/places.ts");
+
+  it("el lugar de la demo existe en el dataset", () => {
+    assert.ok(getPlace(DEMO_CIELO.placeId));
+  });
+
+  it("de noche cerrada, los cinco objetos a más de 10° y coincide con JPL Horizons", () => {
+    const place = getPlace(DEMO_CIELO.placeId);
+    const iso = buildDatetimeISO(DEMO_CIELO.fecha, DEMO_CIELO.hora);
+    assert.equal(luzDelCielo(sunAltitudeDeg(place, iso)), "noche");
+    const cielo = Object.fromEntries(computeSky(place, iso).map((o) => [o.id, o]));
+    for (const o of Object.values(cielo)) assert.ok(o.altitudeDeg > 10, JSON.stringify(o));
+
+    // JPL Horizons (DE441), consultado el 22/11/2026: observador -65.4833 E, -23.7333 N, 0 km,
+    // 2026-11-23 06:00 UT, acimut/elevación aparentes con refracción.
+    const HORIZONS = {
+      luna: { az: 308.536105, alt: 24.475346 },
+      jupiter: { az: 65.292817, alt: 18.852222 },
+      saturno: { az: 275.609337, alt: 10.551666 },
+    };
+    for (const [id, ref] of Object.entries(HORIZONS)) {
+      assert.ok(Math.abs(cielo[id].altitudeDeg - ref.alt) < 0.05, `${id} ${JSON.stringify(cielo[id])}`);
+      assert.ok(Math.abs(cielo[id].azimuthDeg - ref.az) < 0.05, `${id} ${JSON.stringify(cielo[id])}`);
+    }
+  });
+});
