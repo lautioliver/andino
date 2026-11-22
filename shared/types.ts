@@ -1,7 +1,7 @@
 // Contratos compartidos entre Pacha y Cielo (ver docs/design.md, anexo de implementación).
 // Cambios acá se revisan con cuidado: los usan la ficha, Cielo y los módulos de la noche.
 
-export type PlaceId = "purmamarca" | "tilcara" | "humahuaca"; // ajustar al dataset curado
+export type PlaceId = "volcan" | "tumbaya" | "purmamarca" | "hornillos" | "maimara" | "tilcara"; // paradas del Tren Solar
 
 export interface AndinoPlace {
   id: PlaceId;

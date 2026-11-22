@@ -1,8 +1,29 @@
 import type { AndinoPlace, PlaceId } from "@/shared/types";
 
-// Fuente única de lugares para Pacha y Cielo.
-// Coordenadas aproximadas tomadas de Wikipedia (centro de la localidad), suficientes para cálculo astronómico.
+// Fuente única de lugares para Pacha y Cielo: las paradas del Tren Solar de la Quebrada, en el orden del recorrido
+// (Anexo V del Tren Solar, 2025). Coordenadas de Wikipedia, suficientes para el cálculo astronómico.
 export const places: AndinoPlace[] = [
+  {
+    id: "volcan",
+    name: "Volcán",
+    latitude: -23.918,
+    longitude: -65.4653,
+    sourceUrls: [
+      "https://es.wikipedia.org/wiki/Volc%C3%A1n_(Jujuy)",
+      "https://trensolar.com.ar/wp-content/uploads/2025/07/Anexo-5-Programa-actual-de-Servicios-1.pdf",
+    ],
+  },
+  {
+    id: "tumbaya",
+    name: "Tumbaya",
+    latitude: -23.8575,
+    longitude: -65.467,
+    sourceUrls: [
+      "https://es.wikipedia.org/wiki/Tumbaya",
+      "https://commons.wikimedia.org/wiki/File:Capilla_del_Pueblo_de_Tumbaya.jpg",
+      "https://trensolar.com.ar/wp-content/uploads/2025/07/Anexo-5-Programa-actual-de-Servicios-1.pdf",
+    ],
+  },
   {
     id: "purmamarca",
     name: "Purmamarca",
@@ -15,6 +36,28 @@ export const places: AndinoPlace[] = [
     ],
   },
   {
+    id: "hornillos",
+    name: "Posta de Hornillos",
+    latitude: -23.6542,
+    longitude: -65.4311,
+    sourceUrls: [
+      "https://es.wikipedia.org/wiki/Posta_de_Hornillos",
+      "https://es.wikipedia.org/wiki/Maimar%C3%A1",
+      "https://trensolar.com.ar/wp-content/uploads/2025/07/Anexo-5-Programa-actual-de-Servicios-1.pdf",
+    ],
+  },
+  {
+    id: "maimara",
+    name: "Maimará",
+    latitude: -23.6261,
+    longitude: -65.4091,
+    sourceUrls: [
+      "https://es.wikipedia.org/wiki/Maimar%C3%A1",
+      "https://tourism-villages.unwto.org/en/villages/maimara/",
+      "https://trensolar.com.ar/wp-content/uploads/2025/07/Anexo-5-Programa-actual-de-Servicios-1.pdf",
+    ],
+  },
+  {
     id: "tilcara",
     name: "Tilcara",
     latitude: -23.5768,
@@ -22,17 +65,6 @@ export const places: AndinoPlace[] = [
     sourceUrls: [
       "https://es.wikipedia.org/wiki/Tilcara",
       "https://es.wikipedia.org/wiki/Pucar%C3%A1_de_Tilcara",
-      "https://whc.unesco.org/en/list/1116/",
-    ],
-  },
-  {
-    id: "humahuaca",
-    name: "Humahuaca",
-    latitude: -23.2054,
-    longitude: -65.3505,
-    sourceUrls: [
-      "https://es.wikipedia.org/wiki/Humahuaca",
-      "https://es.wikipedia.org/wiki/Monumento_a_los_H%C3%A9roes_de_la_Independencia",
       "https://whc.unesco.org/en/list/1116/",
     ],
   },

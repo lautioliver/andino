@@ -23,16 +23,18 @@ export type Reconocimiento =
   | { estado: "listo"; result: PachaResult }
   | { estado: "error"; mensaje: string };
 
-export async function reconocer(file: File, signal: AbortSignal): Promise<Reconocimiento> {
+export async function reconocer(file: File, signal: AbortSignal, lang: "es" | "en" = "es"): Promise<Reconocimiento> {
+  const en = lang === "en";
   let imagen: Blob;
   try {
     imagen = await reducir(file);
   } catch {
-    return { estado: "error", mensaje: "No pudimos leer esa foto en este navegador." };
+    return { estado: "error", mensaje: en ? "We couldn’t read that photo in this browser." : "No pudimos leer esa foto en este navegador." };
   }
 
   const form = new FormData();
   form.append("image", imagen, "foto.jpg");
+  form.append("lang", lang);
   try {
     const res = await fetch("/api/pacha/analyze", {
       method: "POST",
@@ -40,14 +42,21 @@ export async function reconocer(file: File, signal: AbortSignal): Promise<Recono
       signal: AbortSignal.any([signal, AbortSignal.timeout(TIMEOUT_MS)]),
     });
     const body = await res.json().catch(() => null);
-    if (!res.ok || !body) return { estado: "error", mensaje: body?.error ?? "El reconocimiento no está disponible ahora." };
+    if (!res.ok || !body)
+      return { estado: "error", mensaje: en ? "Recognition isn’t available right now." : (body?.error ?? "El reconocimiento no está disponible ahora.") };
     return { estado: "listo", result: body as PachaResult };
   } catch (e) {
     if (signal.aborted) throw e;
     const timeout = e instanceof DOMException && e.name === "TimeoutError";
     return {
       estado: "error",
-      mensaje: timeout ? "El reconocimiento tardó demasiado." : "Sin conexión con el reconocimiento.",
+      mensaje: en
+        ? timeout
+          ? "Recognition took too long."
+          : "No connection to the recognition service."
+        : timeout
+          ? "El reconocimiento tardó demasiado."
+          : "Sin conexión con el reconocimiento.",
     };
   }
 }

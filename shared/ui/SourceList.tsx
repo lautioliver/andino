@@ -1,10 +1,15 @@
+"use client";
+
+import { useLang } from "@/shared/i18n/lang";
+
 // Fuentes como notas de pie: numeradas, con filete superior.
 export function SourceList({ sources }: { sources: { label: string; url: string }[] }) {
+  const en = useLang() === "en";
   if (sources.length === 0) return null;
   return (
     <section aria-labelledby="fuentes" className="rule pt-4">
       <h2 id="fuentes" className="eyebrow text-text-muted">
-        Fuentes
+        {en ? "Sources" : "Fuentes"}
       </h2>
       <ol className="mt-3 space-y-2 text-sm">
         {sources.map((s, i) => (

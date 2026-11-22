@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { type Lang, useLang } from "@/shared/i18n/lang";
 import type { AndinoPlace } from "@/shared/types";
 import { Button } from "@/shared/ui/Button";
 
@@ -15,29 +16,35 @@ interface Turno {
 }
 
 /** Preguntas para cuando no hay sugerencias de la IA (lugar elegido a mano o ejemplo). */
-function preguntasBase(place: AndinoPlace): string[] {
-  return [`¿Qué tiene de especial ${place.name}?`, "¿Por qué la Quebrada de Humahuaca es Patrimonio Mundial?"];
+function preguntasBase(place: AndinoPlace, lang: Lang): string[] {
+  return lang === "en"
+    ? [`What makes ${place.name} special?`, `What is the history of ${place.name}?`]
+    : [`¿Qué tiene de especial ${place.name}?`, `¿Cuál es la historia de ${place.name}?`];
 }
 
-async function preguntar(placeId: string, question: string, signal: AbortSignal) {
+async function preguntar(placeId: string, question: string, lang: Lang, signal: AbortSignal) {
+  const en = lang === "en";
   try {
     const res = await fetch("/api/pacha/ask", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ placeId, question }),
+      body: JSON.stringify({ placeId, question, lang }),
       signal: AbortSignal.any([signal, AbortSignal.timeout(TIMEOUT_MS)]),
     });
     const body = await res.json().catch(() => null);
-    if (!res.ok || !body?.respuesta) return { error: body?.error ?? "La IA no está disponible ahora." };
+    if (!res.ok || !body?.respuesta) return { error: en ? "The AI isn’t available right now." : (body?.error ?? "La IA no está disponible ahora.") };
     return { respuesta: String(body.respuesta), enFuentes: Boolean(body.enFuentes) };
   } catch (e) {
     if (signal.aborted) throw e;
-    return { error: e instanceof DOMException && e.name === "TimeoutError" ? "La IA tardó demasiado en responder." : "Sin conexión." };
+    const timeout = e instanceof DOMException && e.name === "TimeoutError";
+    return { error: en ? (timeout ? "The AI took too long to answer." : "No connection.") : timeout ? "La IA tardó demasiado en responder." : "Sin conexión." };
   }
 }
 
 /** AND-05: preguntas de seguimiento sobre el lugar, respondidas solo con la ficha. */
 export function Preguntas({ place, sugerencias }: { place: AndinoPlace; sugerencias?: string[] }) {
+  const lang = useLang();
+  const en = lang === "en";
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [texto, setTexto] = useState("");
   const abort = useRef<AbortController | null>(null);
@@ -47,7 +54,7 @@ export function Preguntas({ place, sugerencias }: { place: AndinoPlace; sugerenc
 
   const pensando = turnos.at(-1)?.estado === "pensando";
   const hechas = new Set(turnos.map((t) => t.pregunta));
-  const opciones = (sugerencias?.length ? sugerencias : preguntasBase(place)).filter((p) => !hechas.has(p));
+  const opciones = (sugerencias?.length ? sugerencias : preguntasBase(place, lang)).filter((p) => !hechas.has(p));
 
   async function enviar(pregunta: string) {
     const q = pregunta.trim().slice(0, MAX_PREGUNTA);
@@ -56,7 +63,7 @@ export function Preguntas({ place, sugerencias }: { place: AndinoPlace; sugerenc
     abort.current = ctrl;
     setTexto("");
     setTurnos((t) => [...t, { pregunta: q, estado: "pensando" }]);
-    const r = await preguntar(place.id, q, ctrl.signal).catch(() => null);
+    const r = await preguntar(place.id, q, lang, ctrl.signal).catch(() => null);
     if (!r || ctrl.signal.aborted) return;
     setTurnos((t) =>
       t.map((x, i) =>
@@ -71,12 +78,14 @@ export function Preguntas({ place, sugerencias }: { place: AndinoPlace; sugerenc
 
   return (
     <section aria-labelledby="preguntas" className="rule mt-14 pt-6">
-      <p className="eyebrow text-puna-ink">Preguntá</p>
+      <p className="eyebrow text-puna-ink">{en ? "Ask" : "Preguntá"}</p>
       <h2 id="preguntas" className="headline mt-4 text-3xl md:text-4xl">
-        ¿Qué más querés saber?
+        {en ? "What else would you like to know?" : "¿Qué más querés saber?"}
       </h2>
       <p className="mt-3 text-sm leading-6 text-text-muted">
-        Responde una IA usando solo la ficha de {place.name}. Si algo no está en nuestras fuentes, te lo dice.
+        {en
+          ? `An AI answers using only the ${place.name} card. If something isn't in our sources, it tells you.`
+          : `Responde una IA usando solo la ficha de ${place.name}. Si algo no está en nuestras fuentes, te lo dice.`}
       </p>
 
       {turnos.length > 0 && (
@@ -85,13 +94,13 @@ export function Preguntas({ place, sugerencias }: { place: AndinoPlace; sugerenc
             <li key={i} className="rule py-5">
               <p className="headline text-xl">{t.pregunta}</p>
               {t.estado === "pensando" ? (
-                <p className="mt-2 text-text-muted">Buscando en la ficha…</p>
+                <p className="mt-2 text-text-muted">{en ? "Looking it up in the card…" : "Buscando en la ficha…"}</p>
               ) : t.estado === "error" ? (
-                <p className="mt-2 text-sm text-text-muted">{t.respuesta} Probá de nuevo en un rato.</p>
+                <p className="mt-2 text-sm text-text-muted">{t.respuesta} {en ? "Try again in a while." : "Probá de nuevo en un rato."}</p>
               ) : (
                 <>
                   <p className="mt-2 leading-7 text-text/85">{t.respuesta}</p>
-                  {!t.enFuentes && <p className="eyebrow mt-2 text-puna-ink">No está en nuestras fuentes</p>}
+                  {!t.enFuentes && <p className="eyebrow mt-2 text-puna-ink">{en ? "Not in our sources" : "No está en nuestras fuentes"}</p>}
                 </>
               )}
             </li>
@@ -120,17 +129,17 @@ export function Preguntas({ place, sugerencias }: { place: AndinoPlace; sugerenc
         }}
       >
         <label className="flex-1">
-          <span className="sr-only">Tu pregunta sobre {place.name}</span>
+          <span className="sr-only">{en ? `Your question about ${place.name}` : `Tu pregunta sobre ${place.name}`}</span>
           <input
             value={texto}
             onChange={(e) => setTexto(e.target.value)}
             maxLength={MAX_PREGUNTA}
-            placeholder={`Preguntá algo sobre ${place.name}`}
+            placeholder={en ? `Ask something about ${place.name}` : `Preguntá algo sobre ${place.name}`}
             className="min-h-12 w-full rounded-control border border-border bg-surface px-4 text-base shadow-sm outline-none placeholder:text-text-muted focus:border-violeta focus:ring-2 focus:ring-violeta/25"
           />
         </label>
         <Button type="submit" variant="puna" disabled={pensando || !texto.trim()}>
-          Preguntar
+          {en ? "Ask" : "Preguntar"}
         </Button>
       </form>
     </section>
