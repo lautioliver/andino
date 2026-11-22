@@ -25,5 +25,5 @@ Lo mágico sale de que **es real**: el cielo que se ve es el cielo calculado par
 
 ## Estado
 
-- [ ] Etapa 1
+- [x] Etapa 1 (PR de cielo inmersivo)
 - [ ] Etapa 2
