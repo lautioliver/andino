@@ -21,6 +21,8 @@ export interface Ficha {
   photo: PlacePhoto;
   sources: Source[];
   reviewStatus: "borrador";
+  /** Cómo se ve el lugar, para la IA, cuando la foto de la ficha no lo muestra (si falta, se usa photo.alt). */
+  aspecto?: string;
   /** Inglés: los mismos textos, sin datos nuevos. */
   en: { region: string; summary: string; more: string[]; alt: string };
 }
@@ -49,10 +51,10 @@ export const fichas: Record<PlaceId, Ficha> = {
     photo: {
       src: "/places/volcan.jpg",
       width: 1280,
-      height: 960,
-      alt: "Vías y playa de maniobras de la estación de Volcán, con el edificio de la estación al fondo y cerros bajo un cielo nublado",
-      credit: "Vero Padilla · CC BY-SA 4.0",
-      creditUrl: "https://commons.wikimedia.org/wiki/File:Vieja_Estaci%C3%B3n_de_Trenes_del_Ferrocarril_Gral._Manuel_Belgrano.jpg",
+      height: 854,
+      alt: "El Tren Solar, blanco con franja roja, detenido en el andén de Volcán junto al cartel negro con el nombre de la estación, con galpones de ladrillo y cerros detrás a contraluz",
+      credit: "Argentina.gob.ar · CC BY 4.0",
+      creditUrl: "https://commons.wikimedia.org/wiki/File:Tren_solar_en_estacion_volcan.jpg",
     },
     sources: [
       { label: "Wikipedia — Volcán (Jujuy)", url: "https://es.wikipedia.org/wiki/Volc%C3%A1n_(Jujuy)" },
@@ -67,7 +69,7 @@ export const fichas: Record<PlaceId, Ficha> = {
         "The town was born in 1905 with the railway that climbed the Quebrada, and its station had a major repair workshop. Its name comes from the mud and rock slides that come down the Arroyo del Medio during summer rains, which resemble a lava flow.",
         "On 3 April 1813, during the War of Independence, Alejandro Burela's militias defeated the royalist forces of Pedro Antonio Olañeta here, in the Combat of Volcán. Today part of the old Belgrano Railway buildings houses the Feria Campesina, a craft fair for artisans from the Quebrada and the Puna.",
       ],
-      alt: "Tracks and rail yard at Volcán station, with the station building in the background and hills under a cloudy sky",
+      alt: "The Solar Train, white with a red stripe, stopped at the Volcán platform next to the black station name sign, with brick sheds and backlit hills behind",
     },
   },
   tumbaya: {
@@ -114,10 +116,10 @@ export const fichas: Record<PlaceId, Ficha> = {
     photo: {
       src: "/places/hornillos.jpg",
       width: 1280,
-      height: 960,
-      alt: "Arco blanco de entrada a la Posta de Hornillos, con faroles y el cartel con su nombre, un camino de tierra y cerros detrás",
-      credit: "Rmolfino · CC BY-SA 3.0",
-      creditUrl: "https://commons.wikimedia.org/wiki/File:Posta_de_los_Hornillos_-_entrada.jpg",
+      height: 853,
+      alt: "La capilla blanca de la Posta de Hornillos, con campanario de cúpula rosada, detrás de una pirca de piedra, entre árboles y bajo cerros pelados y cielo azul",
+      credit: "miroab · CC BY-SA 2.0",
+      creditUrl: "https://commons.wikimedia.org/wiki/File:122-Capilla_de_la_Posta_de_Hornillos_Tilcara.jpg",
     },
     sources: [
       { label: "Wikipedia — Posta de Hornillos", url: "https://es.wikipedia.org/wiki/Posta_de_Hornillos" },
@@ -133,7 +135,7 @@ export const fichas: Record<PlaceId, Ficha> = {
         "The post was set up on the orders of inspector Alonso Carrió de la Vandera and was an obligatory stop for travellers between Potosí and Buenos Aires. After 1810 it became one of the headquarters of the Army of the North, under Colonel Manuel Álvarez Prado, and in 1813 Manuel Belgrano rested there.",
         "The museum recreates life in past centuries in three sections: the origin of staging posts, the War of Independence and means of transport. Nearby is the Antigal de Hornillos, an archaeological site that can only be visited with a guide.",
       ],
-      alt: "White entrance arch of the Posta de Hornillos, with lanterns and a sign bearing its name, a dirt road and hills behind",
+      alt: "The white chapel of the Posta de Hornillos, with a pink-domed bell tower, behind a dry-stone wall, among trees and under bare hills and a blue sky",
     },
   },
   maimara: {
@@ -167,6 +169,44 @@ export const fichas: Record<PlaceId, Ficha> = {
         "Near the village are pre-Hispanic sites such as the Antigal Iruyto, which locals consider sacred, along with the colonial church of Nuestra Señora de la Candelaria and the Chicapa mill, built in 1888. In 2025, UN Tourism named it one of the Best Tourism Villages.",
       ],
       alt: "Maimará cemetery on a hill, with white vaults and a cardón cactus, at the foot of the Paleta del Pintor with reddish, purple, ochre and greenish bands",
+    },
+  },
+  elbayeh: {
+    region: "Quebrada de Humahuaca · Departamento Tilcara · Ruta del Vino de Jujuy",
+    summary:
+      "El Bayeh es una bodega de la familia Manzur en Maimará, del lado de Tilcara, y desde marzo de 2026 tiene su propio apeadero del Tren Solar: es la primera bodega de la zona con acceso directo desde las vías. Sus viñedos, en la Finca Ollantay, están a 2400 m, frente a la Paleta del Pintor.",
+    more: [
+      "La Finca Ollantay la compró el abuelo Pedro Manzur en 1971; en 2018 la familia decidió hacer vino y en 2020 nació la marca. Ahí crecen malbec, syrah, chardonnay, semillón y criolla chica, y parte del vino se elabora en ánforas de arcilla traídas de España.",
+      "La bodega construyó el apeadero, y la idea es bajar, quedarse unas horas entre los viñedos con una degustación o una caminata, y seguir viaje en un tren posterior. Las visitas guiadas son con reserva previa. Es una de las paradas del Tren del Vino, la salida del Tren Solar dedicada a la Ruta del Vino de Jujuy.",
+    ],
+    photo: {
+      src: "/places/elbayeh.jpg",
+      width: 1280,
+      height: 720,
+      alt: "El Tren Solar, blanco con franja roja, pasando por el tramo de Maimará entre cerros rojizos erosionados y cardones, junto a la Ruta 9 (no es la bodega)",
+      credit: "Argentina.gob.ar · CC BY 4.0",
+      creditUrl: "https://commons.wikimedia.org/wiki/File:Tren_de_la_quebrada_01.jpg",
+    },
+    aspecto:
+      "Hileras de parras en el llano del valle, un galpón de bodega y, de fondo, la Paleta del Pintor de Maimará. Sin viñedos a la vista no hay cómo distinguirla de Maimará",
+    sources: [
+      { label: "Bodega El Bayeh — Turismo", url: "https://bodegaelbayeh.com.ar/turismo/" },
+      { label: "Bodega El Bayeh — Fincas", url: "https://bodegaelbayeh.com.ar/fincas/" },
+      { label: "Bodega El Bayeh — Familia", url: "https://bodegaelbayeh.com.ar/familia/" },
+      { label: "Las 24 Horas de Jujuy — El Tren Solar suma una nueva parada en la bodega El Bayeh (marzo de 2026)", url: "https://las24horasdejujuy.com.ar/el-tren-solar-de-la-quebrada-suma-una-nueva-parada-en-la-bodega-el-bayeh/" },
+      { label: "Página Central — El Tren Solar suma una nueva parada en Maimará (marzo de 2026)", url: "https://www.paginacentral.com.ar/jujuy/el-tren-solar-suma-una-nueva-parada-en-maimara-y-refuerza-la-ruta-del-vino-jujena/" },
+      { label: "Canal 26 — El Tren Solar estrena una parada entre viñedos (abril de 2026)", url: "https://www.canal26.com/turismo/2026/04/12/el-tren-solar-de-la-quebrada-estrena-una-parada-entre-vinedos-y-suma-una-nueva-experiencia-para-recorrer-jujuy/" },
+    ],
+    reviewStatus: "borrador",
+    en: {
+      region: "Quebrada de Humahuaca · Tilcara Department · Jujuy Wine Route",
+      summary:
+        "El Bayeh is a winery owned by the Manzur family in Maimará, on the Tilcara side, and since March 2026 it has its own Solar Train halt: it is the first winery in the area with direct access from the tracks. Its vineyards, on the Finca Ollantay estate, lie at 2,400 m, facing the Paleta del Pintor.",
+      more: [
+        "Grandfather Pedro Manzur bought the Finca Ollantay in 1971; in 2018 the family decided to make wine and the brand was born in 2020. Malbec, Syrah, Chardonnay, Sémillon and Criolla Chica grow there, and part of the wine is made in clay amphorae brought from Spain.",
+        "The winery built the halt, and the idea is to get off, spend a few hours among the vines with a tasting or a walk, and continue on a later train. Guided visits require booking ahead. It is one of the stops of the Tren del Vino (Wine Train), the Solar Train's outing devoted to the Jujuy Wine Route.",
+      ],
+      alt: "The Solar Train, white with a red stripe, running through the Maimará stretch among eroded reddish hills and cardón cacti, next to Route 9 (not the winery)",
     },
   },
   purmamarca: {

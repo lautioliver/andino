@@ -1,7 +1,8 @@
 import type { AndinoPlace, PlaceId } from "@/shared/types";
 
 // Fuente única de lugares para Pacha y Cielo: las paradas del Tren Solar de la Quebrada, en el orden del recorrido
-// (Anexo V del Tren Solar, 2025). Coordenadas de Wikipedia, suficientes para el cálculo astronómico.
+// (Anexo V del Tren Solar, 2025, más el apeadero El Bayeh, inaugurado en marzo de 2026). Coordenadas de Wikipedia
+// (El Bayeh: la ficha de la bodega en Google Maps), suficientes para el cálculo astronómico.
 export const places: AndinoPlace[] = [
   {
     id: "volcan",
@@ -55,6 +56,18 @@ export const places: AndinoPlace[] = [
       "https://es.wikipedia.org/wiki/Maimar%C3%A1",
       "https://tourism-villages.unwto.org/en/villages/maimara/",
       "https://trensolar.com.ar/wp-content/uploads/2025/07/Anexo-5-Programa-actual-de-Servicios-1.pdf",
+    ],
+  },
+  {
+    id: "elbayeh",
+    name: "El Bayeh",
+    latitude: -23.612,
+    longitude: -65.406,
+    sourceUrls: [
+      "https://bodegaelbayeh.com.ar/turismo/",
+      "https://bodegaelbayeh.com.ar/fincas/",
+      "https://las24horasdejujuy.com.ar/el-tren-solar-de-la-quebrada-suma-una-nueva-parada-en-la-bodega-el-bayeh/",
+      "https://www.paginacentral.com.ar/jujuy/el-tren-solar-suma-una-nueva-parada-en-maimara-y-refuerza-la-ruta-del-vino-jujena/",
     ],
   },
   {

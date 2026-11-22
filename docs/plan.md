@@ -47,7 +47,7 @@ Antes de presentar, el equipo habla con **5 viajeros** (en el Tren Solar o en su
 
 ## 4. El producto en 3 pasos
 
-El punto de observación es el eje: cada paso trabaja sobre un lugar concreto (las seis paradas del Tren Solar: Volcán, Tumbaya, Purmamarca, Posta de Hornillos, Maimará y Tilcara).
+El punto de observación es el eje: cada paso trabaja sobre un lugar concreto (las siete paradas del Tren Solar: Volcán, Tumbaya, Purmamarca, Posta de Hornillos, Maimará, la bodega El Bayeh y Tilcara).
 
 ### 4.1 Cuándo — la mejor noche del viaje (P0)
 
