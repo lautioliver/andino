@@ -1,5 +1,5 @@
 // Lógica pura de la pantalla Cielo (sin React ni efemérides): fechas, proyección y rumbos.
-// Propiedad: jehp23.
+// Escrito por jehp23.
 
 // Jujuy usa UTC−3 todo el año (sin horario de verano desde 2009).
 export const ZONA_ARGENTINA = "-03:00";

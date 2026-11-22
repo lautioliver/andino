@@ -3,7 +3,7 @@
 **Explorá la Tierra. Descubrí el universo.** PWA de turismo inteligente y astroturismo para Jujuy, hecha para la Cursor Hackathon Jujuy.
 
 - **Pacha** (`/explorar`): foto de un paisaje → explicación con fuentes → pregunta de seguimiento. Responsable: `lautioliver`.
-- **Cielo Andino** (`/cielo`): lugar + fecha/hora → objetos celestes calculados. Responsable: `jehp23`.
+- **Cielo Andino** (`/cielo`): lugar + fecha/hora → objetos celestes calculados. Motor y pantalla de `jehp23`; desde la v4 lo lleva `lautioliver`.
 
 Documentación: [`docs/plan.md`](docs/plan.md) (plan del proyecto) y [`docs/design.md`](docs/design.md) (diseño, contratos e implementación; fuente de verdad).
 
@@ -21,7 +21,9 @@ npm run build
 ```text
 app/            rutas: / , /explorar , /cielo
 features/pacha  lautioliver
-features/cielo  jehp23
+features/cielo  motor y pantalla de jehp23; desde la v4, lautioliver
+features/cuando lautioliver
+features/signo  lautioliver
 shared/         contratos (types.ts) y UI base — coordinar antes de cambiar
 data/           dataset compartido (places.ts) — coordinar antes de cambiar
 docs/           plan.md y design.md

@@ -1,7 +1,7 @@
 // Motor de cálculo de Cielo Andino (AND-07).
 // Las posiciones salen de astronomy-engine 2.1.19 (efemérides VSOP87 y modelo lunar de ELP),
 // nunca de la IA. Los textos educativos viven aparte, en data/astronomy.ts.
-// Propiedad: jehp23.
+// Escrito por jehp23.
 import { Body, DefineStar, Equator, Horizon, MakeTime, Observer } from "astronomy-engine";
 import type { SkyObject } from "@/shared/types";
 

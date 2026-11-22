@@ -1,5 +1,5 @@
 // Pasos visibles de satélites Starlink sobre un lugar, calculados con los TLE públicos de CelesTrak (SGP4).
-// Módulo aparte para que Cielo (jehp23) lo pueda enchufar al mapa: la función pura es `calcularPasos`.
+// Módulo aparte para poder enchufarlo al mapa de Cielo: la función pura es `calcularPasos`.
 //
 // Un satélite se ve a simple vista cuando el observador ya está a oscuras y el satélite, muy arriba,
 // todavía refleja la luz del Sol. Eso pasa en las primeras horas después del crepúsculo.
