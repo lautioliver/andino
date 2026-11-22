@@ -120,11 +120,11 @@ export function CieloExplorer() {
     <section className="pt-8 md:pt-12">
       <header className="md:flex md:items-end md:justify-between md:gap-12">
         <div>
-        <Badge tone="sky">De noche</Badge>
+        <Badge tone="violeta">De noche</Badge>
         <h1 className="display mt-5 max-w-[16ch] text-[clamp(2.75rem,8vw,5rem)]">
           {place ? (
             <>
-              El cielo desde <em className="text-sky">{place.name}</em>
+              El cielo desde <em className="acento">{place.name}</em>
             </>
           ) : (
             "Descubrí el cielo desde este lugar."
@@ -149,7 +149,7 @@ export function CieloExplorer() {
       )}
 
       {resultado && (
-        <div className="bleed mt-8 md:mt-10">
+        <div className="oscuro bleed mt-8 md:mt-10">
           <SkyCanvas
             location={resultado.place}
             datetimeISO={resultado.iso}
@@ -172,7 +172,7 @@ export function CieloExplorer() {
               <span className="headline text-3xl tabular-nums md:text-4xl">
                 {resultado.iso.slice(8, 10)}/{resultado.iso.slice(5, 7)} · {resultado.iso.slice(11, 16)}
               </span>
-              <span className={`text-sm tabular-nums ${desfase === 0 ? "text-text-muted" : "text-sky"}`}>{textoDesfase(desfase)}</span>
+              <span className={`text-sm tabular-nums ${desfase === 0 ? "text-text-muted" : "text-violeta-ink"}`}>{textoDesfase(desfase)}</span>
             </p>
           </div>
           <div>
@@ -198,11 +198,11 @@ export function CieloExplorer() {
                   setViajando(false);
                   setDesfase(Number(e.target.value));
                 }}
-                className="min-h-11 w-full accent-sky"
+                className="min-h-11 w-full accent-violeta"
               />
             </div>
             {desfase !== 0 && (
-              <button type="button" className="link-arrow text-sm text-sky" onClick={() => setDesfase(0)}>
+              <button type="button" className="link-arrow text-sm text-violeta-ink" onClick={() => setDesfase(0)}>
                 Volver a la hora elegida
               </button>
             )}
@@ -240,8 +240,8 @@ export function CieloExplorer() {
                       className="group flex min-h-14 w-full items-baseline gap-4 py-3 text-left"
                     >
                       <span className="eyebrow w-6 shrink-0 text-text-muted tabular-nums">{String(i + 1).padStart(2, "0")}</span>
-                      <span className={`headline text-xl md:text-2xl ${activo ? "text-sky" : "group-hover:text-sky"}`}>{o.name}</span>
-                      <span className={`ml-auto text-right text-sm ${o.isAboveHorizon ? "text-text-muted" : "text-text-muted/60"}`}>
+                      <span className={`headline text-xl md:text-2xl ${activo ? "text-violeta-ink" : "group-hover:text-violeta-ink"}`}>{o.name}</span>
+                      <span className={`ml-auto text-right text-sm ${o.isAboveHorizon ? "text-text-muted" : "text-text-muted"}`}>
                         {o.isAboveHorizon ? `Hacia el ${rumbo(o.azimuthDeg)}` : "Bajo el horizonte"}
                       </span>
                     </button>
@@ -279,7 +279,7 @@ export function CieloExplorer() {
 
       <div className="mt-12 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-8 md:mt-16">
         {place && (
-          <LinkButton variant="earth" href={`/explorar?placeId=${place.id}`}>
+          <LinkButton variant="puna" href={`/explorar?placeId=${place.id}`}>
             Volver al paisaje
           </LinkButton>
         )}

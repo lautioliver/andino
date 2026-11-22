@@ -40,7 +40,7 @@ export function TuSigno({ place, fecha }: { place: AndinoPlace; fecha: string })
   }, [cumple, place, fecha]);
 
   return (
-    <div className="mt-12">
+    <div className="mt-12 rounded-card border border-border bg-surface-subtle p-5 md:p-6">
       <p className="eyebrow text-text-muted">Tu signo en el cielo</p>
       <label htmlFor={id} className="lead mt-4 block text-text/85">
         ¿Cuándo es tu cumpleaños?
@@ -50,18 +50,18 @@ export function TuSigno({ place, fecha }: { place: AndinoPlace; fecha: string })
         type="date"
         value={cumple}
         onChange={(e) => setCumple(e.target.value)}
-        className="mt-3 min-h-12 rounded-[4px] border border-border bg-surface px-3 text-text [color-scheme:dark]"
+        className="mt-3 min-h-12 rounded-control border border-border bg-surface px-3 text-text shadow-sm focus:border-violeta"
       />
 
       {resultado ? (
         <div className="mt-6 grid gap-4" aria-live="polite">
           <p className="lead text-text/85">
-            Según el horóscopo sos <span className="text-sky">{resultado.horoscopo.nombre}</span>.{" "}
+            Según el horóscopo sos <span className="text-violeta-ink">{resultado.horoscopo.nombre}</span>.{" "}
             {resultado.coinciden ? (
               <>Ese día el Sol estaba, de verdad, en la constelación de {resultado.sol.nombre}.</>
             ) : (
               <>
-                Pero ese día el Sol estaba en la constelación de <span className="text-sky">{resultado.sol.nombre}</span>.
+                Pero ese día el Sol estaba en la constelación de <span className="text-violeta-ink">{resultado.sol.nombre}</span>.
               </>
             )}
           </p>

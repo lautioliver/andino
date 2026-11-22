@@ -30,11 +30,12 @@ interface Catalogo {
 }
 const catalogo = catalogoJSON as unknown as Catalogo;
 
-// Colores del lienzo (el canvas no lee variables CSS): mismos tonos que los tokens de design.md.
-const SKY = "120, 200, 232"; // --sky
-const SAND = "231, 201, 156"; // --sand
-const TEXT = "245, 243, 238"; // --text
-const MUTED = "185, 195, 210"; // --text-muted
+// Colores del lienzo (el canvas no lee variables CSS): los tokens de .oscuro en design.md §6.
+const SKY = "179, 163, 255"; // --violeta-ink (oscuro): constelaciones
+const SAND = "255, 154, 110"; // --puna-ink (oscuro): horizonte y cardinales
+const TEXT = "248, 250, 252"; // --text (oscuro)
+const MUTED = "203, 213, 225"; // --text-muted (oscuro)
+const LUNA = "236, 228, 210"; // la Luna, pálida: no se tiñe con la marca
 
 const CARDINALES = [
   { label: "N", az: 0 },
@@ -286,7 +287,7 @@ export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, 
         if (!q || q.x < -20 || q.x > ancho + 20 || q.y < -20 || q.y > alto + 20) continue;
         nuevos.push({ id: o.id, x: q.x, y: q.y });
         const radio = o.kind === "satélite" ? 9 : o.kind === "planeta" ? 4 : 3.2;
-        const color = o.kind === "satélite" ? SAND : o.kind === "planeta" ? "255, 236, 200" : TEXT;
+        const color = o.kind === "satélite" ? LUNA : o.kind === "planeta" ? "255, 236, 200" : TEXT;
         ctx.fillStyle = `rgba(${color}, ${o.kind === "satélite" ? 1 : Math.max(0.6, oscuro)})`;
         ctx.beginPath();
         ctx.arc(q.x, q.y, radio, 0, Math.PI * 2);
@@ -362,7 +363,7 @@ export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, 
   }
 
   const cardinal =
-    "eyebrow -mb-px min-h-12 min-w-11 border-b-2 border-transparent text-text-muted transition-colors hover:text-text aria-pressed:border-sky aria-pressed:text-text";
+    "eyebrow -mb-px min-h-12 min-w-11 border-b-2 border-transparent text-text-muted transition-colors hover:text-text aria-pressed:border-violeta aria-pressed:text-text";
   // Cardinal más cercano a la mirada: marca el botón activo.
   const cardinalActivo = Math.round((((az % 360) + 360) % 360) / 90) % 4;
 
@@ -430,7 +431,7 @@ export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, 
               type="button"
               onClick={brujula.estado === "activa" ? brujula.apagar : brujula.encender}
               aria-pressed={brujula.estado === "activa"}
-              className={`${cardinal} ml-2 px-2 text-sky`}
+              className={`${cardinal} ml-2 px-2 text-violeta-ink`}
             >
               {brujula.estado === "activa" ? "Apuntando" : "Apuntá"}
             </button>
@@ -439,7 +440,7 @@ export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, 
       </div>
 
       {brujula.estado === "sin-brujula" || brujula.estado === "denegada" ? (
-        <p role="status" className="mx-auto max-w-[1120px] px-4 pt-3 text-sm text-text-muted md:px-6">
+        <p role="status" className="mx-auto max-w-[1120px] px-4 py-3 text-sm text-text-muted md:px-6">
           {brujula.estado === "denegada"
             ? "Sin permiso para usar la brújula. Girá el cielo con el dedo."
             : "Este dispositivo no informa hacia dónde está el norte. Girá el cielo con el dedo."}

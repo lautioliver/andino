@@ -10,7 +10,7 @@ export function SourceList({ sources }: { sources: { label: string; url: string 
         {sources.map((s, i) => (
           <li key={s.url} className="flex gap-3">
             <span className="w-4 shrink-0 text-text-muted tabular-nums">{i + 1}</span>
-            <a href={s.url} target="_blank" rel="noopener noreferrer" className="underline decoration-border underline-offset-4 hover:decoration-sky">
+            <a href={s.url} target="_blank" rel="noopener noreferrer" className="underline decoration-border underline-offset-4 hover:decoration-violeta">
               {s.label}
             </a>
           </li>

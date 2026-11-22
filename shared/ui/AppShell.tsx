@@ -5,9 +5,10 @@ import { BottomNav, TopNav } from "./NavLinks";
 export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-dvh flex-col">
-      <header className="sticky top-0 z-30 bg-bg/95 backdrop-blur-sm" style={{ paddingTop: "env(safe-area-inset-top)" }}>
+      <header className="sticky top-0 z-30 border-b border-border-subtle bg-bg/90 backdrop-blur-md" style={{ paddingTop: "env(safe-area-inset-top)" }}>
         <nav aria-label="Principal" className="mx-auto flex h-14 max-w-[1120px] items-center justify-between px-4 md:px-6">
-          <Link href="/" className="display text-2xl tracking-tight">
+          <Link href="/" className="flex min-h-11 items-center gap-2 font-display text-xl font-bold tracking-tight">
+            <span aria-hidden className="size-2.5 rounded-full bg-gradient-to-br from-puna to-violeta" />
             Andino
           </Link>
           <Suspense>
@@ -21,7 +22,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </footer>
       <nav
         aria-label="Principal móvil"
-        className="fixed inset-x-0 bottom-0 z-30 bg-bg/95 backdrop-blur-sm md:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-bg/95 backdrop-blur-md md:hidden"
         style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
       >
         <Suspense>

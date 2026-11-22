@@ -1,16 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Inter } from "next/font/google";
+import { Space_Grotesk } from "next/font/google";
 import { AppShell } from "@/shared/ui/AppShell";
 import "./globals.css";
 
-const inter = Inter({ variable: "--font-inter", subsets: ["latin"], display: "swap" });
-const fraunces = Fraunces({
-  variable: "--font-fraunces",
-  subsets: ["latin"],
-  display: "swap",
-  axes: ["opsz"],
-  style: ["normal", "italic"],
-});
+const spaceGrotesk = Space_Grotesk({ variable: "--font-space-grotesk", subsets: ["latin"], display: "swap", weight: ["500", "600", "700"] });
 
 export const metadata: Metadata = {
   title: "ANDINO — Tu mejor noche de cielo en Jujuy",
@@ -18,13 +11,13 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0b1020",
+  themeColor: "#fffaf7",
   viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="es-AR" className={`${inter.variable} ${fraunces.variable} h-full antialiased`}>
+    <html lang="es-AR" className={`${spaceGrotesk.variable} h-full antialiased`}>
       <body className="min-h-full font-sans">
         <AppShell>{children}</AppShell>
       </body>

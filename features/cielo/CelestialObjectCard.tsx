@@ -6,9 +6,9 @@ const grados = (valor: number) => `${valor.toLocaleString("es-AR", { maximumFrac
 
 export function CelestialObjectCard({ object, info }: { object: SkyObject; info: SkyObjectInfo }) {
   return (
-    <article className="rule pt-4" aria-live="polite">
-      <p className="eyebrow text-sky">{info.kind}</p>
-      <h2 className="display mt-3 text-5xl">{object.name}</h2>
+    <article className="card p-5 md:p-6" aria-live="polite">
+      <p className="eyebrow text-violeta-ink">{info.kind}</p>
+      <h2 className="display mt-3 text-4xl md:text-5xl">{object.name}</h2>
 
       {object.isAboveHorizon ? (
         <p className="lead mt-4">
@@ -28,7 +28,7 @@ export function CelestialObjectCard({ object, info }: { object: SkyObject; info:
         {info.sources.map((s, i) => (
           <span key={s.url}>
             {i > 0 && " · "}
-            <a href={s.url} target="_blank" rel="noreferrer" className="underline decoration-border underline-offset-4 hover:decoration-sky">
+            <a href={s.url} target="_blank" rel="noreferrer" className="underline decoration-border underline-offset-4 hover:decoration-violeta">
               {s.label}
             </a>
           </span>

@@ -63,18 +63,18 @@ export function NocheEnLinea({ place }: { place: AndinoPlace }) {
       <p className="eyebrow text-text-muted first-letter:uppercase">{diaLargo.format(new Date(`${fecha}T12:00:00-03:00`))}</p>
       <p className="headline mt-4 max-w-[22ch] text-[clamp(2rem,5vw,3.5rem)]">{conclusion}</p>
 
-      <ol className="mt-10 md:mt-14 md:grid md:grid-flow-col md:auto-cols-fr md:border-t md:border-border">
+      <ol className="mt-10 md:mt-14 md:grid md:grid-flow-col md:auto-cols-fr md:gap-4">
         {linea.eventos.map((e) => {
           const luna = e.tipo.endsWith("luna");
           return (
             <li
               key={e.tipo}
-              className="relative flex items-baseline justify-between gap-6 border-t border-border py-4 md:block md:border-t-0 md:py-0 md:pt-6 md:pr-6"
+              className="relative flex items-baseline justify-between gap-6 border-t border-border py-4 md:block md:rounded-card md:border md:bg-surface md:p-6 md:shadow-sm"
             >
               {/* Marca sobre el filete: arena para la Luna, celeste para el Sol y el cielo. */}
-              <span aria-hidden className={`absolute top-[-4px] left-0 hidden size-[7px] rounded-full md:block ${luna ? "bg-sand" : "bg-sky"}`} />
-              <span className="headline order-2 text-3xl tabular-nums md:text-4xl">{hora.format(new Date(e.iso))}</span>
-              <span className={`order-1 text-sm md:mt-2 md:block ${luna ? "text-sand" : "text-text-muted"}`}>{e.titulo}</span>
+              <span aria-hidden className={`absolute top-6 right-6 hidden size-2 rounded-full md:block ${luna ? "bg-puna" : "bg-violeta"}`} />
+              <span className="font-display order-2 text-3xl font-bold tracking-[-0.03em] tabular-nums md:text-4xl">{hora.format(new Date(e.iso))}</span>
+              <span className={`order-1 text-sm md:mt-2 md:block ${luna ? "text-puna-ink" : "text-text-muted"}`}>{e.titulo}</span>
             </li>
           );
         })}
@@ -84,7 +84,7 @@ export function NocheEnLinea({ place }: { place: AndinoPlace }) {
         Horas calculadas para {place.name} con efemérides astronómicas. El cálculo no conoce las nubes ni los cerros: mirá el
         pronóstico antes de salir.
       </p>
-      <Link href={`/cielo${queryCielo(place.id, { fecha: noche.fecha, hora: HORA_NOCHE })}`} className="link-arrow mt-4 text-sky">
+      <Link href={`/cielo${queryCielo(place.id, { fecha: noche.fecha, hora: HORA_NOCHE })}`} className="link-arrow mt-4 text-violeta-ink">
         Ver este cielo a las {HORA_NOCHE}
       </Link>
     </div>
