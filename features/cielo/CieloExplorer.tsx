@@ -1,16 +1,15 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { nombreObjeto, SKY_OBJECT_INFO } from "@/data/astronomy";
-import { getPlace } from "@/data/places";
+import { getPlace, places } from "@/data/places";
 import { type Lang, useLang } from "@/shared/i18n/lang";
-import type { PlaceId } from "@/shared/types";
 import { Badge } from "@/shared/ui/Badge";
 import { Button, LinkButton } from "@/shared/ui/Button";
 import { StatusMessage } from "@/shared/ui/StatusMessage";
 import { CelestialObjectCard } from "./CelestialObjectCard";
-import { DateTimePicker, LocationSelector } from "./CieloControls";
+import { DateTimePicker, type LugarElegido, LocationSelector } from "./CieloControls";
 import {
   buildDatetimeISO,
   DEMO_CIELO,
@@ -22,18 +21,18 @@ import {
 } from "./cielo";
 import { desplazarISO } from "./firmamento";
 import { aISOLocal } from "./jornada";
-import { computeSky, type SkyObjectId, sunAltitudeDeg } from "./motor";
+import { computeSky, type SkyLocation, type SkyObjectId, sunAltitudeDeg } from "./motor";
 import { SkyCanvas } from "./SkyCanvas";
+import { type Coordenadas, LEJOS_KM, paradaMasCercana, posicionValida, textoDistancia } from "./ubicacion";
 
-function calcular(placeId: PlaceId | null, fecha: string, hora: string, desfaseMin: number) {
-  const place = getPlace(placeId);
-  if (!place || !fecha || !hora) return null;
+function calcular(location: SkyLocation | null, fecha: string, hora: string, desfaseMin: number) {
+  if (!location || !fecha || !hora) return null;
   try {
     const base = buildDatetimeISO(fecha, hora);
     const iso = desfaseMin === 0 ? base : desplazarISO(base, desfaseMin);
-    const objetos = computeSky(place, iso).map((o) => ({ ...o, kind: SKY_OBJECT_INFO[o.id as SkyObjectId].kind }));
-    const solAlt = sunAltitudeDeg(place, iso);
-    return { place, iso, objetos, solAlt, luz: luzDelCielo(solAlt) };
+    const objetos = computeSky(location, iso).map((o) => ({ ...o, kind: SKY_OBJECT_INFO[o.id as SkyObjectId].kind }));
+    const solAlt = sunAltitudeDeg(location, iso);
+    return { location, iso, objetos, solAlt, luz: luzDelCielo(solAlt) };
   } catch {
     return null;
   }
@@ -44,8 +43,42 @@ const VIAJE_MAX = 12 * 60;
 /** Este minuto en Argentina: "YYYY-MM-DDTHH:MM". */
 const minutoActual = () => aISOLocal(new Date()).slice(0, 16);
 
+type EstadoUbicacion =
+  | { estado: "buscando" }
+  | { estado: "listo"; pos: Coordenadas }
+  | { estado: "error"; motivo: "denegado" | "no-disponible" }
+  | { estado: "inactivo" };
+
+const sinSuscripcion = () => () => {};
+
+// Pide la posición una vez: en el tren el cielo casi no cambia entre paradas, así que no la seguimos.
+function pedirPosicion(alTerminar: (r: EstadoUbicacion) => void) {
+  if (!("geolocation" in navigator)) {
+    queueMicrotask(() => alTerminar({ estado: "error", motivo: "no-disponible" }));
+    return;
+  }
+  navigator.geolocation.getCurrentPosition(
+    (p) => {
+      const pos = { latitude: p.coords.latitude, longitude: p.coords.longitude };
+      alTerminar(posicionValida(pos) ? { estado: "listo", pos } : { estado: "error", motivo: "no-disponible" });
+    },
+    (err) => alTerminar({ estado: "error", motivo: err.code === err.PERMISSION_DENIED ? "denegado" : "no-disponible" }),
+    { enableHighAccuracy: false, timeout: 15_000, maximumAge: 10 * 60_000 },
+  );
+}
+
 const textos = {
   es: {
+    tuUbicacion: "tu ubicación",
+    buscando: "Buscando tu ubicación…",
+    buscandoTexto: "Si el teléfono lo pide, permití el acceso a la ubicación. Mientras tanto podés elegir una parada.",
+    denegado: "No tenemos permiso para usar tu ubicación.",
+    denegadoTexto: "Permitilo en la configuración del navegador o elegí una parada del Tren Solar.",
+    noDisponible: "No pudimos obtener tu ubicación.",
+    noDisponibleTexto: "Probá de nuevo con «Mi ubicación» o elegí una parada del Tren Solar.",
+    cercana: (nombre: string, dist: string) => `Parada más cercana: ${nombre}, a ${dist}.`,
+    lejos: (nombre: string, dist: string) => `Estás lejos del recorrido del Tren Solar: la parada más cercana es ${nombre}, a ${dist}.`,
+    verFicha: (nombre: string) => `Ver la ficha de ${nombre}`,
     badge: "De noche",
     titulo: "El cielo desde",
     sinLugar: "Descubrí el cielo desde este lugar.",
@@ -84,6 +117,16 @@ const textos = {
       "Que un objeto esté sobre el horizonte no garantiza verlo: también influyen las nubes, la luz de la Luna y de las ciudades, y los cerros del horizonte local. Cálculo con astronomy-engine.",
   },
   en: {
+    tuUbicacion: "your location",
+    buscando: "Finding your location…",
+    buscandoTexto: "If your phone asks, allow location access. Meanwhile you can choose a stop.",
+    denegado: "We don't have permission to use your location.",
+    denegadoTexto: "Allow it in your browser settings or choose a Solar Train stop.",
+    noDisponible: "We couldn't get your location.",
+    noDisponibleTexto: "Try «My location» again or choose a Solar Train stop.",
+    cercana: (nombre: string, dist: string) => `Nearest stop: ${nombre}, ${dist} away.`,
+    lejos: (nombre: string, dist: string) => `You are far from the Solar Train route: the nearest stop is ${nombre}, ${dist} away.`,
+    verFicha: (nombre: string) => `See the ${nombre} guide`,
     badge: "At night",
     titulo: "The sky from",
     sinLugar: "Discover the sky from this place.",
@@ -133,7 +176,10 @@ function textoDesfase(min: number, lang: Lang) {
 // Todo se calcula en el teléfono: funciona sin conexión, sin sensores y sin IA.
 export function CieloExplorer() {
   const searchParams = useSearchParams();
-  const [placeId, setPlaceId] = useState<PlaceId | null>(() => getPlace(searchParams.get("placeId"))?.id ?? null);
+  // Con ?placeId= (por ejemplo, desde la ficha) se usa esa parada; sin él, la ubicación del teléfono.
+  const [elegido, setElegido] = useState<LugarElegido | null>(() => getPlace(searchParams.get("placeId"))?.id ?? null);
+  const [ubicacion, setUbicacion] = useState<EstadoUbicacion>(() => (elegido === null ? { estado: "buscando" } : { estado: "inactivo" }));
+  const conUbicacion = useSyncExternalStore(sinSuscripcion, () => "geolocation" in navigator, () => false);
   // ?fecha=&hora= permiten compartir un momento concreto (por ejemplo, el de la demo).
   const [momentoInicial] = useState(() => momentoDesdeURL(searchParams.get("fecha"), searchParams.get("hora")));
   const lang = useLang();
@@ -153,10 +199,29 @@ export function CieloExplorer() {
   const [apuntando, setApuntando] = useState(false);
   const [vivoAntes, setVivoAntes] = useState(true);
 
+  const pos = elegido === "aqui" && ubicacion.estado === "listo" ? ubicacion.pos : null;
+  const place = elegido === "aqui" ? undefined : getPlace(elegido);
+  const location: SkyLocation | null = pos ?? place ?? null;
+  const cercana = useMemo(() => (pos ? paradaMasCercana(pos, places) : null), [pos]);
+  const nombreLugar = pos ? t.tuUbicacion : (place?.name ?? "");
+  // La ficha del paisaje: la parada elegida o, desde la ubicación, la más cercana.
+  const parada = place ?? cercana?.parada;
+
   const resultado = useMemo(
-    () => (vivo ? calcular(placeId, ahora.slice(0, 10), ahora.slice(11, 16), 0) : calcular(placeId, fecha, hora, desfase)),
-    [placeId, fecha, hora, desfase, vivo, ahora],
+    () => (vivo ? calcular(location, ahora.slice(0, 10), ahora.slice(11, 16), 0) : calcular(location, fecha, hora, desfase)),
+    [location, fecha, hora, desfase, vivo, ahora],
   );
+
+  function alObtener(r: EstadoUbicacion) {
+    setUbicacion(r);
+    if (r.estado === "listo") setElegido((e) => (e === null ? "aqui" : e));
+  }
+
+  // Al entrar sin parada elegida se pide la posición sola; después, desde el selector con «Mi ubicación».
+  useEffect(() => {
+    if (ubicacion.estado === "buscando") pedirPosicion(alObtener);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!vivo) return;
@@ -189,7 +254,7 @@ export function CieloExplorer() {
     setVivo(true);
     setDesfase(0);
     setViajando(false);
-    actualizarURL(placeId, null);
+    actualizarURL(elegido, null);
   }
 
   useEffect(() => {
@@ -205,20 +270,29 @@ export function CieloExplorer() {
     }, 60);
     return () => window.clearInterval(id);
   }, [viajando]);
-  const place = getPlace(placeId);
   // Sin elección, la ficha muestra el objeto más alto: la columna nunca queda vacía.
   const masAlto = resultado?.objetos.filter((o) => o.isAboveHorizon).sort((a, b) => b.altitudeDeg - a.altitudeDeg)[0] ?? null;
   const seleccionado = resultado?.objetos.find((o) => o.id === selectedId) ?? masAlto;
   const ningunoVisible = resultado !== null && resultado.objetos.every((o) => !o.isAboveHorizon);
 
   // Deja lugar y momento en la URL: se puede compartir y recargar sin perder el contexto.
-  function actualizarURL(id: PlaceId | null, momento: { fecha: string; hora: string } | null) {
-    if (id) window.history.replaceState(null, "", queryCielo(id, momento));
+  // Desde la ubicación la URL no lleva coordenadas: solo el momento, si hay uno elegido.
+  function actualizarURL(id: LugarElegido | null, momento: { fecha: string; hora: string } | null) {
+    if (id === "aqui") {
+      const q = momento ? `?${new URLSearchParams(momento)}` : "";
+      window.history.replaceState(null, "", `${window.location.pathname}${q}`);
+    } else if (id) {
+      window.history.replaceState(null, "", queryCielo(id, momento));
+    }
   }
 
-  function elegirLugar(id: PlaceId) {
-    setPlaceId(id);
+  function elegirLugar(id: LugarElegido) {
+    setElegido(id);
     actualizarURL(id, vivo ? null : momentoDesdeURL(fecha, hora));
+    if (id === "aqui" && ubicacion.estado !== "listo" && ubicacion.estado !== "buscando") {
+      setUbicacion({ estado: "buscando" });
+      pedirPosicion(alObtener);
+    }
   }
 
   // Desde el mapa, la ficha queda fuera de pantalla en el celular: la traemos a la vista.
@@ -232,12 +306,12 @@ export function CieloExplorer() {
     setHora(nuevaHora);
     setVivo(false);
     setDesfase(0);
-    actualizarURL(placeId, momentoDesdeURL(nuevaFecha, nuevaHora));
+    actualizarURL(elegido, momentoDesdeURL(nuevaFecha, nuevaHora));
   }
 
   function verNocheDeDemo() {
     const id = DEMO_CIELO.placeId;
-    setPlaceId(id);
+    setElegido(id);
     setFecha(DEMO_CIELO.fecha);
     setHora(DEMO_CIELO.hora);
     setVivo(false);
@@ -251,25 +325,38 @@ export function CieloExplorer() {
         <div>
         <Badge tone="violeta">{t.badge}</Badge>
         <h1 className="display mt-5 max-w-[16ch] text-[clamp(2.75rem,8vw,5rem)]">
-          {place ? (
+          {location ? (
             <>
-              {t.titulo} <em className="acento">{place.name}</em>
+              {t.titulo} <em className="acento">{nombreLugar}</em>
             </>
           ) : (
             t.sinLugar
           )}
         </h1>
+        {cercana && (
+          <p className="mt-3 text-sm text-text-muted">
+            {(cercana.km > LEJOS_KM ? t.lejos : t.cercana)(cercana.parada.name, textoDistancia(cercana.km))}
+          </p>
+        )}
         </div>
         <p className="mt-5 max-w-[36ch] text-text-muted md:mb-2 md:text-right">{t.bajada}</p>
       </header>
 
-      {!place && (
-        <div className="mt-8">
-          <StatusMessage title={t.elegiLugar} />
+      {!location && (
+        <div className="mt-8" aria-live="polite">
+          {ubicacion.estado === "buscando" ? (
+            <StatusMessage title={t.buscando}>{t.buscandoTexto}</StatusMessage>
+          ) : ubicacion.estado === "error" && (elegido === null || elegido === "aqui") ? (
+            <StatusMessage title={ubicacion.motivo === "denegado" ? t.denegado : t.noDisponible} tone="error">
+              {ubicacion.motivo === "denegado" ? t.denegadoTexto : t.noDisponibleTexto}
+            </StatusMessage>
+          ) : (
+            <StatusMessage title={t.elegiLugar} />
+          )}
         </div>
       )}
 
-      {place && !resultado && (
+      {location && !resultado && (
         <div className="mt-8">
           <StatusMessage title={t.completa} tone="error">
             {t.completaTexto}
@@ -280,13 +367,13 @@ export function CieloExplorer() {
       {resultado && (
         <div className="oscuro bleed mt-8 md:mt-10">
           <SkyCanvas
-            location={resultado.place}
+            location={resultado.location}
             datetimeISO={resultado.iso}
             solAlt={resultado.solAlt}
             objetos={resultado.objetos}
             selectedId={seleccionado?.id ?? null}
             onSelect={elegirDesdeMapa}
-            nombreLugar={resultado.place.name}
+            nombreLugar={nombreLugar}
             yacana={verYacana}
             onApuntar={alApuntar}
           />
@@ -374,7 +461,7 @@ export function CieloExplorer() {
           {t.lugarMomento}
         </h2>
         <div className="mt-5 grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] md:gap-12">
-          <LocationSelector value={placeId} onChange={elegirLugar} />
+          <LocationSelector value={elegido} onChange={elegirLugar} conUbicacion={conUbicacion} />
           <DateTimePicker
             fecha={vivo ? ahora.slice(0, 10) : fecha}
             hora={vivo ? ahora.slice(11, 16) : hora}
@@ -441,9 +528,9 @@ export function CieloExplorer() {
       )}
 
       <div className="mt-12 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-8 md:mt-16">
-        {place && (
-          <LinkButton variant="puna" href={`/explorar?placeId=${place.id}`}>
-            {t.volverPaisaje}
+        {parada && (
+          <LinkButton variant="puna" href={`/explorar?placeId=${parada.id}`}>
+            {place ? t.volverPaisaje : t.verFicha(parada.name)}
           </LinkButton>
         )}
         <Button variant="ghost" onClick={verNocheDeDemo}>
