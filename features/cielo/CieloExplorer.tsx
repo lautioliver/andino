@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { SKY_OBJECT_INFO } from "@/data/astronomy";
 import { getPlace } from "@/data/places";
 import type { PlaceId } from "@/shared/types";
@@ -19,19 +19,31 @@ import {
   queryCielo,
   rumbo,
 } from "./cielo";
+import { desplazarISO } from "./firmamento";
 import { computeSky, type SkyObjectId, sunAltitudeDeg } from "./motor";
-import { SkyMap } from "./SkyMap";
+import { SkyCanvas } from "./SkyCanvas";
 
-function calcular(placeId: PlaceId | null, fecha: string, hora: string) {
+function calcular(placeId: PlaceId | null, fecha: string, hora: string, desfaseMin: number) {
   const place = getPlace(placeId);
   if (!place || !fecha || !hora) return null;
   try {
-    const iso = buildDatetimeISO(fecha, hora);
+    const base = buildDatetimeISO(fecha, hora);
+    const iso = desfaseMin === 0 ? base : desplazarISO(base, desfaseMin);
     const objetos = computeSky(place, iso).map((o) => ({ ...o, kind: SKY_OBJECT_INFO[o.id as SkyObjectId].kind }));
-    return { place, objetos, luz: luzDelCielo(sunAltitudeDeg(place, iso)) };
+    const solAlt = sunAltitudeDeg(place, iso);
+    return { place, iso, objetos, solAlt, luz: luzDelCielo(solAlt) };
   } catch {
     return null;
   }
+}
+
+const VIAJE_MAX = 12 * 60;
+
+function textoDesfase(min: number) {
+  if (min === 0) return "hora elegida";
+  const h = Math.floor(Math.abs(min) / 60);
+  const m = Math.abs(min) % 60;
+  return `${min > 0 ? "+" : "−"}${h ? `${h} h` : ""}${h && m ? " " : ""}${m ? `${m} min` : ""}`;
 }
 
 // Todo se calcula en el teléfono: funciona sin conexión, sin sensores y sin IA.
@@ -44,8 +56,25 @@ export function CieloExplorer() {
   const [hora, setHora] = useState(momentoInicial?.hora ?? HORA_EJEMPLO);
   const [esEjemplo, setEsEjemplo] = useState(momentoInicial === null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  // Viaje en el tiempo: minutos sumados a la fecha y hora elegidas; no se guarda en la URL.
+  const [desfase, setDesfase] = useState(0);
+  const [viajando, setViajando] = useState(false);
 
-  const resultado = useMemo(() => calcular(placeId, fecha, hora), [placeId, fecha, hora]);
+  const resultado = useMemo(() => calcular(placeId, fecha, hora, desfase), [placeId, fecha, hora, desfase]);
+
+  useEffect(() => {
+    if (!viajando) return;
+    const id = window.setInterval(() => {
+      setDesfase((d) => {
+        if (d + 5 > VIAJE_MAX) {
+          setViajando(false);
+          return d;
+        }
+        return d + 5;
+      });
+    }, 60);
+    return () => window.clearInterval(id);
+  }, [viajando]);
   const place = getPlace(placeId);
   const seleccionado = resultado?.objetos.find((o) => o.id === selectedId) ?? null;
   const ningunoVisible = resultado !== null && resultado.objetos.every((o) => !o.isAboveHorizon);
@@ -70,6 +99,7 @@ export function CieloExplorer() {
     setFecha(nuevaFecha);
     setHora(nuevaHora);
     setEsEjemplo(false);
+    setDesfase(0);
     actualizarURL(placeId, momentoDesdeURL(nuevaFecha, nuevaHora));
   }
 
@@ -79,6 +109,7 @@ export function CieloExplorer() {
     setFecha(DEMO_CIELO.fecha);
     setHora(DEMO_CIELO.hora);
     setEsEjemplo(false);
+    setDesfase(0);
     actualizarURL(id, DEMO_CIELO);
   }
 
@@ -91,11 +122,6 @@ export function CieloExplorer() {
         <p className="mt-1 text-sm text-text-muted">Posiciones calculadas para la fecha y hora seleccionadas.</p>
       </header>
 
-      <div className="grid gap-4 rounded-card border border-border bg-surface p-4 md:grid-cols-2">
-        <LocationSelector value={placeId} onChange={elegirLugar} />
-        <DateTimePicker fecha={fecha} hora={hora} esEjemplo={esEjemplo} onChange={elegirMomento} />
-      </div>
-
       {!place && <StatusMessage title="Elegí un lugar para calcular su cielo." />}
 
       {place && !resultado && (
@@ -103,6 +129,69 @@ export function CieloExplorer() {
           Necesitamos las dos para calcular las posiciones.
         </StatusMessage>
       )}
+
+      {resultado && (
+        <div className="-mx-4 md:mx-0 md:overflow-hidden md:rounded-hero md:border md:border-border">
+          <SkyCanvas
+            location={resultado.place}
+            datetimeISO={resultado.iso}
+            solAlt={resultado.solAlt}
+            objetos={resultado.objetos}
+            selectedId={selectedId}
+            onSelect={elegirDesdeMapa}
+            nombreLugar={resultado.place.name}
+          />
+        </div>
+      )}
+
+      {resultado && (
+        <div className="space-y-3 rounded-card border border-border bg-surface p-4">
+          <div className="flex items-baseline justify-between gap-3">
+            <label htmlFor="viaje-tiempo" className="text-sm text-text-muted">
+              Viajar en el tiempo
+            </label>
+            <p className="font-display text-xl font-bold tabular-nums">
+              {resultado.iso.slice(8, 10)}/{resultado.iso.slice(5, 7)} · {resultado.iso.slice(11, 16)}
+              <span className="ml-2 font-sans text-xs font-normal text-text-muted">{textoDesfase(desfase)}</span>
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <Button
+              variant="ghost"
+              className="shrink-0"
+              onClick={() => {
+                if (!viajando && desfase >= VIAJE_MAX) setDesfase(-VIAJE_MAX);
+                setViajando(!viajando);
+              }}
+            >
+              {viajando ? "Pausar" : "Reproducir"}
+            </Button>
+            <input
+              id="viaje-tiempo"
+              type="range"
+              min={-VIAJE_MAX}
+              max={VIAJE_MAX}
+              step={10}
+              value={desfase}
+              onChange={(e) => {
+                setViajando(false);
+                setDesfase(Number(e.target.value));
+              }}
+              className="min-h-11 w-full accent-sky"
+            />
+          </div>
+          {desfase !== 0 && (
+            <button type="button" className="text-sm text-sky underline underline-offset-2" onClick={() => setDesfase(0)}>
+              Volver a la hora elegida
+            </button>
+          )}
+        </div>
+      )}
+
+      <div className="grid gap-4 rounded-card border border-border bg-surface p-4 md:grid-cols-2">
+        <LocationSelector value={placeId} onChange={elegirLugar} />
+        <DateTimePicker fecha={fecha} hora={hora} esEjemplo={esEjemplo} onChange={elegirMomento} />
+      </div>
 
       {resultado && (
         <div className="grid gap-5 md:grid-cols-2 md:items-start">
@@ -115,10 +204,9 @@ export function CieloExplorer() {
               </StatusMessage>
             )}
 
-            <SkyMap objects={resultado.objetos} selectedId={selectedId} onSelect={elegirDesdeMapa} />
-            <p className="text-center text-xs text-text-muted">
-              Mapa esquemático: el centro es el punto sobre tu cabeza y el borde, el horizonte. Está pensado para mirar
-              hacia arriba, por eso el este queda a la izquierda.
+            <p className="text-xs text-text-muted">
+              Estrellas, constelaciones y Vía Láctea en su posición calculada para este lugar y momento (catálogo
+              d3-celestial, estrellas hasta magnitud 5). La silueta del horizonte es plana: no incluye los cerros.
             </p>
 
             {ningunoVisible && (
@@ -154,7 +242,7 @@ export function CieloExplorer() {
                 <CelestialObjectCard object={seleccionado} info={SKY_OBJECT_INFO[seleccionado.id as SkyObjectId]} />
               </div>
             ) : (
-              <p className="text-sm text-text-muted">Tocá un objeto del mapa o de la lista para ver su ficha.</p>
+              <p className="text-sm text-text-muted">Tocá un objeto del cielo o de la lista para ver su ficha.</p>
             )}
           </div>
         </div>
