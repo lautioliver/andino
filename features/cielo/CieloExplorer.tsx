@@ -187,6 +187,13 @@ export function CieloExplorer() {
         </div>
       )}
 
+      {resultado && activo && resultado.luz !== "noche" && (
+        <p className="mt-4 text-sm text-text-muted" aria-live="polite">
+          {resultado.luz === "dia" ? "Es de día: las estrellas no se ven." : "Todavía hay luz: solo se ven las estrellas más brillantes."} Las
+          constelaciones están marcadas tenues para que sepas dónde están.
+        </p>
+      )}
+
       {resultado && (
         <div className="mt-4 flex flex-wrap items-baseline gap-x-4 gap-y-1">
           <button
