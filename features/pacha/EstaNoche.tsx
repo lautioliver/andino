@@ -3,6 +3,7 @@
 import { useMemo, useSyncExternalStore } from "react";
 import type { AndinoPlace } from "@/shared/types";
 import { LinkButton } from "@/shared/ui/Button";
+import { PasosStarlink } from "@/features/satelites/PasosStarlink";
 import { fechaDeLaNoche, nocheEn, type Noche } from "./noche";
 
 // La fecha depende del reloj del visitante: en el servidor (o al prerender) no hay "esta noche".
@@ -61,6 +62,8 @@ export function EstaNoche({ place }: { place: AndinoPlace }) {
               </li>
             ))}
           </ul>
+
+          <PasosStarlink key={noche.fecha} placeId={place.id} fecha={noche.fecha} />
 
           <p className="mt-4 text-sm leading-6 text-text-muted">
             Posiciones calculadas para {place.name} con efemérides astronómicas. No tienen en cuenta los cerros de la
