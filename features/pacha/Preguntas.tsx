@@ -103,8 +103,9 @@ export function Preguntas({ place, sugerencias }: { place: AndinoPlace; sugerenc
         <ul className="mt-6 space-y-2">
           {opciones.map((p) => (
             <li key={p}>
-              <button type="button" disabled={pensando} onClick={() => enviar(p)} className="link-arrow text-left text-earth disabled:opacity-50">
+              <button type="button" disabled={pensando} onClick={() => enviar(p)} className="min-h-12 py-2 text-left font-medium text-earth transition-colors hover:text-sand disabled:opacity-50">
                 {p}
+                <span aria-hidden>&nbsp;→</span>
               </button>
             </li>
           ))}

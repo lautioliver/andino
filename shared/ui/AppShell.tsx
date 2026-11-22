@@ -15,8 +15,8 @@ export function AppShell({ children }: { children: ReactNode }) {
           </Suspense>
         </nav>
       </header>
-      <main className="mx-auto w-full max-w-[1120px] flex-1 px-4 pb-28 md:px-6 md:pb-16">{children}</main>
-      <footer className="mx-auto hidden w-full max-w-[1120px] px-6 pb-8 text-xs text-text-muted md:block">
+      <main className="mx-auto w-full max-w-[1120px] flex-1 px-4 pb-16 md:px-6">{children}</main>
+      <footer className="mx-auto w-full max-w-[1120px] px-4 pb-28 text-xs text-text-muted md:px-6 md:pb-8">
         <p className="rule pt-4">ANDINO · Cursor Hackathon Jujuy · Sin afiliación con SpaceX.</p>
       </footer>
       <nav

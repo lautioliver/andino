@@ -153,13 +153,9 @@ export function PachaFlow() {
               </div>
             </details>
 
-            <Preguntas key={place.id} place={place} sugerencias={ia?.followUpSuggestions} />
-
             <EstaNoche place={place} />
 
-            <Button variant="ghost" className="mt-6" onClick={() => router.push("/explorar")}>
-              No es este lugar
-            </Button>
+            <Preguntas key={place.id} place={place} sugerencias={ia?.followUpSuggestions} />
           </div>
 
           <aside className="space-y-8 lg:pt-14">
@@ -172,9 +168,16 @@ export function PachaFlow() {
               </p>
             </div>
             <SourceList sources={ficha.sources} />
-            <Button variant="ghost" onClick={reset}>
-              Explorar otro paisaje
-            </Button>
+            <div className="rule flex flex-col items-start pt-2">
+              {isUserPhoto && (
+                <Button variant="ghost" onClick={() => router.push("/explorar")}>
+                  No es este lugar
+                </Button>
+              )}
+              <Button variant="ghost" onClick={reset}>
+                Explorar otro paisaje
+              </Button>
+            </div>
           </aside>
         </div>
       </article>

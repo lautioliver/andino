@@ -77,7 +77,9 @@ export function CieloExplorer() {
     return () => window.clearInterval(id);
   }, [viajando]);
   const place = getPlace(placeId);
-  const seleccionado = resultado?.objetos.find((o) => o.id === selectedId) ?? null;
+  // Sin elección, la ficha muestra el objeto más alto: la columna nunca queda vacía.
+  const masAlto = resultado?.objetos.filter((o) => o.isAboveHorizon).sort((a, b) => b.altitudeDeg - a.altitudeDeg)[0] ?? null;
+  const seleccionado = resultado?.objetos.find((o) => o.id === selectedId) ?? masAlto;
   const ningunoVisible = resultado !== null && resultado.objetos.every((o) => !o.isAboveHorizon);
 
   // Deja lugar y momento en la URL: se puede compartir y recargar sin perder el contexto.
@@ -115,10 +117,11 @@ export function CieloExplorer() {
   }
 
   return (
-    <section className="pt-8 md:pt-16">
-      <header>
+    <section className="pt-8 md:pt-12">
+      <header className="md:flex md:items-end md:justify-between md:gap-12">
+        <div>
         <Badge tone="sky">De noche</Badge>
-        <h1 className="display mt-5 max-w-[14ch] text-[clamp(2.75rem,9vw,6rem)]">
+        <h1 className="display mt-5 max-w-[16ch] text-[clamp(2.75rem,8vw,5rem)]">
           {place ? (
             <>
               El cielo desde <em className="text-sky">{place.name}</em>
@@ -127,7 +130,8 @@ export function CieloExplorer() {
             "Descubrí el cielo desde este lugar."
           )}
         </h1>
-        <p className="lead mt-5 max-w-[45ch] text-text-muted">Posiciones calculadas para la fecha y hora seleccionadas.</p>
+        </div>
+        <p className="mt-5 max-w-[32ch] text-text-muted md:mb-2 md:text-right">Posiciones calculadas para la fecha y hora seleccionadas.</p>
       </header>
 
       {!place && (
@@ -145,13 +149,13 @@ export function CieloExplorer() {
       )}
 
       {resultado && (
-        <div className="bleed mt-10 md:mt-14">
+        <div className="bleed mt-8 md:mt-10">
           <SkyCanvas
             location={resultado.place}
             datetimeISO={resultado.iso}
             solAlt={resultado.solAlt}
             objetos={resultado.objetos}
-            selectedId={selectedId}
+            selectedId={seleccionado?.id ?? null}
             onSelect={elegirDesdeMapa}
             nombreLugar={resultado.place.name}
           />
@@ -160,13 +164,15 @@ export function CieloExplorer() {
 
       {resultado && (
         <div className="mt-6 grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] md:items-center md:gap-12">
-          <div className="flex items-baseline justify-between gap-4 md:block">
+          <div>
             <label htmlFor="viaje-tiempo" className="eyebrow text-text-muted">
               Viajar en el tiempo
             </label>
-            <p className="headline text-3xl tabular-nums md:mt-2 md:text-4xl">
-              {resultado.iso.slice(8, 10)}/{resultado.iso.slice(5, 7)} · {resultado.iso.slice(11, 16)}
-              <span className="ml-3 align-middle font-sans text-xs tracking-normal text-text-muted">{textoDesfase(desfase)}</span>
+            <p className="mt-2 flex items-baseline gap-3">
+              <span className="headline text-3xl tabular-nums md:text-4xl">
+                {resultado.iso.slice(8, 10)}/{resultado.iso.slice(5, 7)} · {resultado.iso.slice(11, 16)}
+              </span>
+              <span className={`text-sm tabular-nums ${desfase === 0 ? "text-text-muted" : "text-sky"}`}>{textoDesfase(desfase)}</span>
             </p>
           </div>
           <div>
@@ -224,7 +230,7 @@ export function CieloExplorer() {
             </div>
             <ul className="mt-4 divide-y divide-border" aria-label="Objetos calculados">
               {resultado.objetos.map((o, i) => {
-                const activo = o.id === selectedId;
+                const activo = o.id === seleccionado?.id;
                 return (
                   <li key={o.id}>
                     <button
@@ -251,7 +257,7 @@ export function CieloExplorer() {
                 <CelestialObjectCard object={seleccionado} info={SKY_OBJECT_INFO[seleccionado.id as SkyObjectId]} />
               </div>
             ) : (
-              <p className="rule pt-4 text-text-muted">Tocá un objeto del cielo o de la lista para ver su ficha.</p>
+              <p className="rule pt-4 text-text-muted">Tocá un objeto de la lista para ver su ficha.</p>
             )}
 
             {resultado.luz !== "noche" && (
