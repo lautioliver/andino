@@ -1,6 +1,6 @@
 # ANDINO
 
-**Tu mejor noche de cielo en Jujuy.** PWA de turismo inteligente y astroturismo para Jujuy, hecha para la Cursor Hackathon Jujuy. Pensada para los pasajeros del **Tren Solar de la Quebrada**: cubre sus seis paradas (Volcán, Tumbaya, Purmamarca, Posta de Hornillos, Maimará y Tilcara), en español y en inglés.
+**Tu mejor noche de cielo en Jujuy.** PWA de turismo inteligente y astroturismo para Jujuy, hecha para la Cursor Hackathon Jujuy. Pensada para los pasajeros del **Tren Solar de la Quebrada**: cubre sus siete paradas (Volcán, Tumbaya, Purmamarca, Posta de Hornillos, Maimará, la bodega El Bayeh y Tilcara), en español y en inglés.
 
 - **Pacha** (`/explorar`): foto desde el tren o en una parada → qué es el lugar, su territorio y su historia, con fuentes → pregunta de seguimiento. Responsable: `lautioliver`.
 - **Cielo Andino** (`/cielo`): el cielo de ahora, en vivo, para apuntar con el teléfono; o lugar + fecha/hora → objetos celestes calculados. Motor y pantalla de `jehp23`; desde la v4 lo lleva `lautioliver`.

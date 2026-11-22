@@ -319,7 +319,7 @@ Entregar una PWA móvil demostrable en el tren: **punto de observación → mejo
 ### Contrato compartido (cerrar en los primeros 30 min)
 
 ```ts
-export type PlaceId = 'volcan' | 'tumbaya' | 'purmamarca' | 'hornillos' | 'maimara' | 'tilcara'; // paradas del Tren Solar
+export type PlaceId = 'volcan' | 'tumbaya' | 'purmamarca' | 'hornillos' | 'maimara' | 'elbayeh' | 'tilcara'; // paradas del Tren Solar
 export interface AndinoPlace {
   id: string;
   name: string;
