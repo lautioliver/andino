@@ -21,6 +21,7 @@ import {
   rumbo,
 } from "./cielo";
 import { desplazarISO } from "./firmamento";
+import { aISOLocal } from "./jornada";
 import { computeSky, type SkyObjectId, sunAltitudeDeg } from "./motor";
 import { SkyCanvas } from "./SkyCanvas";
 
@@ -39,6 +40,9 @@ function calcular(placeId: PlaceId | null, fecha: string, hora: string, desfaseM
 }
 
 const VIAJE_MAX = 12 * 60;
+
+/** Este minuto en Argentina: "YYYY-MM-DDTHH:MM". */
+const minutoActual = () => aISOLocal(new Date()).slice(0, 16);
 
 function textoDesfase(min: number) {
   if (min === 0) return "hora elegida";
@@ -62,7 +66,25 @@ export function CieloExplorer() {
   const [viajando, setViajando] = useState(false);
   const [verYacana, setVerYacana] = useState(true);
 
-  const resultado = useMemo(() => calcular(placeId, fecha, hora, desfase), [placeId, fecha, hora, desfase]);
+  // En vivo: mientras «Apuntá» está encendido, el cielo es el de este momento y se actualiza solo.
+  const [enVivo, setEnVivo] = useState<string | null>(null);
+
+  const resultado = useMemo(
+    () => (enVivo ? calcular(placeId, enVivo.slice(0, 10), enVivo.slice(11, 16), 0) : calcular(placeId, fecha, hora, desfase)),
+    [placeId, fecha, hora, desfase, enVivo],
+  );
+
+  const activo = enVivo !== null;
+  useEffect(() => {
+    if (!activo) return;
+    const id = window.setInterval(() => setEnVivo(minutoActual()), 15_000);
+    return () => window.clearInterval(id);
+  }, [activo]);
+
+  function alApuntar(activa: boolean) {
+    setViajando(false);
+    setEnVivo(activa ? minutoActual() : null);
+  }
 
   useEffect(() => {
     if (!viajando) return;
@@ -156,6 +178,7 @@ export function CieloExplorer() {
             onSelect={elegirDesdeMapa}
             nombreLugar={resultado.place.name}
             yacana={verYacana}
+            onApuntar={alApuntar}
           />
         </div>
       )}
@@ -184,13 +207,16 @@ export function CieloExplorer() {
             </label>
             <p className="headline text-3xl tabular-nums md:mt-2 md:text-4xl">
               {resultado.iso.slice(8, 10)}/{resultado.iso.slice(5, 7)} · {resultado.iso.slice(11, 16)}
-              <span className="ml-3 align-middle font-sans text-xs tracking-normal text-text-muted">{textoDesfase(desfase)}</span>
+              <span className={`ml-3 align-middle font-sans text-xs tracking-normal ${activo ? "text-sky" : "text-text-muted"}`}>
+                {activo ? "en vivo, mientras apuntás" : textoDesfase(desfase)}
+              </span>
             </p>
           </div>
           <div>
             <div className="flex items-center gap-4">
               <Button
                 variant="ghost"
+                disabled={activo}
                 className="w-28 shrink-0"
                 onClick={() => {
                   if (!viajando && desfase >= VIAJE_MAX) setDesfase(-VIAJE_MAX);
@@ -202,6 +228,7 @@ export function CieloExplorer() {
               <input
                 id="viaje-tiempo"
                 type="range"
+                disabled={activo}
                 min={-VIAJE_MAX}
                 max={VIAJE_MAX}
                 step={10}
