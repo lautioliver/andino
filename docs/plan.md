@@ -1,80 +1,111 @@
 # ANDINO — Plan de proyecto | Cursor Hackathon Jujuy
 
-> Versión 3 · 22 de noviembre de 2026  
-> **Enfoque:** MVP de turismo inteligente + astroturismo + exploración espacial  
-> **Equipo:** `lautioliver` (Desarrollador 1, Pacha e integración) y `jehp23` (Desarrollador 2, Cielo Andino y demo)  
-> **Cliente objetivo:** Gobierno de la Provincia de Jujuy (hipótesis; no existe acuerdo confirmado)  
+> Versión 4 · 22 de noviembre de 2026  
+> **Enfoque:** astroturismo en la Quebrada y la Puna de Jujuy  
+> **Tagline:** «Tu mejor noche de cielo en Jujuy»  
+> **Equipo:** `lautioliver` (Desarrollador 1, ficha del lugar e integración) y `jehp23` (Desarrollador 2, motor del cielo y demo)  
 > **Contexto:** hackathon en el Tren Solar, con temática vinculada a Cursor y la comunidad espacial/SpaceX mencionada por el equipo. No implica patrocinio, integración ni colaboración oficial de SpaceX.
+
+> **Por qué cambió el plan (v3 → v4):** los mentores señalaron que la versión anterior no tenía un problema real ni un nicho claro; lo único que les interesó fue el cielo. Dejamos de ser «turismo inteligente en general» y nos enfocamos en una persona y un problema concretos. El Gobierno provincial deja de ser el cliente objetivo de la demo.
 
 ## 1. Visión
 
-**ANDINO — Explorá la Tierra. Descubrí el universo.**
+**ANDINO — Tu mejor noche de cielo en Jujuy.**
 
-Plataforma turística que combina IA multimodal, mapas, información regional curada y astronomía computacional para descubrir Jujuy de día y explorar su cielo de noche. Una PWA para visitantes. Un eventual panel institucional es una extensión posterior, no un requisito del MVP.
+Una PWA que acompaña al viajero que llega a la Quebrada y la Puna a vivir el cielo: le dice **cuándo** salir, le enseña **adónde** mirar con el celular y le explica **qué significa** lo que ve, desde la astronomía y desde el cielo andino.
 
-**Propuesta diferencial:** una experiencia continua de **territorio → cielo → itinerario**. La astronomía es una capacidad real, no solo una estética espacial.
+**Propuesta diferencial:** la astronomía es el producto, no la decoración. Las posiciones del Sol, la Luna, las estrellas y los satélites salen de un motor de cálculo real para el lugar y la fecha del viaje; la IA solo explica.
 
-## 2. Problema y cliente
+**Palabras para el jurado:** «astronomía» y «astroturismo». Nunca «astrología».
 
-- **Visitantes:** información turística dispersa, dificultades para comprender lo que observan y para combinar destinos con actividades de observación del cielo.
-- **Gobierno provincial (cliente potencial):** necesidad hipotética de administrar contenidos turísticos, difundir destinos y conocer qué información consultan los usuarios.
-- **Validación pendiente:** entrevistar a turistas, prestadores y representantes del área de turismo; no asumir intención de compra ni cifras de impacto.
+## 2. Problema y nicho
 
-**Usuarios:** turistas nacionales e internacionales, residentes, estudiantes y operadores turísticos. **Administrador:** editor institucional. **Comprador potencial:** organismo provincial competente en turismo.
+**Nicho:** el viajero de la Quebrada y la Puna que viene, entre otras cosas, a vivir el cielo. Incluye al perfil espiritual o alternativo que busca el cielo andino, además del aficionado a la astronomía y del turista que «quiere ver las estrellas».
 
-## 3. Experiencias del producto
+**Problema:** está bajo un cielo excepcional y se va sin verlo ni entenderlo, porque:
 
-### 3.1 Pacha — Explorá la Tierra (MVP P0)
+- **Elige mal la noche:** no sabe que la Luna llena tapa casi todo, ni a qué hora sale o se pone la Luna en las fechas de su viaje.
+- **Sale a mala hora:** no sabe cuándo termina de oscurecer.
+- **Mira desde el lugar equivocado:** desde el pueblo iluminado o con cerros que tapan el horizonte.
+- **No sabe qué está viendo:** reconoce, como mucho, las Tres Marías y la Cruz del Sur.
 
-El visitante fotografía un paisaje o elige un punto turístico. La IA combina descripción visual, ubicación opcional y fichas verificadas para explicar geografía, historia, patrimonio y recomendaciones relevantes.
+**Validación pendiente:** este problema es nuestra hipótesis, armada con la devolución de los mentores y nuestra experiencia. No tenemos cifras de visitantes ni de demanda; no las inventamos en el pitch. Ver la sección 3.
 
-**Flujo:** cámara/imagen → candidato de lugar → confirmación si hay incertidumbre → explicación con fuentes → pregunta de seguimiento → sugerencia de ruta.
+**Clientes posibles (no validados, solo para el pitch de visión):** hospedajes y operadores de turismo astronómico de la región, y el área de turismo provincial. Ninguno está confirmado.
 
-No prometer reconocimiento universal de montañas ni inventar datos culturales.
+## 3. Validación: 5 conversaciones con viajeros
 
-### 3.2 Cielo Andino — Descubrí el universo (MVP P0 acotado)
+Antes de presentar, el equipo habla con **5 viajeros** (en el Tren Solar, en Purmamarca, Tilcara o Humahuaca). Conversaciones cortas, sin guion cerrado:
 
-Una vista del cielo calculada a partir de **latitud, longitud, fecha y hora** muestra objetos astronómicos seleccionados y su posición aproximada. La demo permite seleccionar un lugar y observar qué se vería desde allí de noche.
+1. ¿Viniste, entre otras cosas, por el cielo? ¿Ya saliste a mirarlo?
+2. ¿Cómo elegiste la noche y la hora? ¿Sabías cómo estaba la Luna?
+3. ¿Desde dónde miraste? ¿Había luces o cerros?
+4. ¿Qué reconociste? ¿Te hubiera gustado saber qué era cada cosa, o qué veían los pueblos andinos?
+5. ¿Pagarías o reservarías algo para tener una buena noche de cielo? ¿Qué?
 
-**MVP:** mapa celeste 2D o visualización simple, 3–5 objetos destacados, fichas educativas y una explicación asistida por IA. **Opcional:** orientación con sensores del teléfono si funciona de manera confiable.
+**Registro:** por cada conversación, una línea con lo que dijo (sin nombre ni datos personales) y si confirma o contradice el problema. Si en el pitch citamos a alguien, es textual y con su permiso. Si las conversaciones contradicen la hipótesis, se ajusta el producto, no el relato.
 
-**Criterio cultural:** los relatos y denominaciones astronómicas andinas deben proceder de fuentes verificables y, para una versión pública, contar con revisión de referentes culturales y lingüísticos. No equiparar automáticamente constelaciones occidentales con tradiciones andinas.
+## 4. El producto en 3 pasos
 
-### 3.3 Rutas Andinas — Planificá tu aventura (MVP P1)
+El punto de observación es el eje: cada paso trabaja sobre un lugar concreto (Purmamarca, Tilcara, Humahuaca y los que se sumen).
 
-Recomendar un itinerario corto a partir de intereses, tiempo disponible y puntos turísticos curados. Incluir opcionalmente una parada de observación del cielo.
+### 4.1 Cuándo — la mejor noche del viaje (P0)
 
-Para un producto real, las recomendaciones de observación deben considerar **nubosidad, fase lunar, contaminación lumínica, seguridad, acceso y horarios**; si esos datos no están disponibles, mostrar la ruta como sugerencia no verificada.
+El viajero indica dónde está y qué noches tiene. ANDINO calcula, con el motor actual, la puesta del Sol, el fin del crepúsculo, la fase de la Luna y su salida y puesta, y recomienda **la mejor noche y la franja horaria más oscura**, explicando por qué.
 
-### 3.4 Salud Andina — Territorio y ecosistemas (futuro)
+**Ya existe:** «Esta noche» en la ficha del lugar (puesta del Sol, fase de la Luna, objetos visibles) y los pasos visibles de satélites Starlink. **Falta:** comparar varias noches del viaje y calcular la franja oscura.
 
-Mantener como posible módulo independiente de monitoreo comunitario de vegas y bofedales, sujeto a validación con especialistas. **Fuera del alcance del hackathon** para conservar foco turístico.
+**Límite:** sin datos meteorológicos confiables no prometemos cielo despejado; lo decimos.
 
-## 4. La demo diferenciadora
+### 4.2 Apuntá — el celular al cielo (P0 si funciona en el teléfono real)
 
-1. **Vista desde el espacio:** animación o mapa que sitúa a Jujuy en la Tierra y acerca la cámara hacia la Quebrada. Es visualización, no datos satelitales en tiempo real.
-2. **Exploración terrestre:** cargar una foto tomada desde el Tren Solar; Pacha ofrece explicación contextual con fuentes.
-3. **Exploración celeste:** alternar a Cielo Andino y calcular qué objetos se verían desde ese lugar a una hora nocturna seleccionada.
-4. **Cierre turístico:** mostrar una recomendación sencilla de actividad local basada en el destino seleccionado.
-5. **Visión institucional (pitch, no software):** explicar cómo un organismo provincial podría administrar contenidos en una versión futura.
+Con geolocalización y brújula del teléfono, el viajero apunta al cielo y ve qué hay en esa dirección, de noche y también de día (dónde está la Luna, por dónde saldrá una constelación). **Plan B:** girar el cielo con el dedo, que ya funciona en la vista de cielo inmersiva.
 
-**Mensaje para jurado:** «ANDINO conecta el patrimonio terrestre de Jujuy con su cielo: una nueva forma de descubrir el territorio y una herramienta para promoverlo». No afirmar que SpaceX provee tecnología o datos al producto.
+**Regla:** si la brújula no es confiable en el dispositivo de la demo, se muestra el plan B. No se simula orientación.
 
-## 5. Alcance priorizado
+### 4.3 Qué significa — constelaciones, cielo andino y tu signo (P0 acotado)
+
+- **Constelaciones occidentales** principales visibles esa noche.
+- **Cielo andino:** las constelaciones oscuras de la Vía Láctea (por ejemplo la Yacana, la llama). Fuentes académicas de Perú y Bolivia, citadas con autor y obra. No equiparamos automáticamente figuras occidentales con andinas ni atribuimos relatos a comunidades sin respaldo; para una versión pública, revisión de referentes culturales.
+- **Tu signo en el cielo:** dónde está *de verdad* la constelación de tu signo esa noche (posición real, incluida la diferencia con las fechas del horóscopo). **Sin predicciones.** Es una puerta de entrada para el perfil espiritual, contada como astronomía.
+
+### 4.4 La ficha del punto de observación (antes, Pacha)
+
+Pacha deja de ser un producto aparte: es la **ficha del lugar**. Reconoce el paisaje por foto o permite elegirlo, explica geografía e historia con fuentes y, sobre todo, informa lo que importa para observar: si el horizonte está despejado, cuánta luz hay cerca, cómo llegar y cuidados (altura, frío, seguridad).
+
+### 4.5 Visión a futuro (no va en la demo)
+
+- **Estado del territorio en tiempo real:** nubosidad, viento, accesos y contaminación lumínica por punto de observación.
+- Panel para hospedajes y operadores; reservas de salidas guiadas.
+- Monitoreo de vegas y bofedales (Salud Andina), sujeto a validación con especialistas.
+
+## 5. La demo y el alcance
+
+### 5.1 Recorrido de la demo
+
+1. **Llegada:** el viajero está en un lugar de la Quebrada (por ejemplo Tilcara) con tres noches de viaje.
+2. **Cuándo:** ANDINO compara las noches y recomienda una, con la hora en que termina de oscurecer y dónde está la Luna.
+3. **Dónde:** la ficha del punto de observación explica por qué conviene ese lugar y no el centro del pueblo.
+4. **Apuntá:** el celular al cielo (o el plan B con el dedo) muestra lo que hay en esa dirección.
+5. **Qué significa:** la Yacana en la Vía Láctea, con su fuente, y «tu signo en el cielo» para alguien del público.
+6. **Visión:** una frase sobre el estado del territorio en tiempo real y los posibles clientes.
+
+**Mensaje para el jurado:** «Jujuy tiene un cielo excepcional y la mayoría de los viajeros se va sin verlo. ANDINO les dice cuándo salir, adónde mirar y qué están viendo». No afirmar que SpaceX provee tecnología o datos al producto.
+
+### 5.2 Alcance priorizado
 
 | Prioridad | Entregable | Definición de terminado |
 |---|---|---|
-| P0 | PWA mobile-first | Navegación clara y usable en móvil |
-| P0 | Pacha | Foto → explicación respaldada por fichas → pregunta |
-| P0 | Cielo Andino básico | Lugar + fecha/hora → objetos celestes calculados |
-| P0 | Dataset curado | 3–5 puntos turísticos, fuentes y coordenadas aproximadas |
-| P0 | Demo robusta | Imágenes precargadas y resultados demostrables ante mala conectividad |
-| P1 | Rutas Andinas | Itinerario breve basado en destinos del dataset |
-| Fuera del MVP | Panel institucional | Describirlo en el pitch; no implementarlo durante el hackathon |
-| P2 | Vista Tierra desde órbita | Transición visual atractiva, sin bloquear funciones centrales |
-| P2 | Voz, AR y sensores | Solo si están probados en el dispositivo real |
+| P0 | Cuándo: la mejor noche | Lugar + noches del viaje → noche recomendada, franja oscura y Luna, calculadas |
+| P0 | Qué significa | Constelaciones visibles + Yacana con fuente + tu signo en su posición real |
+| P0 | Ficha del punto de observación | 3–5 lugares con datos para observar y fuentes |
+| P0 | PWA mobile-first y demo robusta | Usable en un teléfono real; funciona con mala conectividad |
+| P0/P1 | Apuntá | Brújula si funciona en el dispositivo real; si no, girar con el dedo |
+| P1 | Reconocimiento del lugar por foto | Ya existe; se mantiene como entrada a la ficha |
+| P2 | Transición Tierra → Cielo | Visual, sin bloquear lo anterior |
+| Fuera del MVP | Estado del territorio en tiempo real, panel institucional | Solo en el pitch, como visión |
 
-**Regla de corte:** si Pacha o Cielo no funcionan al llegar a la mitad del tiempo, eliminar P1/P2. Una demo integrada vale más que tres módulos incompletos.
+**Regla de corte:** si a mitad del tiempo «Cuándo» o «Qué significa» no funcionan, se frena todo lo demás. Una noche bien recomendada y bien explicada vale más que cinco funciones a medias.
 
 ## 6. Arquitectura
 
@@ -189,11 +220,12 @@ andino/
 
 ## 11. Criterios de éxito
 
-- Una persona puede fotografiar o elegir un destino y obtener una explicación con fuentes.
-- El mismo destino se utiliza para calcular una vista celeste en una fecha y hora seleccionadas.
+- Un viajero indica lugar y noches de su viaje y recibe la mejor noche y la franja más oscura, con el porqué (Sol y Luna calculados).
+- Puede apuntar el celular, o girar el cielo con el dedo, y saber qué hay en esa dirección.
+- Ve al menos una constelación andina con su fuente y la posición real de su signo, sin predicciones.
 - La demo deja claro qué datos son reales, qué partes son simuladas y qué funciones son futuras.
 - Funciona en un teléfono real; existe un fallback para conectividad limitada.
-- El pitch demuestra utilidad turística, relación auténtica con la astronomía y valor institucional potencial.
+- El pitch muestra un problema concreto de un nicho concreto, respaldado por las 5 conversaciones si se hicieron.
 
 ## 12. Riesgos
 
@@ -205,19 +237,20 @@ andino/
 | Demasiado alcance | Pacha + Cielo como núcleo; recortar dashboard y animaciones |
 | Relatos culturales inexactos | Usar solo fuentes verificadas y marcar contenido pendiente de revisión |
 | Confusión sobre SpaceX | Presentar inspiración temática, no alianza ni integración |
-| Adopción pública no validada | Identificar al Gobierno como cliente objetivo, no cliente confirmado |
+| Problema no validado | Hacer las 5 conversaciones con viajeros; no presentar clientes como confirmados |
+| Confusión con astrología | Decir «astronomía» o «astroturismo»; «tu signo» muestra posiciones reales, sin predicciones |
 
 ## 13. Pitch de 3 minutos
 
-**0:00–0:25 — Problema:** «Cuando visitamos Jujuy, vemos paisajes extraordinarios, pero muchas veces no conocemos sus historias. Y al caer la noche, tampoco sabemos qué estamos viendo en el cielo».
+**0:00–0:25 — Problema:** «La gente viene a la Quebrada y a la Puna, entre otras cosas, por el cielo. Y la mayoría se va sin verlo: sale la noche de Luna llena, a la hora equivocada, desde el pueblo iluminado, y no sabe qué está mirando». Si tenemos las 5 conversaciones, citar una, textual.
 
-**0:25–1:15 — Tierra:** demo Pacha con imagen del recorrido, explicación y fuente.
+**0:25–1:05 — Cuándo:** en Tilcara con tres noches de viaje; ANDINO recomienda una y explica por qué (Luna, fin del crepúsculo). Todo calculado, nada inventado.
 
-**1:15–2:05 — Cielo:** desde el mismo lugar, seleccionar una hora nocturna y mostrar el mapa celeste calculado; explicar un objeto astronómico.
+**1:05–1:45 — Apuntá:** el celular al cielo (o el plan B con el dedo); aparece lo que hay en esa dirección, incluido un paso de Starlink si coincide.
 
-**2:05–2:35 — Turismo:** itinerario que conecta patrimonio terrestre y astroturismo; valor potencial para la promoción turística provincial.
+**1:45–2:30 — Qué significa:** la Yacana en la Vía Láctea, con su fuente; y «tu signo en el cielo» para alguien del jurado: dónde está de verdad esta noche. Astronomía, no predicciones.
 
-**2:35–3:00 — Cierre:** «ANDINO: explorá la Tierra, descubrí el universo. Una experiencia para el visitante y una plataforma para acercar el patrimonio jujeño al mundo».
+**2:30–3:00 — Cierre:** visión del estado del territorio en tiempo real y quiénes podrían usarlo (hospedajes, operadores, turismo provincial; no confirmados). «ANDINO: tu mejor noche de cielo en Jujuy».
 
 ## 14. Decisiones pendientes
 
@@ -227,8 +260,10 @@ andino/
 - [ ] Definir proveedor de IA y créditos.
 - [ ] Elegir motor astronómico y validar cálculos.
 - [ ] Confirmar si habrá un dispositivo para probar orientación por sensores.
-- [ ] Validar con un organismo turístico si el panel institucional responde a una necesidad real.
+- [ ] Hacer y registrar las 5 conversaciones con viajeros (sección 3).
+- [ ] Elegir las fuentes del cielo andino (Perú y Bolivia) y citarlas con autor y obra.
+- [ ] Validar el giro a astroturismo con `jehp23` y coordinar «Cuándo» y «Apuntá» con su trabajo en curso.
 
 ---
 
-**Definición de terminado del MVP:** demo integrada **Tierra → Cielo** con contenido turístico respaldado, cálculos astronómicos reales, interfaz móvil estable y una historia clara de adopción institucional potencial. **No se requiere dashboard, autenticación, AR, voz, rutas completas ni infraestructura de producción.**
+**Definición de terminado del MVP:** demo integrada **Cuándo → Apuntá → Qué significa** sobre un punto de observación real, con cálculos astronómicos reales, fuentes citadas para el cielo andino e interfaz móvil estable. **No se requiere dashboard, autenticación, estado del territorio en tiempo real, voz ni infraestructura de producción.**

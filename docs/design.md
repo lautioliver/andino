@@ -1,24 +1,26 @@
 # ANDINO — Design System & UX Specification
 
-> Versión 3 · 22 de noviembre de 2026  
+> Versión 4 · 22 de noviembre de 2026  
 > Documento único de diseño e implementación · Complemento de [`plan.md`](./plan.md) · **Alcance: MVP de hackathon**  
-> Equipo: `lautioliver` (Pacha e integración) · `jehp23` (Cielo Andino y demo)
+> Equipo: `lautioliver` (ficha del lugar e integración) · `jehp23` (motor del cielo y demo)
+
+> **v4:** el producto gira a astroturismo («Tu mejor noche de cielo en Jujuy»; ver `plan.md`, secciones 1 a 5). Este documento se ajustó donde contradecía esa dirección. Los anexos de implementación al final reflejan el reparto de la v3; el reparto de «Cuándo», «Apuntá» y «Qué significa» está pendiente de acordar con `jehp23`.
 
 
 > **Fuente de verdad:** este archivo integra el sistema visual y las instrucciones de implementación para ambos desarrolladores. Los archivos `implementer*.md` anteriores quedan como referencias históricas; ante discrepancias prevalece este documento.
 
 ## 1. Concepto de diseño
 
-**ANDINO — Explorá la Tierra. Descubrí el universo.**
+**ANDINO — Tu mejor noche de cielo en Jujuy.**
 
-**Dirección creativa: Andean Space Exploration, editorial y sobria.** Una interfaz turística accesible y cálida, con una capa visual de exploración astronómica. La fotografía de Jujuy es protagonista; los elementos orbitales, estrellas y mapas acompañan la experiencia, no la entorpecen. Evitar el cliché de una interfaz de nave espacial, el exceso de neón y la apropiación de símbolos culturales sin contexto.
+**Dirección creativa: revista de cielo andino, editorial y sobria.** El cielo de Jujuy es el protagonista; el paisaje es el lugar desde donde se lo mira. Los datos calculados (Sol, Luna, estrellas, satélites) se presentan como información útil para salir a observar, no como decoración espacial. Evitar el cliché de una interfaz de nave espacial, el exceso de neón, la estética esotérica y la apropiación de símbolos culturales sin contexto.
 
 **Tres principios:**
-1. **Descubrimiento inmediato:** llegar a «Explorar» en un toque.
-2. **Una ubicación, dos perspectivas:** el mismo destino conecta Pacha con Cielo.
-3. **Confianza:** separar contenido curado, cálculos astronómicos y respuestas generadas por IA.
+1. **Una respuesta clara primero:** cuál es la mejor noche y a qué hora salir, en la primera pantalla del lugar.
+2. **Un lugar, de día y de noche:** todo gira alrededor de un punto de observación concreto.
+3. **Confianza:** separar cálculos astronómicos, contenido curado con fuentes (incluido el cielo andino) y respuestas generadas por IA. Astronomía, nunca astrología: «tu signo» muestra posiciones reales, sin predicciones.
 
-**Cliente objetivo:** Gobierno de Jujuy (potencial, no confirmado). **Usuario del MVP:** turista. No diseñar panel gubernamental durante el hackathon.
+**Usuario del MVP:** el viajero de la Quebrada y la Puna que viene a vivir el cielo, incluido el perfil espiritual o alternativo. Clientes posibles (hospedajes, operadores, turismo provincial) no confirmados; no diseñar paneles para ellos durante el hackathon.
 
 ## 2. Identidad visual
 
@@ -31,14 +33,14 @@
 | `--surface-raised` | `#223047` | Elementos elevados |
 | `--text` | `#F5F3EE` | Texto principal |
 | `--text-muted` | `#B9C3D2` | Texto secundario |
-| `--earth` | `#E8794E` | CTA de Pacha, acentos terrestres |
+| `--earth` | `#E8794E` | CTA de día (ficha del lugar), acentos terrestres |
 | `--sky` | `#78C8E8` | Cielo, astronomía, indicadores |
 | `--sand` | `#E7C99C` | Detalles cálidos, chips |
 | `--success` | `#7CC9A7` | Estados confirmados |
 | `--danger` | `#F29A9A` | Errores |
 | `--border` | `#35435A` | Divisores y bordes |
 
-**Reglas:** usar `--earth` como acento en Pacha y `--sky` en Cielo; **sin neones, brillos, resplandores ni degradados metálicos**. Preferir superficies planas, contornos discretos y fotografías auténticas. No codificar información solo por color. Comprobar contraste WCAG AA, especialmente en texto pequeño y botones con fondos de acento. Si un par no alcanza contraste, usar texto oscuro o ajustar el tono.
+**Reglas:** usar `--earth` como acento de día (ficha del lugar) y `--sky` de noche (cielo); **sin neones, brillos, resplandores ni degradados metálicos**. Preferir superficies planas, contornos discretos y fotografías auténticas. No codificar información solo por color. Comprobar contraste WCAG AA, especialmente en texto pequeño y botones con fondos de acento. Si un par no alcanza contraste, usar texto oscuro o ajustar el tono.
 
 ### Tipografía
 
@@ -67,18 +69,20 @@
 ```text
 ANDINO
 ├── Inicio (/)
-├── Pacha (/explorar)
-│   ├── Captura o carga de imagen
-│   ├── Confirmación de lugar (si aplica)
-│   └── Resultado + pregunta
-└── Cielo Andino (/cielo)
-    ├── Lugar y fecha/hora
-    └── Mapa celeste + detalle de objeto
+├── Ficha del punto de observación (/explorar, «De día»)
+│   ├── Elegir lugar o reconocerlo por foto
+│   ├── Datos para observar + fuentes
+│   └── Cuándo: la mejor noche del viaje
+└── Cielo (/cielo, «De noche»)
+    ├── Apuntá: brújula o girar con el dedo
+    └── Qué significa: constelaciones, cielo andino, tu signo
 ```
 
-**Navegación móvil del MVP:** `Inicio`, `Explorar`, `Cielo`; marca ANDINO arriba. **Desktop:** navegación superior equivalente. La referencia visual anterior mostraba `Docs` con icono de documento: si se conserva, debe abrir una ficha editorial real de destinos/fuentes (no un tab vacío) y reemplazar un acceso redundante; `Cielo` debe seguir accesible en un toque desde Inicio/Pacha. `Rutas Andinas` es P1 y solo aparece si funciona. No mostrar opciones vacías.
+Las rutas actuales (`/`, `/explorar`, `/cielo`) se mantienen; si «Cuándo» o «Qué significa» necesitan pantalla propia, se acuerda con `jehp23` antes de crear rutas.
 
-**Contexto compartido:** `location`, `placeId?`, `datetime`. Al pasar de Pacha a Cielo, conservar lugar y ofrecer fecha/hora nocturna editable. Si no hay permiso GPS, seleccionar lugar manualmente.
+**Navegación móvil del MVP:** `Inicio`, `De día`, `De noche`; marca ANDINO arriba. **Desktop:** navegación superior equivalente. No mostrar opciones vacías: un paso que no funciona en el teléfono real no aparece en la navegación.
+
+**Contexto compartido:** `location`, `placeId?`, `datetime` y, para «Cuándo», las noches del viaje. Al pasar de la ficha al cielo, conservar lugar y la noche recomendada. Si no hay permiso GPS, seleccionar lugar manualmente.
 
 ## 4. Pantallas y estados
 
@@ -86,40 +90,44 @@ ANDINO
 
 **Objetivo:** que el visitante entienda el producto y empiece en menos de 10 segundos.
 
-- Marca ANDINO y claim «Explorá la Tierra. Descubrí el universo». El símbolo aprobado es de **Pacha**, no reemplaza automáticamente la identidad madre ANDINO.
-- Fotografía principal del paisaje jujeño.
-- Un solo CTA primario `Elegí un lugar` → `/explorar`. Cielo se alcanza desde el lugar (y desde la navegación), no como segundo producto.
-- Recorrido «Un lugar, de día y de noche» en tres pasos (elegí/fotografiá → conocé su historia → mirá su cielo); no introducir un onboarding largo.
+- Marca ANDINO y claim «Tu mejor noche de cielo en Jujuy».
+- Imagen principal del cielo sobre el paisaje jujeño.
+- Un solo CTA primario `Elegí un lugar` → `/explorar`. El cielo se alcanza desde el lugar (y desde la navegación), no como segundo producto.
+- Recorrido en tres pasos (**Cuándo** salir → **Apuntá** el celular → **Qué significa** lo que ves); no introducir un onboarding largo.
 - Cada destino muestra una línea calculada de su noche («Esta noche: Luna llena, Saturno y Sirio»).
 
-### 4.2 Pacha — Captura
+### 4.2 Ficha del punto de observación — entrada
 
-- Título: «¿Qué estás viendo?».
-- Acción principal `Tomar una foto` (input con captura cuando el dispositivo lo soporte).
-- Acción alternativa `Subir imagen`.
+Lo que antes era Pacha: ya no es un producto aparte, es la forma de llegar a la ficha de un lugar.
+
+- Título: «¿Desde dónde vas a mirar?».
+- Elegir un lugar de la lista, o `Tomar una foto` / `Subir imagen` para reconocerlo.
 - Acceso a imágenes de demostración identificadas como tales.
 - Solicitar permisos solo al usar la función correspondiente.
-- Previsualización, reemplazo de imagen y botón `Descubrir este lugar`.
 - Validar formato y tamaño antes del envío; informar errores con acciones recuperables.
-
-### 4.3 Pacha — Resultado
-
-- Foto, nombre de lugar **sugerido** y opción `No es este lugar` si hay ambigüedad.
-- Explicación breve (primero 2–4 frases), sección expandible `Conocer más`.
-- Fuentes visibles: nombre, referencia/enlace si existe.
-- Campo `Preguntale a Pacha...` con pregunta de seguimiento.
-- Sección «Esta noche en {lugar}»: puesta del sol, fase de la Luna y objetos sobre el horizonte a las 22:00, calculados con el motor de Cielo y con la advertencia de cerros y nubes. Cierra con `Mirar el cielo completo` → `/cielo?placeId=…&fecha=…&hora=22:00`.
 - Si la IA no puede identificar con confianza: «No puedo reconocerlo con seguridad» y selector de destino.
 
-### 4.4 Cielo Andino
+### 4.3 Ficha del punto de observación
+
+- Foto, nombre del lugar (sugerido si viene de la IA) y opción `No es este lugar` si hay ambigüedad.
+- **Cuándo**, arriba de todo: la mejor noche entre las del viaje y la franja más oscura, con el porqué en una línea (Luna, fin del crepúsculo). Hoy existe «Esta noche en {lugar}» (puesta del sol, fase de la Luna, objetos sobre el horizonte, pasos de Starlink): es la base de este bloque.
+- **Para observar:** horizonte despejado o con cerros, luz cercana, cómo llegar, cuidados (altura, frío). Solo datos con fuente; si no hay dato, se dice.
+- Explicación breve del lugar (2–4 frases), `Conocer más` y fuentes visibles.
+- Campo `Preguntá sobre este lugar…` con pregunta de seguimiento.
+- Advertencia: el cálculo no conoce nubes ni cerros cercanos. Sin datos meteorológicos no se promete cielo despejado.
+- CTA `Mirar el cielo de esa noche` → `/cielo?placeId=…&fecha=…&hora=…`.
+
+### 4.4 Cielo — Apuntá y Qué significa
 
 - Encabezado: «El cielo desde [lugar]».
-- Selector de lugar, fecha y hora; valor inicial nocturno **de ejemplo** claramente etiquetado.
-- Mapa 2D simple con horizonte, puntos y etiquetas de 3–5 objetos calculados.
-- Tarjeta al tocar un objeto: nombre, tipo, posición/visibilidad estimada, explicación y fuente.
-- Indicador «Simulación para fecha y hora seleccionadas»; **no** prometer visibilidad real si no se consideran clima, obstáculos y contaminación lumínica.
-- CTA `Volver al paisaje` para regresar a Pacha conservando el lugar.
-- No exigir AR, brújula, cámara ni orientación de sensores para el MVP.
+- Selector de lugar, fecha y hora; valor inicial: la noche recomendada, o una de ejemplo claramente etiquetada.
+- **Apuntá:** con permiso de orientación, el cielo sigue al celular (brújula y giroscopio). **Plan B siempre disponible:** girar el cielo con el dedo. Si la brújula no es confiable en el dispositivo, se muestra solo el plan B; nunca se simula orientación. Funciona también de día (dónde está la Luna, por dónde saldrá una constelación).
+- **Qué significa**, al tocar un objeto o figura: nombre, tipo, posición, explicación y fuente.
+  - Constelaciones occidentales principales visibles.
+  - **Cielo andino:** constelaciones oscuras de la Vía Láctea (por ejemplo la Yacana), con autor y obra de la fuente. Visualmente distintas de las occidentales; nunca una encima de la otra como si fueran equivalentes.
+  - **Tu signo en el cielo:** el usuario elige su signo y se resalta la constelación en su posición real esa noche, con la diferencia respecto de las fechas del horóscopo. Sin predicciones ni lenguaje esotérico.
+- Indicador «Posiciones calculadas para la fecha y hora seleccionadas»; **no** prometer visibilidad real si no se consideran clima, obstáculos y contaminación lumínica.
+- CTA `Volver al lugar` conservando el lugar.
 
 ### 4.5 Estados comunes
 
@@ -139,7 +147,7 @@ ANDINO
 |---|---|---|
 | `AppShell` | Header, navegación, contenedor | `lautioliver` |
 | `Button` / `IconButton` | Acciones accesibles | `lautioliver` |
-| `PlaceCard` | Destino turístico | `lautioliver` |
+| `PlaceCard` | Punto de observación | `lautioliver` |
 | `ImageUploader` | Cámara / archivo / preview | `lautioliver` |
 | `SourceList` | Referencias del contenido | `lautioliver` |
 | `LocationSelector` | Lugar compartido | Definición conjunta; implementación `jehp23` |
@@ -147,6 +155,9 @@ ANDINO
 | `SkyMap` | Mapa celeste 2D | `jehp23` |
 | `CelestialObjectCard` | Detalle astronómico | `jehp23` |
 | `StatusMessage` | Vacío, error, offline | `lautioliver` |
+| `MejorNoche` | Cuándo: noches del viaje → recomendada y franja oscura | A acordar con `jehp23` |
+| `Orientacion` | Apuntá: brújula con plan B de arrastre | A acordar con `jehp23` |
+| `FiguraAndina` / `TuSigno` | Qué significa: cielo andino y signo en su posición real | A acordar con `jehp23` |
 
 **Regla de colaboración:** acordar los contratos de componentes compartidos en los primeros 30 minutos. No modificar archivos compartidos en paralelo sin avisar.
 
@@ -174,7 +185,7 @@ ANDINO
 
 ## 7. Movimiento y transición Tierra → Cielo
 
-**Momento distintivo de la demo:** desde el resultado de Pacha, la sección «Esta noche» y su CTA `Mirar el cielo completo` abren Cielo Andino con el mismo lugar seleccionado. Aplicar transición corta (200–350ms) entre acentos terracota y celeste; un pequeño cambio de gradiente es suficiente.
+**Momento distintivo de la demo:** desde la ficha del lugar, el bloque «Cuándo» y su CTA abren el cielo de la noche recomendada con el mismo lugar seleccionado. Aplicar transición corta (200–350ms) entre acentos terracota y celeste; un pequeño cambio de gradiente es suficiente.
 
 - Usar animaciones de `transform` y `opacity`, evitando efectos pesados.
 - Respetar `prefers-reduced-motion`.
@@ -187,23 +198,27 @@ ANDINO
 - Área de contenido: `max-width: 1120px`; lectura de texto largo limitada a ~65 caracteres por línea.
 - Safe areas en iOS/Android para navegación fija.
 - Foco visible, navegación por teclado, etiquetas para inputs y textos alternativos.
-- No depender de gestos, movimiento o audio como único modo de uso.
+- No depender de gestos, movimiento o audio como único modo de uso: «Apuntá» siempre tiene el plan B de arrastre y, por teclado, flechas para girar.
 - Optimizar fotografías; lazy load fuera de pantalla; evitar librerías 3D grandes.
 - Cargar rápido en conectividad variable y disponer de imágenes/escenarios precargados para demo.
 
 ## 9. Copywriting y tono
 
-**Voz:** cercana, curiosa, informativa, precisa. Español rioplatense neutro con voseo consistente. Evitar promesas absolutas y exotización de comunidades.
+**Voz:** cercana, curiosa, informativa, precisa. Español rioplatense neutro con voseo consistente. Evitar promesas absolutas, exotización de comunidades y lenguaje esotérico. Decir «astronomía» o «astroturismo», nunca «astrología».
 
 | Contexto | Texto recomendado |
 |---|---|
-| Inicio | «Jujuy, de la Tierra al universo.» |
-| Pacha | «¿Qué estás viendo?» |
+| Inicio | «Tu mejor noche de cielo en Jujuy.» |
+| Ficha | «¿Desde dónde vas a mirar?» |
 | Cámara | «Tomar una foto» |
 | IA | «Estamos buscando información sobre este paisaje…» |
 | Incertidumbre | «No podemos identificar el lugar con seguridad. Elegí uno para continuar.» |
-| Cielo | «Descubrí el cielo desde este lugar.» |
+| Cuándo | «La mejor noche de tu viaje» |
+| Apuntá | «Apuntá el celular al cielo» · plan B: «Mové el cielo con el dedo» |
+| Qué significa | «Qué estás viendo» |
+| Tu signo | «Dónde está tu signo esta noche» |
 | Simulación | «Posiciones calculadas para la fecha y hora seleccionadas.» |
+| Sin clima | «El cálculo no conoce las nubes: mirá el pronóstico antes de salir.» |
 | Error | «No pudimos completar la consulta. Probá otra vez.» |
 
 ## 10. Entregables de diseño para la hackathon
@@ -211,35 +226,42 @@ ANDINO
 ### P0 — Debe estar implementado
 
 - [ ] Paleta, tipografías y componentes base consistentes.
-- [ ] Inicio con acceso directo a Pacha y Cielo.
-- [ ] Flujo Pacha: captura/carga → resultado → fuentes → pregunta.
-- [ ] Flujo Cielo: ubicación y fecha/hora → mapa 2D → detalle.
-- [ ] Paso Pacha → Cielo conservando ubicación.
+- [ ] Inicio con el claim y acceso al lugar en un toque.
+- [ ] Ficha del punto de observación con datos para observar y fuentes.
+- [ ] Cuándo: mejor noche del viaje y franja oscura, calculadas.
+- [ ] Qué significa: constelaciones, una figura andina con fuente y tu signo en su posición real.
+- [ ] Paso ficha → cielo conservando lugar y noche.
 - [ ] Estados de carga, error, incertidumbre y demo.
 - [ ] Responsive móvil real y navegación accesible.
 
+### P0/P1 — Si funciona en el teléfono real
+
+- [ ] Apuntá con brújula (el plan B con el dedo es P0).
+
 ### P1 — Solo si P0 está estable
 
-- [ ] Recomendación de ruta corta.
+- [ ] Reconocimiento del lugar por foto como entrada a la ficha (ya existe).
 - [ ] Microanimaciones adicionales.
 - [ ] Narración por voz.
 
 ### P2 / Fuera de alcance
 
-- [ ] Vista orbital avanzada, 3D o realidad aumentada.
+- [ ] Vista orbital avanzada, 3D o realidad aumentada con cámara.
+- [ ] Estado del territorio en tiempo real (nubosidad, accesos, contaminación lumínica).
 - [ ] Dashboard institucional, autenticación y CMS.
 - [ ] Salud Andina y contenidos culturales no validados.
 
 ## 11. Revisión visual antes del pitch
 
 1. ¿Se entiende el producto en la pantalla inicial sin explicación oral?
-2. ¿Los dos módulos parecen partes de una misma aplicación?
-3. ¿La transición conserva el lugar seleccionado?
-4. ¿Las fuentes, la incertidumbre y las simulaciones están señaladas?
-5. ¿Funciona la demo en un teléfono, con y sin buena conexión?
-6. ¿El diseño deja ver el paisaje y el cielo en lugar de competir con ellos?
+2. ¿Queda claro, en la ficha del lugar, cuál es la mejor noche y a qué hora salir?
+3. ¿La transición al cielo conserva el lugar y la noche?
+4. ¿Se distingue el cielo andino del occidental, y «tu signo» se lee como astronomía y no como horóscopo?
+5. ¿Las fuentes, la incertidumbre y las simulaciones están señaladas?
+6. ¿Funciona la demo en un teléfono, con y sin buena conexión, y con y sin brújula?
+7. ¿El diseño deja ver el paisaje y el cielo en lugar de competir con ellos?
 
-**Definición de terminado:** una experiencia turística visualmente coherente, usable en móvil y demostrable de punta a punta: **paisaje → interpretación → cielo desde el mismo lugar**.
+**Definición de terminado:** una experiencia visualmente coherente, usable en móvil y demostrable de punta a punta sobre un punto de observación: **Cuándo → Apuntá → Qué significa**.
 
 
 ## 12. Nueva propuesta de isotipo Pacha — pendiente de validación
@@ -286,7 +308,7 @@ ANDINO
 
 ### Propósito
 
-Entregar una PWA móvil demostrable en el tren: **imagen de paisaje → explicación con fuentes → cielo calculado para ese mismo lugar**. Cliente objetivo a futuro: Gobierno de Jujuy; **no** construir dashboard, autenticación, CMS, rutas completas ni integración SpaceX.
+Entregar una PWA móvil demostrable en el tren: **punto de observación → mejor noche → apuntar al cielo → qué significa**, todo calculado para ese mismo lugar. Clientes posibles a futuro no confirmados; **no** construir dashboard, autenticación, CMS, estado del territorio en tiempo real ni integración SpaceX.
 
 ### Asignación
 
@@ -347,7 +369,8 @@ export interface SkyObject {
 - [ ] PWA navegable y usable desde móvil real.
 - [ ] Pacha admite foto o ejemplo y ofrece respuesta contextual con fuentes y manejo de incertidumbre.
 - [ ] Cielo calcula posiciones de 3–5 objetos desde un lugar y una fecha/hora elegidos.
-- [ ] Paso Tierra → Cielo preserva el lugar.
+- [ ] Paso ficha → cielo preserva el lugar y la noche.
+- [ ] Cuándo, Apuntá (al menos el plan B) y Qué significa funcionan según `plan.md`, sección 5.
 - [ ] Diseño sobrio según `design.md`, con isotipo Pacha provisional según `design.md` y sin neón.
 - [ ] Demo online y alternativa precargada identificada como tal.
 - [ ] No se atribuye alianza o tecnología propia a SpaceX.
@@ -489,7 +512,7 @@ interface SkyObject {
 }
 ```
 
-**Importante:** el mapa puede ser una proyección simplificada; debe indicarse que es esquemático. No afirmar orientación real del teléfono ni reconocimiento AR. No inventar que una constelación es tradicionalmente andina sin validación cultural.
+**Importante:** el mapa puede ser una proyección simplificada; debe indicarse que es esquemático. Solo afirmar orientación real del teléfono cuando «Apuntá» use la brújula y funcione en el dispositivo; nunca reconocimiento AR. No inventar que una constelación es tradicionalmente andina sin validación cultural.
 
 ### Criterios de aceptación
 
