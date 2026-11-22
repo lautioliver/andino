@@ -358,7 +358,7 @@ export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, 
       </div>
 
       <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between p-4">
-        <p className="rounded-full bg-bg/70 px-3 py-1 text-xs text-text-muted">
+        <p className="eyebrow bg-bg/70 px-3 py-2 text-text-muted">
           Mirando al <span className="font-medium text-text">{rumbo(az)}</span> · arrastrá para girar
         </p>
       </div>
@@ -370,7 +370,7 @@ export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, 
             type="button"
             onClick={() => setAz(c.az)}
             aria-label={`Mirar al ${rumbo(c.az)}`}
-            className="min-h-11 min-w-11 rounded-full border border-border bg-bg/80 text-sm font-medium text-text"
+            className="eyebrow min-h-11 min-w-11 bg-bg/80 text-text aria-pressed:text-sky"
           >
             {c.label}
           </button>

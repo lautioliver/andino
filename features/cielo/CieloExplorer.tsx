@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { SKY_OBJECT_INFO } from "@/data/astronomy";
 import { getPlace } from "@/data/places";
 import type { PlaceId } from "@/shared/types";
+import { Badge } from "@/shared/ui/Badge";
 import { Button, LinkButton } from "@/shared/ui/Button";
 import { StatusMessage } from "@/shared/ui/StatusMessage";
 import { CelestialObjectCard } from "./CelestialObjectCard";
@@ -114,24 +115,37 @@ export function CieloExplorer() {
   }
 
   return (
-    <section className="space-y-5">
+    <section className="pt-8 md:pt-16">
       <header>
-        <h1 className="font-display text-[28px] leading-[34px] font-bold">
-          {place ? `El cielo desde ${place.name}` : "Descubrí el cielo desde este lugar."}
+        <Badge tone="sky">Cielo Andino · El universo</Badge>
+        <h1 className="display mt-5 max-w-[14ch] text-[clamp(2.75rem,9vw,6rem)]">
+          {place ? (
+            <>
+              El cielo desde <em className="text-sky">{place.name}</em>
+            </>
+          ) : (
+            "Descubrí el cielo desde este lugar."
+          )}
         </h1>
-        <p className="mt-1 text-sm text-text-muted">Posiciones calculadas para la fecha y hora seleccionadas.</p>
+        <p className="lead mt-5 max-w-[45ch] text-text-muted">Posiciones calculadas para la fecha y hora seleccionadas.</p>
       </header>
 
-      {!place && <StatusMessage title="Elegí un lugar para calcular su cielo." />}
+      {!place && (
+        <div className="mt-8">
+          <StatusMessage title="Elegí un lugar para calcular su cielo." />
+        </div>
+      )}
 
       {place && !resultado && (
-        <StatusMessage title="Completá la fecha y la hora." tone="error">
-          Necesitamos las dos para calcular las posiciones.
-        </StatusMessage>
+        <div className="mt-8">
+          <StatusMessage title="Completá la fecha y la hora." tone="error">
+            Necesitamos las dos para calcular las posiciones.
+          </StatusMessage>
+        </div>
       )}
 
       {resultado && (
-        <div className="-mx-4 md:mx-0 md:overflow-hidden md:rounded-hero md:border md:border-border">
+        <div className="bleed mt-10 md:mt-14">
           <SkyCanvas
             location={resultado.place}
             datetimeISO={resultado.iso}
@@ -145,57 +159,101 @@ export function CieloExplorer() {
       )}
 
       {resultado && (
-        <div className="space-y-3 rounded-card border border-border bg-surface p-4">
-          <div className="flex items-baseline justify-between gap-3">
-            <label htmlFor="viaje-tiempo" className="text-sm text-text-muted">
+        <div className="mt-6 grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] md:items-center md:gap-12">
+          <div className="flex items-baseline justify-between gap-4 md:block">
+            <label htmlFor="viaje-tiempo" className="eyebrow text-text-muted">
               Viajar en el tiempo
             </label>
-            <p className="font-display text-xl font-bold tabular-nums">
+            <p className="headline text-3xl tabular-nums md:mt-2 md:text-4xl">
               {resultado.iso.slice(8, 10)}/{resultado.iso.slice(5, 7)} · {resultado.iso.slice(11, 16)}
-              <span className="ml-2 font-sans text-xs font-normal text-text-muted">{textoDesfase(desfase)}</span>
+              <span className="ml-3 align-middle font-sans text-xs tracking-normal text-text-muted">{textoDesfase(desfase)}</span>
             </p>
           </div>
-          <div className="flex items-center gap-3">
-            <Button
-              variant="ghost"
-              className="shrink-0"
-              onClick={() => {
-                if (!viajando && desfase >= VIAJE_MAX) setDesfase(-VIAJE_MAX);
-                setViajando(!viajando);
-              }}
-            >
-              {viajando ? "Pausar" : "Reproducir"}
-            </Button>
-            <input
-              id="viaje-tiempo"
-              type="range"
-              min={-VIAJE_MAX}
-              max={VIAJE_MAX}
-              step={10}
-              value={desfase}
-              onChange={(e) => {
-                setViajando(false);
-                setDesfase(Number(e.target.value));
-              }}
-              className="min-h-11 w-full accent-sky"
-            />
+          <div>
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                className="w-28 shrink-0"
+                onClick={() => {
+                  if (!viajando && desfase >= VIAJE_MAX) setDesfase(-VIAJE_MAX);
+                  setViajando(!viajando);
+                }}
+              >
+                {viajando ? "Pausar" : "Reproducir"}
+              </Button>
+              <input
+                id="viaje-tiempo"
+                type="range"
+                min={-VIAJE_MAX}
+                max={VIAJE_MAX}
+                step={10}
+                value={desfase}
+                onChange={(e) => {
+                  setViajando(false);
+                  setDesfase(Number(e.target.value));
+                }}
+                className="min-h-11 w-full accent-sky"
+              />
+            </div>
+            {desfase !== 0 && (
+              <button type="button" className="link-arrow text-sm text-sky" onClick={() => setDesfase(0)}>
+                Volver a la hora elegida
+              </button>
+            )}
           </div>
-          {desfase !== 0 && (
-            <button type="button" className="text-sm text-sky underline underline-offset-2" onClick={() => setDesfase(0)}>
-              Volver a la hora elegida
-            </button>
-          )}
         </div>
       )}
 
-      <div className="grid gap-4 rounded-card border border-border bg-surface p-4 md:grid-cols-2">
-        <LocationSelector value={placeId} onChange={elegirLugar} />
-        <DateTimePicker fecha={fecha} hora={hora} esEjemplo={esEjemplo} onChange={elegirMomento} />
-      </div>
+      <section aria-labelledby="momento" className="rule mt-12 pt-4 md:mt-16">
+        <h2 id="momento" className="eyebrow text-text-muted">
+          Lugar y momento
+        </h2>
+        <div className="mt-5 grid gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] md:gap-12">
+          <LocationSelector value={placeId} onChange={elegirLugar} />
+          <DateTimePicker fecha={fecha} hora={hora} esEjemplo={esEjemplo} onChange={elegirMomento} />
+        </div>
+      </section>
 
       {resultado && (
-        <div className="grid gap-5 md:grid-cols-2 md:items-start">
-          <div className="space-y-3">
+        <section aria-labelledby="objetos" className="mt-12 grid gap-10 md:mt-16 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] md:gap-12">
+          <div>
+            <div className="rule flex items-baseline justify-between pt-4">
+              <h2 id="objetos" className="headline text-3xl md:text-4xl">
+                Qué hay en el cielo
+              </h2>
+            </div>
+            <ul className="mt-4 divide-y divide-border" aria-label="Objetos calculados">
+              {resultado.objetos.map((o, i) => {
+                const activo = o.id === selectedId;
+                return (
+                  <li key={o.id}>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedId(o.id)}
+                      aria-pressed={activo}
+                      className="group flex min-h-14 w-full items-baseline gap-4 py-3 text-left"
+                    >
+                      <span className="eyebrow w-6 shrink-0 text-text-muted tabular-nums">{String(i + 1).padStart(2, "0")}</span>
+                      <span className={`headline text-xl md:text-2xl ${activo ? "text-sky" : "group-hover:text-sky"}`}>{o.name}</span>
+                      <span className={`ml-auto text-right text-sm ${o.isAboveHorizon ? "text-text-muted" : "text-text-muted/60"}`}>
+                        {o.isAboveHorizon ? `Hacia el ${rumbo(o.azimuthDeg)}` : "Bajo el horizonte"}
+                      </span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+
+          <div className="space-y-6">
+            {seleccionado ? (
+              <div id="ficha-cielo" className="scroll-mb-24">
+                <CelestialObjectCard object={seleccionado} info={SKY_OBJECT_INFO[seleccionado.id as SkyObjectId]} />
+              </div>
+            ) : (
+              <p className="rule pt-4 text-text-muted">Tocá un objeto del cielo o de la lista para ver su ficha.</p>
+            )}
+
             {resultado.luz !== "noche" && (
               <StatusMessage title={resultado.luz === "dia" ? "A esta hora es de día." : "A esta hora hay crepúsculo."}>
                 {resultado.luz === "dia"
@@ -204,51 +262,16 @@ export function CieloExplorer() {
               </StatusMessage>
             )}
 
-            <p className="text-xs text-text-muted">
-              Estrellas, constelaciones y Vía Láctea en su posición calculada para este lugar y momento (catálogo
-              d3-celestial, estrellas hasta magnitud 5). La silueta del horizonte es plana: no incluye los cerros.
-            </p>
-
             {ningunoVisible && (
               <StatusMessage title="Ningún objeto de la selección está sobre el horizonte.">
                 Probá otra hora u otro lugar.
               </StatusMessage>
             )}
           </div>
-
-          <div className="space-y-3">
-            <ul className="grid gap-2" aria-label="Objetos calculados">
-              {resultado.objetos.map((o) => (
-                <li key={o.id}>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedId(o.id)}
-                    aria-pressed={o.id === selectedId}
-                    className={`flex min-h-12 w-full items-center justify-between gap-3 rounded-control border px-4 py-2 text-left ${
-                      o.id === selectedId ? "border-sky bg-surface-raised" : "border-border bg-surface"
-                    }`}
-                  >
-                    <span className="font-medium">{o.name}</span>
-                    <span className="text-sm text-text-muted">
-                      {o.isAboveHorizon ? `Hacia el ${rumbo(o.azimuthDeg)}` : "Bajo el horizonte"}
-                    </span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-
-            {seleccionado ? (
-              <div id="ficha-cielo" className="scroll-mb-24">
-                <CelestialObjectCard object={seleccionado} info={SKY_OBJECT_INFO[seleccionado.id as SkyObjectId]} />
-              </div>
-            ) : (
-              <p className="text-sm text-text-muted">Tocá un objeto del cielo o de la lista para ver su ficha.</p>
-            )}
-          </div>
-        </div>
+        </section>
       )}
 
-      <div className="flex flex-col gap-3 sm:flex-row">
+      <div className="mt-12 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-8 md:mt-16">
         {place && (
           <LinkButton variant="earth" href={`/explorar?placeId=${place.id}`}>
             Volver al paisaje
@@ -259,10 +282,16 @@ export function CieloExplorer() {
         </Button>
       </div>
 
-      <p className="max-w-[65ch] text-xs text-text-muted">
-        Que un objeto esté sobre el horizonte no garantiza verlo: también influyen las nubes, la luz de la Luna y de las
-        ciudades, y los cerros del horizonte local. Cálculo con astronomy-engine.
-      </p>
+      <div className="rule mt-12 max-w-[75ch] space-y-2 pt-4 text-xs leading-5 text-text-muted">
+        <p>
+          Estrellas, constelaciones y Vía Láctea en su posición calculada para este lugar y momento (catálogo d3-celestial,
+          estrellas hasta magnitud 5). La silueta del horizonte es plana: no incluye los cerros.
+        </p>
+        <p>
+          Que un objeto esté sobre el horizonte no garantiza verlo: también influyen las nubes, la luz de la Luna y de las
+          ciudades, y los cerros del horizonte local. Cálculo con astronomy-engine.
+        </p>
+      </div>
     </section>
   );
 }
