@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Suspense, type ReactNode } from "react";
+import { AndinoMark } from "./AndinoMark";
 import { LangToggle } from "./LangToggle";
 import { BottomNav, Pie, TopNav } from "./NavLinks";
 
@@ -9,7 +10,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <header className="sticky top-0 z-30 border-b border-border-subtle bg-bg/90 backdrop-blur-md" style={{ paddingTop: "env(safe-area-inset-top)" }}>
         <nav aria-label="Principal" className="mx-auto flex h-14 max-w-[1120px] items-center justify-between px-4 md:px-6">
           <Link href="/" className="flex min-h-11 items-center gap-2 font-display text-xl font-bold tracking-tight">
-            <span aria-hidden className="size-2.5 rounded-full bg-gradient-to-br from-puna to-violeta" />
+            <AndinoMark className="size-7" />
             Andino
           </Link>
           <div className="flex items-center gap-3 md:gap-6">
