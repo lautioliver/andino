@@ -60,6 +60,7 @@ export function CieloExplorer() {
   // Viaje en el tiempo: minutos sumados a la fecha y hora elegidas; no se guarda en la URL.
   const [desfase, setDesfase] = useState(0);
   const [viajando, setViajando] = useState(false);
+  const [verYacana, setVerYacana] = useState(true);
 
   const resultado = useMemo(() => calcular(placeId, fecha, hora, desfase), [placeId, fecha, hora, desfase]);
 
@@ -154,7 +155,24 @@ export function CieloExplorer() {
             selectedId={selectedId}
             onSelect={elegirDesdeMapa}
             nombreLugar={resultado.place.name}
+            yacana={verYacana}
           />
+        </div>
+      )}
+
+      {resultado && (
+        <div className="mt-4 flex flex-wrap items-baseline gap-x-4 gap-y-1">
+          <button
+            type="button"
+            aria-pressed={verYacana}
+            onClick={() => setVerYacana(!verYacana)}
+            className="eyebrow min-h-11 border-b-2 border-transparent text-text-muted transition-colors hover:text-text aria-pressed:border-sand aria-pressed:text-sand"
+          >
+            {verYacana ? "Ocultar la Yacana" : "Ver la Yacana"}
+          </button>
+          <p className="text-sm text-text-muted">
+            La llama del cielo andino: una figura oscura de la Vía Láctea; sus ojos son α y β Centauri.
+          </p>
         </div>
       )}
 
