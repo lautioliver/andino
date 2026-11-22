@@ -53,21 +53,30 @@ export function proyectarEnDomo(altitudDeg: number, acimutDeg: number, radio: nu
   return { x: -r * Math.sin(az), y: -r * Math.cos(az) };
 }
 
-const RUMBOS = ["norte", "noreste", "este", "sureste", "sur", "suroeste", "oeste", "noroeste"] as const;
+const RUMBOS = {
+  es: ["norte", "noreste", "este", "sureste", "sur", "suroeste", "oeste", "noroeste"],
+  en: ["north", "northeast", "east", "southeast", "south", "southwest", "west", "northwest"],
+} as const;
 
-/** Acimut en grados → rumbo de 8 puntos ("noreste"). */
-export function rumbo(acimutDeg: number): (typeof RUMBOS)[number] {
+/** Acimut en grados → rumbo de 8 puntos ("noreste" / "northeast"). */
+export function rumbo(acimutDeg: number, lang: "es" | "en" = "es"): string {
   const normalizado = ((acimutDeg % 360) + 360) % 360;
-  return RUMBOS[Math.round(normalizado / 45) % 8];
+  return RUMBOS[lang][Math.round(normalizado / 45) % 8];
 }
 
+const ALTURAS = {
+  es: ["bajo el horizonte", "muy bajo, cerca del horizonte", "a media altura", "alto en el cielo", "casi sobre tu cabeza"],
+  en: ["below the horizon", "very low, near the horizon", "halfway up", "high in the sky", "almost overhead"],
+} as const;
+
 /** Descripción de la altura para no especialistas. */
-export function describirAltura(altitudDeg: number): string {
-  if (altitudDeg <= 0) return "bajo el horizonte";
-  if (altitudDeg < 15) return "muy bajo, cerca del horizonte";
-  if (altitudDeg < 45) return "a media altura";
-  if (altitudDeg < 75) return "alto en el cielo";
-  return "casi sobre tu cabeza";
+export function describirAltura(altitudDeg: number, lang: "es" | "en" = "es"): string {
+  const a = ALTURAS[lang];
+  if (altitudDeg <= 0) return a[0];
+  if (altitudDeg < 15) return a[1];
+  if (altitudDeg < 45) return a[2];
+  if (altitudDeg < 75) return a[3];
+  return a[4];
 }
 
 export type Luz = "noche" | "crepusculo" | "dia";

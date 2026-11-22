@@ -1,28 +1,42 @@
+"use client";
+
 import { places } from "@/data/places";
+import { useT } from "@/shared/i18n/lang";
 import type { PlaceId } from "@/shared/types";
-import { HORA_EJEMPLO } from "./cielo";
 
 // Campos de Abra: caja blanca, borde suave, radio 8px.
 const campo = "mt-2 min-h-12 w-full rounded-control border border-border bg-surface px-3 text-base text-text shadow-sm focus:border-violeta";
 
-export function LocationSelector({
-  value,
-  onChange,
-}: {
-  value: PlaceId | null;
-  onChange: (id: PlaceId) => void;
-}) {
+const textos = {
+  es: {
+    lugar: "Lugar",
+    elegir: "Elegí un lugar",
+    momento: "Fecha y hora · Argentina, UTC−3",
+    fecha: "Fecha",
+    hora: "Hora",
+    vivo: "Ahora, en vivo: el cielo sigue al reloj. Cambiá la fecha o la hora para ver otro momento.",
+    ahora: "Volver a ahora",
+  },
+  en: {
+    lugar: "Place",
+    elegir: "Choose a place",
+    momento: "Date and time · Argentina, UTC−3",
+    fecha: "Date",
+    hora: "Time",
+    vivo: "Live, right now: the sky follows the clock. Change the date or time to see another moment.",
+    ahora: "Back to now",
+  },
+};
+
+export function LocationSelector({ value, onChange }: { value: PlaceId | null; onChange: (id: PlaceId) => void }) {
+  const t = useT(textos);
   return (
     <label className="block">
-      <span className="eyebrow text-text-muted">Lugar</span>
-      <select
-        className={`${campo} appearance-none`}
-        value={value ?? ""}
-        onChange={(e) => onChange(e.target.value as PlaceId)}
-      >
+      <span className="eyebrow text-text-muted">{t.lugar}</span>
+      <select className={`${campo} appearance-none`} value={value ?? ""} onChange={(e) => onChange(e.target.value as PlaceId)}>
         {value === null && (
           <option value="" disabled>
-            Elegí un lugar
+            {t.elegir}
           </option>
         )}
         {places.map((p) => (
@@ -38,37 +52,33 @@ export function LocationSelector({
 export function DateTimePicker({
   fecha,
   hora,
-  esEjemplo,
+  enVivo,
   onChange,
+  onAhora,
 }: {
   fecha: string;
   hora: string;
-  esEjemplo: boolean;
+  enVivo: boolean;
   onChange: (fecha: string, hora: string) => void;
+  onAhora: () => void;
 }) {
+  const t = useT(textos);
   return (
     <fieldset>
-      <legend className="eyebrow text-text-muted">Fecha y hora · Argentina, UTC−3</legend>
+      <legend className="eyebrow text-text-muted">{t.momento}</legend>
       <div className="mt-1 grid gap-6 min-[360px]:grid-cols-2">
-        <input
-          type="date"
-          aria-label="Fecha"
-          className={campo}
-          value={fecha}
-          onChange={(e) => onChange(e.target.value, hora)}
-        />
-        <input
-          type="time"
-          aria-label="Hora"
-          className={campo}
-          value={hora}
-          onChange={(e) => onChange(fecha, e.target.value)}
-        />
+        <input type="date" aria-label={t.fecha} className={campo} value={fecha} onChange={(e) => onChange(e.target.value, hora)} />
+        <input type="time" aria-label={t.hora} className={campo} value={hora} onChange={(e) => onChange(fecha, e.target.value)} />
       </div>
-      {esEjemplo && (
-        <p className="mt-3 text-sm text-puna-ink">
-          Ejemplo: hoy a las {HORA_EJEMPLO}. Cambialo para ver otro momento.
+      {enVivo ? (
+        <p className="mt-3 flex items-center gap-2 text-sm text-success">
+          <span aria-hidden className="size-2 animate-pulse rounded-full bg-success" />
+          {t.vivo}
         </p>
+      ) : (
+        <button type="button" onClick={onAhora} className="link-arrow mt-2 text-sm text-violeta-ink">
+          {t.ahora}
+        </button>
       )}
     </fieldset>
   );
