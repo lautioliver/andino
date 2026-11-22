@@ -4,6 +4,7 @@ import { useMemo, useSyncExternalStore } from "react";
 import type { AndinoPlace } from "@/shared/types";
 import { LinkButton } from "@/shared/ui/Button";
 import { PasosStarlink } from "@/features/satelites/PasosStarlink";
+import { MejorNoche } from "@/features/cuando/MejorNoche";
 import { fechaDeLaNoche, nocheEn, type Noche } from "./noche";
 
 // La fecha depende del reloj del visitante: en el servidor (o al prerender) no hay "esta noche".
@@ -41,7 +42,10 @@ export function EstaNoche({ place }: { place: AndinoPlace }) {
         <p className="lead mt-6 text-text-muted">Calculando el cielo de esta noche…</p>
       ) : (
         <>
-          <p className="lead mt-6 text-text/85">
+          <MejorNoche place={place} fecha={noche.fecha} />
+
+          <p className="eyebrow mt-12 text-text-muted">Esta noche</p>
+          <p className="lead mt-4 text-text/85">
             {noche.puestaDeSol ? `El sol se pone a las ${noche.puestaDeSol}. ` : ""}
             {noche.visibles.length > 0
               ? `A las ${noche.hora}, desde acá, vas a poder ver:`
