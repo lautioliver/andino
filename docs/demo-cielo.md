@@ -25,7 +25,7 @@
 ## Recorrido de la demo (Tierra → Cielo)
 
 1. `/explorar` → elegir Purmamarca (o la foto de ejemplo) → ficha con fuentes.
-2. **«Ver el cielo desde acá»** → `/cielo?placeId=purmamarca`: mismo lugar y hora de ejemplo (hoy, 22:00).
+2. Bajar hasta **«Esta noche en Purmamarca»** (Luna, objetos visibles a las 22:00) → **«Mirar el cielo completo»** → `/cielo?placeId=purmamarca&fecha=<hoy>&hora=22:00`: mismo lugar y los mismos objetos que la ficha.
 3. **«Ver la noche de la demo»** → los cinco objetos en el mapa. Tocar **Acrux** y después **Júpiter** para mostrar las fichas.
 4. **«Volver al paisaje»** → `/explorar?placeId=purmamarca`, con el lugar intacto.
 
