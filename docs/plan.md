@@ -3,7 +3,7 @@
 > Versión 4 · 22 de noviembre de 2026  
 > **Enfoque:** astroturismo en la Quebrada y la Puna de Jujuy  
 > **Tagline:** «Tu mejor noche de cielo en Jujuy»  
-> **Equipo:** `lautioliver` (Desarrollador 1, ficha del lugar e integración) y `jehp23` (Desarrollador 2, motor del cielo y demo)  
+> **Equipo:** `lautioliver` (todo el desarrollo desde la v4) y `jehp23` (motor del cielo, pantalla Cielo y horas de la noche, hasta la v3)  
 > **Contexto:** hackathon en el Tren Solar, con temática vinculada a Cursor y la comunidad espacial/SpaceX mencionada por el equipo. No implica patrocinio, integración ni colaboración oficial de SpaceX.
 
 > **Por qué cambió el plan (v3 → v4):** los mentores señalaron que la versión anterior no tenía un problema real ni un nicho claro; lo único que les interesó fue el cielo. Dejamos de ser «turismo inteligente en general» y nos enfocamos en una persona y un problema concretos. El Gobierno provincial deja de ser el cliente objetivo de la demo.
@@ -156,6 +156,8 @@ flowchart TD
 
 ## 9. Organización de desarrollo — dos personas
 
+> **Reparto desde la v4 (22/11/2026):** `jehp23` no siguió después del giro a astroturismo; sus PR #15 y #20 se cerraron sin mergear y las ramas quedan intactas. Desde entonces `lautioliver` lleva todo el desarrollo: «Cuándo» (#24, sobre las horas de la noche que escribió `jehp23` en #15), «Tu signo» (#25) y «Apuntá» (#26). Lo que escribió `jehp23` (motor del cielo, pantalla Cielo, cielo inmersivo) se mantiene con su crédito. La tabla y el cronograma de abajo son el reparto original de la v3 y quedan como registro.
+
 **Principio:** dividir por funcionalidades completas (*vertical slices*), no por frontend/backend. Cada desarrollador implementa interfaz, lógica y pruebas de su módulo; ambos comparten contratos mínimos y revisan los cambios críticos.
 
 | Responsabilidad | Desarrollador 1 — `lautioliver` | Desarrollador 2 — `jehp23` |
@@ -175,7 +177,9 @@ andino/
 │   └── cielo/page.tsx
 ├── features/
 │   ├── pacha/           # lautioliver
-│   └── cielo/           # jehp23
+│   ├── cielo/           # motor y pantalla de jehp23 (v3); desde la v4, lautioliver
+│   ├── cuando/          # lautioliver
+│   └── signo/           # lautioliver
 ├── shared/              # contratos acordados
 ├── data/                # fichas y ejemplos de demo
 └── docs/plan.md
@@ -263,7 +267,7 @@ andino/
 - [ ] Hacer y registrar las 5 conversaciones con viajeros (sección 3).
 - [x] Elegir las fuentes del cielo andino y citarlas con autor y obra ([`fuentes-cielo-andino.md`](./fuentes-cielo-andino.md)).
 - [ ] Consultar a investigadores del NOA o a comunidades de Jujuy antes de afirmar algo local sobre el cielo andino.
-- [ ] Validar el giro a astroturismo con `jehp23` y coordinar «Cuándo» y «Apuntá» con su trabajo en curso.
+- [x] Reparto después del giro: `jehp23` no siguió; `lautioliver` lleva «Cuándo», «Apuntá» y «Qué significa» (ver sección 9).
 
 ---
 

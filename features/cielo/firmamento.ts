@@ -1,5 +1,5 @@
 // Matemática del cielo inmersivo: de J2000 a horizonte local y de ahí a la pantalla.
-// Lógica pura (sin DOM). Propiedad: jehp23.
+// Lógica pura (sin DOM). Escrito por jehp23.
 import { MakeTime, Observer, Rotation_EQJ_HOR } from "astronomy-engine";
 // Sin imports de valor relativos: los tests corren este .ts directo con node (ver motor.test.mjs).
 import type { SkyLocation } from "./motor";

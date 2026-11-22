@@ -2,9 +2,9 @@
 
 > Versión 4 · 22 de noviembre de 2026  
 > Documento único de diseño e implementación · Complemento de [`plan.md`](./plan.md) · **Alcance: MVP de hackathon**  
-> Equipo: `lautioliver` (ficha del lugar e integración) · `jehp23` (motor del cielo y demo)
+> Equipo: `lautioliver` (todo el desarrollo desde la v4) · `jehp23` (motor del cielo, pantalla Cielo y horas de la noche, hasta la v3)
 
-> **v4:** el producto gira a astroturismo («Tu mejor noche de cielo en Jujuy»; ver `plan.md`, secciones 1 a 5). Este documento se ajustó donde contradecía esa dirección. Los anexos de implementación al final reflejan el reparto de la v3; el reparto de «Cuándo», «Apuntá» y «Qué significa» está pendiente de acordar con `jehp23`.
+> **v4:** el producto gira a astroturismo («Tu mejor noche de cielo en Jujuy»; ver `plan.md`, secciones 1 a 5). Este documento se ajustó donde contradecía esa dirección. Desde la v4 todo el desarrollo es de `lautioliver` (ver `plan.md`, sección 9); los anexos de implementación al final quedan como registro del reparto de la v3.
 
 
 > **Fuente de verdad:** este archivo integra el sistema visual y las instrucciones de implementación para ambos desarrolladores. Los archivos `implementer*.md` anteriores quedan como referencias históricas; ante discrepancias prevalece este documento.
@@ -78,7 +78,7 @@ ANDINO
     └── Qué significa: constelaciones, cielo andino, tu signo
 ```
 
-Las rutas actuales (`/`, `/explorar`, `/cielo`) se mantienen; si «Cuándo» o «Qué significa» necesitan pantalla propia, se acuerda con `jehp23` antes de crear rutas.
+Las rutas actuales (`/`, `/explorar`, `/cielo`) se mantienen; si «Cuándo» o «Qué significa» necesitan pantalla propia, se agrega primero a este documento. Hoy «Cuándo» y «Tu signo» viven en la ficha (`EstaNoche`) y «Apuntá» en `/cielo`.
 
 **Navegación móvil del MVP:** `Inicio`, `De día`, `De noche`; marca ANDINO arriba. **Desktop:** navegación superior equivalente. No mostrar opciones vacías: un paso que no funciona en el teléfono real no aparece en la navegación.
 
@@ -155,9 +155,9 @@ Lo que antes era Pacha: ya no es un producto aparte, es la forma de llegar a la 
 | `SkyMap` | Mapa celeste 2D | `jehp23` |
 | `CelestialObjectCard` | Detalle astronómico | `jehp23` |
 | `StatusMessage` | Vacío, error, offline | `lautioliver` |
-| `MejorNoche` | Cuándo: noches del viaje → recomendada y franja oscura | A acordar con `jehp23` |
-| `Orientacion` | Apuntá: brújula con plan B de arrastre | A acordar con `jehp23` |
-| `FiguraAndina` / `TuSigno` | Qué significa: cielo andino y signo en su posición real | A acordar con `jehp23` |
+| `MejorNoche` | Cuándo: noches del viaje → recomendada y franja oscura | `lautioliver` (#24) |
+| `useBrujula` / `orientacion` | Apuntá: brújula con plan B de arrastre, dentro de `SkyCanvas` | `lautioliver` (#26) |
+| `FiguraAndina` / `TuSigno` | Qué significa: cielo andino y signo en su posición real | `lautioliver` (`TuSigno` en #25; `FiguraAndina` pendiente) |
 
 **Regla de colaboración:** acordar los contratos de componentes compartidos en los primeros 30 minutos. No modificar archivos compartidos en paralelo sin avisar.
 
@@ -311,6 +311,8 @@ Lo que antes era Pacha: ya no es un producto aparte, es la forma de llegar a la 
 Entregar una PWA móvil demostrable en el tren: **punto de observación → mejor noche → apuntar al cielo → qué significa**, todo calculado para ese mismo lugar. Clientes posibles a futuro no confirmados; **no** construir dashboard, autenticación, CMS, estado del territorio en tiempo real ni integración SpaceX.
 
 ### Asignación
+
+> **Desde la v4:** `lautioliver` lleva los dos dominios. Esta tabla, las reglas de colaboración y los dos anexos siguientes son el reparto de la v3.
 
 | Responsable | Dominio | Guía |
 |---|---|---|
