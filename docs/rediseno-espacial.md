@@ -23,7 +23,14 @@ Lo mágico sale de que **es real**: el cielo que se ve es el cielo calculado par
 - **Transición Tierra → Cielo** (`design.md` §7): la foto del lugar se funde con el cielo calculado al pasar de Pacha a Cielo.
 - Navegación y detalles tipográficos con el mismo lenguaje.
 
+Cómo quedó:
+
+- **Inicio** (`features/cielo/CieloAhora.tsx`): arriba el cielo calculado para Purmamarca con la hora del teléfono, mirando al sur; abajo la foto del cerro, que se funde con él. Una leyenda dice lugar, hora y si es de día, crepúsculo o de noche. De día el cielo es celeste y sin estrellas: es lo que hay. El catálogo se baja aparte para no demorar el titular.
+- **Tierra → Cielo** (`shared/tierraCielo.ts`): al tocar «Ver el cielo desde acá», la foto de Pacha pasa a ocupar el lugar del cielo (view transition de 350 ms) y se desvanece sobre el cielo calculado (900 ms). Solo al navegar desde Pacha: recargar o compartir `/cielo` no la repite. Con la foto propia del usuario no hay fundido (su object URL se libera al salir). Respeta `prefers-reduced-motion`.
+- `features/cielo/lienzo.ts`: el dibujo del firmamento, compartido entre el cielo inmersivo y el de fondo.
+
 ## Estado
 
 - [x] Etapa 1 (PR de cielo inmersivo)
-- [ ] Etapa 2
+- [x] Etapa 2: Inicio y transición Tierra → Cielo
+- [ ] Etapa 2: navegación y detalles tipográficos

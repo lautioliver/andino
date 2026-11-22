@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, ViewTransition } from "react";
 import { getPlace, places } from "@/data/places";
 import type { PlaceId } from "@/shared/types";
 import { Badge } from "@/shared/ui/Badge";
@@ -10,6 +10,7 @@ import { Button, LinkButton } from "@/shared/ui/Button";
 import { PhotoCredit } from "@/shared/ui/PhotoCredit";
 import { SourceList } from "@/shared/ui/SourceList";
 import { StatusMessage } from "@/shared/ui/StatusMessage";
+import { salirHaciaElCielo, VT_TIERRA_CIELO } from "@/shared/tierraCielo";
 import { fichas } from "./fichas";
 import { PlaceCard } from "./PlaceCard";
 
@@ -86,17 +87,20 @@ export function PachaFlow() {
       <article className="space-y-6">
         {inputs}
         <div className="overflow-hidden rounded-hero border border-border bg-surface">
-          <div className="relative aspect-[4/3] w-full">
-            <Image
-              src={shown.url}
-              alt={isUserPhoto ? "Tu foto" : ficha.photo.alt}
-              fill
-              sizes="(max-width: 1120px) 100vw, 1120px"
-              className="object-cover"
-              unoptimized={shown.isObjectUrl}
-              priority
-            />
-          </div>
+          {/* Tierra → Cielo: esta foto y el cielo de /cielo son el mismo elemento para la transición. */}
+          <ViewTransition name={VT_TIERRA_CIELO} share={VT_TIERRA_CIELO} default="none">
+            <div className="relative aspect-[4/3] w-full">
+              <Image
+                src={shown.url}
+                alt={isUserPhoto ? "Tu foto" : ficha.photo.alt}
+                fill
+                sizes="(max-width: 1120px) 100vw, 1120px"
+                className="object-cover"
+                unoptimized={shown.isObjectUrl}
+                priority
+              />
+            </div>
+          </ViewTransition>
           <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2">
             {isUserPhoto ? <span className="text-xs text-text-muted">Tu foto (no se guarda)</span> : <PhotoCredit credit={ficha.photo.credit} url={ficha.photo.creditUrl} />}
             {photo?.isDemo && <Badge>Ejemplo precargado</Badge>}
@@ -126,7 +130,12 @@ export function PachaFlow() {
         <SourceList sources={ficha.sources} />
 
         <div className="flex flex-col gap-3 sm:flex-row">
-          <LinkButton variant="sky" href={`/cielo?placeId=${place.id}`}>
+          <LinkButton
+            variant="sky"
+            href={`/cielo?placeId=${place.id}`}
+            // La foto propia vive en un object URL que se libera al salir: se funde solo la del lugar.
+            onClick={() => !shown.isObjectUrl && salirHaciaElCielo({ placeId: place.id, src: shown.url })}
+          >
             Ver el cielo desde acá
           </LinkButton>
           <Button variant="ghost" onClick={() => router.push("/explorar")}>

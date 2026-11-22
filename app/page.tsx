@@ -1,16 +1,23 @@
 import Image from "next/image";
+import { getPlace } from "@/data/places";
+import { CieloAhora } from "@/features/cielo/CieloAhora";
 import { fichas } from "@/features/pacha/fichas";
 import { LinkButton } from "@/shared/ui/Button";
 import { PhotoCredit } from "@/shared/ui/PhotoCredit";
 
 const hero = fichas.purmamarca.photo;
+const lugar = getPlace("purmamarca")!;
 
 export default function Home() {
   return (
     <div className="space-y-3">
       <section className="relative overflow-hidden rounded-hero border border-border">
-        <Image src={hero.src} alt={hero.alt} fill priority sizes="(max-width: 1120px) 100vw, 1120px" className="object-cover" />
-        <div className="absolute inset-0 bg-bg/70" />
+        {/* Arriba, el cielo calculado para este momento; abajo, la foto, que se funde con él. */}
+        <CieloAhora place={lugar} />
+        <div className="absolute inset-x-0 bottom-0 h-[72%] [mask-image:linear-gradient(to_bottom,transparent,black_38%)]">
+          <Image src={hero.src} alt={hero.alt} fill priority sizes="(max-width: 1120px) 100vw, 1120px" className="object-cover object-top" />
+          <div className="absolute inset-0 bg-bg/70" />
+        </div>
         <div className="relative p-6 pt-40 md:p-10 md:pt-56">
           <p className="text-sm text-sand">Jujuy, de la Tierra al universo.</p>
           <h1 className="mt-2 font-display text-4xl leading-10 font-bold">

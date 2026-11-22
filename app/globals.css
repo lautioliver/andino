@@ -48,9 +48,32 @@ body {
   outline-offset: 2px;
 }
 
+/* Transición Tierra → Cielo (design.md §7): la foto de Pacha pasa a ocupar el lugar del cielo
+   y se funde con el cielo calculado. Solo opacity y transform. */
+::view-transition-group(.tierra-cielo) {
+  animation-duration: 350ms;
+}
+
+@keyframes fundir-en-cielo {
+  to {
+    opacity: 0;
+  }
+}
+
+.fundir-en-cielo {
+  animation: fundir-en-cielo 900ms ease-in-out 350ms both;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
+    animation-delay: 0s !important;
     transition-duration: 0.01ms !important;
+  }
+
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
   }
 }

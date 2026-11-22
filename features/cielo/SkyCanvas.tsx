@@ -1,39 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import catalogoJSON from "@/data/cielo/catalogo.json";
 import type { SkyObjectKind } from "@/data/astronomy";
 import type { SkyObject } from "@/shared/types";
 import { rumbo } from "./cielo";
-import {
-  aHorizonte,
-  aPantalla,
-  type Camara,
-  camara,
-  colorEstrella,
-  coloresCielo,
-  enCamara,
-  matrizHorizonte,
-  oscuridad,
-  proyectar,
-  radioEstrella,
-  recortarPoligono,
-} from "./firmamento";
+import { type Camara, camara, proyectar } from "./firmamento";
+import { MUTED, pintarFirmamento, precalcular, prefiereMenosMovimiento, SAND, TEXT } from "./lienzo";
 import type { SkyLocation } from "./motor";
-
-type Punto = [number, number];
-interface Catalogo {
-  estrellas: [number, number, number, number][];
-  constelaciones: { id: string; nombre: string; etiqueta: Punto; lineas: Punto[][] }[];
-  viaLactea: { nivel: number; poligonos: Punto[][] }[];
-}
-const catalogo = catalogoJSON as unknown as Catalogo;
-
-// Colores del lienzo (el canvas no lee variables CSS): mismos tonos que los tokens de design.md.
-const SKY = "120, 200, 232"; // --sky
-const SAND = "231, 201, 156"; // --sand
-const TEXT = "245, 243, 238"; // --text
-const MUTED = "185, 195, 210"; // --text-muted
 
 const CARDINALES = [
   { label: "N", az: 0 },
@@ -57,31 +30,6 @@ interface Props {
   onSelect: (id: string) => void;
   nombreLugar: string;
 }
-
-interface Precalculo {
-  estrellas: { alt: number; az: number; mag: number; color: string; fase: number; velocidad: number }[];
-  lineas: { alt: number; az: number }[][];
-  etiquetas: { nombre: string; alt: number; az: number }[];
-  viaLactea: { nivel: number; poligonos: { alt: number; az: number }[][] }[];
-}
-
-/** Posiciones de todo el catálogo para un instante y lugar: se calcula una vez, no por cuadro. */
-function precalcular(location: SkyLocation, datetimeISO: string): Precalculo {
-  const m = matrizHorizonte(location, datetimeISO);
-  const h = ([ar, dec]: Punto) => aHorizonte(m, ar, dec);
-  return {
-    estrellas: catalogo.estrellas.map(([ar, dec, mag, bv], i) => {
-      const [r, g, b] = colorEstrella(bv);
-      return { ...aHorizonte(m, ar, dec), mag, color: `${r}, ${g}, ${b}`, fase: (i * 2.399) % (2 * Math.PI), velocidad: 0.6 + ((i * 7) % 13) / 10 };
-    }),
-    lineas: catalogo.constelaciones.flatMap((c) => c.lineas.map((linea) => linea.map(h))),
-    etiquetas: catalogo.constelaciones.map((c) => ({ nombre: c.nombre, ...h(c.etiqueta) })),
-    viaLactea: catalogo.viaLactea.map((n) => ({ nivel: n.nivel, poligonos: n.poligonos.map((p) => p.map(h)) })),
-  };
-}
-
-const prefiereMenosMovimiento = () =>
-  typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /**
  * Cielo inmersivo: mirás hacia un rumbo con el horizonte abajo y arrastrás para girar.
@@ -156,82 +104,10 @@ export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, 
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
       const cam: Camara = camara({ az: s.az, alt: s.alt, fov: s.fov }, ancho, alto);
-      const oscuro = oscuridad(s.solAlt);
       const horizonteY = proyectar(cam, 0, s.az)?.y ?? alto;
 
-      // 1. Cielo: color calculado según la altura del Sol.
-      const { cenit, horizonte } = coloresCielo(s.solAlt);
-      const fondo = ctx.createLinearGradient(0, 0, 0, Math.max(1, horizonteY));
-      fondo.addColorStop(0, cenit);
-      fondo.addColorStop(1, horizonte);
-      ctx.fillStyle = fondo;
-      ctx.fillRect(0, 0, ancho, alto);
-
-      // 2. Vía Láctea: capas apenas visibles que se suman donde es más densa.
-      if (oscuro > 0) {
-        for (const nivel of s.pre.viaLactea) {
-          // Un solo trazado por nivel con regla par-impar: los anillos interiores son huecos.
-          ctx.fillStyle = `rgba(${TEXT}, ${0.04 * oscuro})`;
-          ctx.beginPath();
-          for (const poligono of nivel.poligonos) {
-            const recortado = recortarPoligono(poligono.map((p) => enCamara(cam, p.alt, p.az)));
-            if (recortado.length < 3) continue;
-            recortado.forEach((p, i) => {
-              const q = aPantalla(cam, p);
-              if (!q) return;
-              if (i === 0) ctx.moveTo(q.x, q.y);
-              else ctx.lineTo(q.x, q.y);
-            });
-            ctx.closePath();
-          }
-          ctx.fill("evenodd");
-        }
-      }
-
-      // 3. Constelaciones: líneas y nombres tenues.
-      if (oscuro > 0) {
-        ctx.strokeStyle = `rgba(${SKY}, ${0.22 * oscuro})`;
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        for (const linea of s.pre.lineas) {
-          let anterior: { x: number; y: number } | null = null;
-          for (const p of linea) {
-            const q = p.alt > -2 ? proyectar(cam, p.alt, p.az) : null;
-            if (q && anterior) {
-              ctx.moveTo(anterior.x, anterior.y);
-              ctx.lineTo(q.x, q.y);
-            }
-            anterior = q;
-          }
-        }
-        ctx.stroke();
-
-        ctx.font = `500 10px ${fuente}`;
-        ctx.textAlign = "center";
-        ctx.fillStyle = `rgba(${SKY}, ${0.5 * oscuro})`;
-        for (const e of s.pre.etiquetas) {
-          if (e.alt < 4) continue;
-          const q = proyectar(cam, e.alt, e.az);
-          if (q && q.x > -40 && q.x < ancho + 40 && q.y > 0 && q.y < horizonteY) ctx.fillText(e.nombre.toUpperCase(), q.x, q.y);
-        }
-      }
-
-      // 4. Estrellas: posición, brillo y color reales; titileo suave (más cerca del horizonte).
-      if (oscuro > 0) {
-        const tt = t / 1000;
-        for (const e of s.pre.estrellas) {
-          if (e.alt < 0) continue;
-          const q = proyectar(cam, e.alt, e.az);
-          if (!q || q.x < -4 || q.x > ancho + 4 || q.y < -4 || q.y > alto + 4) continue;
-          const amplitud = quieto ? 0 : 0.08 + 0.22 * (1 - Math.min(1, e.alt / 45));
-          const titileo = 1 - amplitud * (0.5 + 0.5 * Math.sin(tt * e.velocidad * 2.2 + e.fase));
-          const brillo = Math.min(1, Math.max(0.18, 1.15 - e.mag * 0.17)) * oscuro * titileo;
-          ctx.fillStyle = `rgba(${e.color}, ${brillo})`;
-          ctx.beginPath();
-          ctx.arc(q.x, q.y, radioEstrella(e.mag), 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
+      // 1 a 4. Cielo, Vía Láctea, constelaciones y estrellas.
+      const oscuro = pintarFirmamento(ctx, { pre: s.pre, cam, solAlt: s.solAlt, horizonteY, t, quieto, fuente, conNombres: true });
 
       // 5. Suelo: todo lo que está bajo el horizonte, con el borde en arena.
       ctx.beginPath();
