@@ -230,6 +230,8 @@ export function CieloExplorer() {
   }, [vivo]);
 
   function alApuntar(activa: boolean) {
+    // SkyCanvas avisa también al montar (sin apuntar): sin este corte, volvía al vivo y pisaba la fecha de la URL.
+    if (activa === apuntando) return;
     setViajando(false);
     setApuntando(activa);
     if (activa) {
