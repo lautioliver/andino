@@ -11,6 +11,8 @@ const textos = {
   es: {
     lugar: "Lugar",
     elegir: "Elegí un lugar",
+    aqui: "Mi ubicación",
+    paradas: "Paradas del Tren Solar",
     momento: "Fecha y hora · Argentina, UTC−3",
     fecha: "Fecha",
     hora: "Hora",
@@ -20,6 +22,8 @@ const textos = {
   en: {
     lugar: "Place",
     elegir: "Choose a place",
+    aqui: "My location",
+    paradas: "Solar Train stops",
     momento: "Date and time · Argentina, UTC−3",
     fecha: "Date",
     hora: "Time",
@@ -28,22 +32,37 @@ const textos = {
   },
 };
 
-export function LocationSelector({ value, onChange }: { value: PlaceId | null; onChange: (id: PlaceId) => void }) {
+/** "aqui" es la ubicación del teléfono; el resto, las paradas. */
+export type LugarElegido = PlaceId | "aqui";
+
+export function LocationSelector({
+  value,
+  onChange,
+  conUbicacion,
+}: {
+  value: LugarElegido | null;
+  onChange: (id: LugarElegido) => void;
+  /** Muestra «Mi ubicación» si el teléfono puede dar su posición. */
+  conUbicacion: boolean;
+}) {
   const t = useT(textos);
   return (
     <label className="block">
       <span className="eyebrow text-text-muted">{t.lugar}</span>
-      <select className={`${campo} appearance-none`} value={value ?? ""} onChange={(e) => onChange(e.target.value as PlaceId)}>
+      <select className={`${campo} appearance-none`} value={value ?? ""} onChange={(e) => onChange(e.target.value as LugarElegido)}>
         {value === null && (
           <option value="" disabled>
             {t.elegir}
           </option>
         )}
-        {places.map((p) => (
-          <option key={p.id} value={p.id}>
-            {p.name}
-          </option>
-        ))}
+        {conUbicacion && <option value="aqui">{t.aqui}</option>}
+        <optgroup label={t.paradas}>
+          {places.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.name}
+            </option>
+          ))}
+        </optgroup>
       </select>
     </label>
   );
