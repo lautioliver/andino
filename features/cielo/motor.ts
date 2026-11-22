@@ -49,6 +49,14 @@ export function parseDatetimeISO(datetimeISO: string): Date {
 
 const redondear = (valor: number, decimales = 2) => Math.round(valor * 10 ** decimales) / 10 ** decimales;
 
+/** Altitud geométrica del centro del Sol: sirve para saber si es de día o de noche. */
+export function sunAltitudeDeg(location: SkyLocation, datetimeISO: string): number {
+  const time = MakeTime(parseDatetimeISO(datetimeISO));
+  const observer = new Observer(location.latitude, location.longitude, location.heightMeters ?? 0);
+  const eq = Equator(Body.Sun, time, observer, true, true);
+  return redondear(Horizon(time, observer, eq.ra, eq.dec).altitude);
+}
+
 /**
  * Altitud y acimut de los objetos del catálogo vistos desde un lugar en un instante.
  * - Acimut en grados desde el norte geográfico, en sentido horario (E = 90°).
