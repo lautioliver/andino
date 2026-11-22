@@ -5,8 +5,8 @@ import { usePathname } from "next/navigation";
 
 const nav = [
   { href: "/", label: "Inicio" },
-  { href: "/explorar", label: "Explorar" },
-  { href: "/cielo", label: "Cielo" },
+  { href: "/explorar", label: "De día" },
+  { href: "/cielo", label: "De noche" },
 ] as const;
 
 function isActive(pathname: string, href: string) {
