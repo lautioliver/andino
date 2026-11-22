@@ -170,7 +170,7 @@ export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, 
     let raf = 0;
 
     const dibujar = (t: number) => {
-      const s = { pre, az, alt, fov, solAlt, objetos, selectedId, tamanio, yacana };
+      const s = { pre, az, alt, fov, solAlt, objetos, selectedId, tamanio, yacana, apuntando };
       const { ancho, alto } = s.tamanio;
       if (ancho === 0 || alto === 0) return;
       const dpr = Math.min(2, window.devicePixelRatio || 1);
@@ -180,6 +180,10 @@ export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, 
 
       const cam: Camara = camara({ az: s.az, alt: s.alt, fov: s.fov }, ancho, alto);
       const oscuro = oscuridad(s.solAlt);
+      // Apuntando con luz, las figuras (líneas y nombres, no las estrellas) se marcan tenues para que sepas
+      // dónde están aunque no se vean. En blanco: el celeste se pierde contra el cielo de día.
+      const guia = s.apuntando ? Math.max(oscuro, 0.6) : oscuro;
+      const tinta = s.apuntando && oscuro < 0.6 ? TEXT : SKY;
       const horizonteY = proyectar(cam, 0, s.az)?.y ?? alto;
 
       // 1. Cielo: color calculado según la altura del Sol.
@@ -212,8 +216,8 @@ export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, 
       }
 
       // 3. Constelaciones: líneas y nombres tenues.
-      if (oscuro > 0) {
-        ctx.strokeStyle = `rgba(${SKY}, ${0.22 * oscuro})`;
+      if (guia > 0) {
+        ctx.strokeStyle = `rgba(${tinta}, ${0.22 * guia})`;
         ctx.lineWidth = 1;
         ctx.beginPath();
         for (const linea of s.pre.lineas) {
@@ -231,7 +235,7 @@ export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, 
 
         ctx.font = `500 10px ${fuente}`;
         ctx.textAlign = "center";
-        ctx.fillStyle = `rgba(${SKY}, ${0.5 * oscuro})`;
+        ctx.fillStyle = `rgba(${tinta}, ${0.5 * guia})`;
         for (const e of s.pre.etiquetas) {
           if (e.alt < 4) continue;
           const q = proyectar(cam, e.alt, e.az);
@@ -258,8 +262,8 @@ export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, 
 
       // 4b. Yacana (docs/fuentes-cielo-andino.md): es una figura oscura de la Vía Láctea, no un dibujo de
       // estrellas. Solo sus ojos (α y β Cen) y su nombre, en arena y sin líneas, para no confundirla con las occidentales.
-      if (s.yacana && oscuro > 0) {
-        ctx.strokeStyle = `rgba(${SAND}, ${0.8 * oscuro})`;
+      if (s.yacana && guia > 0) {
+        ctx.strokeStyle = `rgba(${SAND}, ${0.8 * guia})`;
         ctx.lineWidth = 1.25;
         const ojos = s.pre.yacana.ojos.filter((o) => o.alt > 0).map((o) => proyectar(cam, o.alt, o.az));
         for (const q of ojos) {
@@ -272,14 +276,14 @@ export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, 
         ctx.textAlign = "center";
         if (a && b && a.y < horizonteY) {
           ctx.font = `500 10px ${fuente}`;
-          ctx.fillStyle = `rgba(${SAND}, ${0.7 * oscuro})`;
+          ctx.fillStyle = `rgba(${SAND}, ${0.7 * guia})`;
           ctx.fillText("ojos de la Yacana", (a.x + b.x) / 2, Math.min(a.y, b.y) - 14);
         }
         const e = s.pre.yacana.etiqueta;
         const q = e.alt >= 4 ? proyectar(cam, e.alt, e.az) : null;
         if (q && q.x > -60 && q.x < ancho + 60 && q.y > 0 && q.y < horizonteY) {
           ctx.font = `italic 500 15px ${fuente}`;
-          ctx.fillStyle = `rgba(${SAND}, ${0.9 * oscuro})`;
+          ctx.fillStyle = `rgba(${SAND}, ${0.9 * guia})`;
           ctx.fillText("Yacana", q.x, q.y);
         }
       }
@@ -353,7 +357,7 @@ export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, 
     else raf = requestAnimationFrame(bucle);
     // Con movimiento reducido se redibuja solo cuando cambia algo (este efecto se vuelve a correr).
     return () => cancelAnimationFrame(raf);
-  }, [pre, az, alt, fov, solAlt, objetos, selectedId, tamanio, yacana]);
+  }, [pre, az, alt, fov, solAlt, objetos, selectedId, tamanio, yacana, apuntando]);
 
   // Arrastrar para girar; un toque corto elige el objeto más cercano.
   const arrastre = useRef<{ x: number; y: number; az: number; alt: number; movio: boolean } | null>(null);
