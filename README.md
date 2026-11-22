@@ -1,6 +1,6 @@
 # ANDINO
 
-**Explorá la Tierra. Descubrí el universo.** PWA de turismo inteligente y astroturismo para Jujuy, hecha para la Cursor Hackathon Jujuy.
+**Tu mejor noche de cielo en Jujuy.** PWA de turismo inteligente y astroturismo para Jujuy, hecha para la Cursor Hackathon Jujuy.
 
 - **Pacha** (`/explorar`): foto de un paisaje → explicación con fuentes → pregunta de seguimiento. Responsable: `lautioliver`.
 - **Cielo Andino** (`/cielo`): lugar + fecha/hora → objetos celestes calculados. Motor y pantalla de `jehp23`; desde la v4 lo lleva `lautioliver`.
