@@ -11,7 +11,7 @@ import { fechaDeLaNoche, nocheEn, type Noche } from "./noche";
 
 // La fecha depende del reloj del visitante: en el servidor (o al prerender) no hay "esta noche".
 const sinSuscripcion = () => () => {};
-function useFechaDeLaNoche(): string | null {
+export function useFechaDeLaNoche(): string | null {
   return useSyncExternalStore(
     sinSuscripcion,
     () => fechaDeLaNoche(new Date()),
@@ -35,7 +35,7 @@ export function EstaNoche({ place }: { place: AndinoPlace }) {
 
   return (
     <section aria-labelledby="esta-noche" className="rule mt-14 pt-6">
-      <p className="eyebrow text-sky">De noche</p>
+      <p className="eyebrow text-violeta-ink">De noche</p>
       <h2 id="esta-noche" className="headline mt-4 text-4xl md:text-5xl">
         Esta noche en {place.name}
       </h2>
@@ -76,7 +76,7 @@ export function EstaNoche({ place }: { place: AndinoPlace }) {
             quebrada ni las nubes: lo que está muy bajo puede quedar tapado.
           </p>
 
-          <LinkButton variant="sky" href={noche.href} className="mt-8">
+          <LinkButton variant="violeta" href={noche.href} className="mt-8">
             Mirar el cielo completo
           </LinkButton>
 
@@ -91,12 +91,43 @@ export function EstaNoche({ place }: { place: AndinoPlace }) {
 /** Una línea para las tarjetas de destinos del Inicio. */
 export function NocheBreve({ place }: { place: AndinoPlace }) {
   const noche = useNoche(place);
-  if (!noche) return <p className="mt-2 min-h-5 text-sm text-sky/80">&nbsp;</p>;
+  if (!noche) return <p className="mt-2 min-h-5 text-sm text-violeta-ink/80">&nbsp;</p>;
   const nombres = noche.visibles.slice(0, 2).map((o) => o.name.replace(/ \(.*\)$/, ""));
   const partes = [noche.luna.visible ? noche.luna.fase : null, ...nombres].filter((s): s is string => Boolean(s));
   return (
-    <p className="mt-2 min-h-5 text-sm text-sky">
+    <p className="mt-2 min-h-5 text-sm text-violeta-ink">
       {partes.length > 0 ? `Esta noche: ${lista(partes)}` : "Esta noche: mirá su cielo"}
     </p>
+  );
+}
+
+/** Portada del Inicio: la respuesta de esta noche en tres datos, calculada en el teléfono. */
+export function NocheHero({ place }: { place: AndinoPlace }) {
+  const noche = useNoche(place);
+  const nombres = noche?.visibles.slice(0, 2).map((o) => o.name.replace(/ \(.*\)$/, "")) ?? [];
+  const datos = noche
+    ? [
+        { valor: noche.puestaDeSol ?? "—", texto: "se pone el sol" },
+        { valor: `${noche.luna.iluminada}%`, texto: noche.luna.fase.toLowerCase() },
+        { valor: noche.hora, texto: nombres.length ? `${lista(nombres)} a la vista` : "mirá su cielo" },
+      ]
+    : null;
+
+  return (
+    <section aria-labelledby="noche-hero" className="rule max-w-[640px] pt-4">
+      <h2 id="noche-hero" className="eyebrow text-violeta-ink">
+        Esta noche en {place.name}
+      </h2>
+      {/* Alto fijo: sin salto de diseño mientras se calcula en el cliente. */}
+      <dl className="mt-4 grid min-h-[4.5rem] grid-cols-3 gap-4 sm:gap-8">
+        {(datos ?? [0, 1, 2].map(() => ({ valor: " ", texto: " " }))).map((d, i) => (
+          <div key={i}>
+            <dt className="sr-only">{d.texto}</dt>
+            <dd className="headline text-2xl tabular-nums sm:text-4xl">{d.valor}</dd>
+            <dd className="mt-1 text-xs leading-4 text-text/75 sm:text-sm">{d.texto}</dd>
+          </div>
+        ))}
+      </dl>
+    </section>
   );
 }

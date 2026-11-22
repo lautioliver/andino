@@ -1,103 +1,87 @@
 import Image from "next/image";
 import Link from "next/link";
-import { places } from "@/data/places";
-import { NocheBreve } from "@/features/pacha/EstaNoche";
+import { getPlace, places } from "@/data/places";
 import { fichas } from "@/features/pacha/fichas";
+import { HORA_NOCHE } from "@/features/pacha/noche";
+import { CieloDePortada, NocheEnLinea } from "@/features/pacha/Portada";
 import { LinkButton } from "@/shared/ui/Button";
-import { PhotoCredit } from "@/shared/ui/PhotoCredit";
 
-const hero = fichas.purmamarca.photo;
+const lugarPortada = getPlace("purmamarca")!;
 
-const pasos = [
-  {
-    momento: "De día",
-    titulo: "Elegí desde dónde mirar",
-    texto: "Un pueblo de la Quebrada o una foto que sacaste en el camino.",
-    tono: "text-earth",
-  },
-  {
-    momento: "Al caer el sol",
-    titulo: "Sabé cuándo salir",
-    texto: "A qué hora se pone el sol, cómo está la Luna y qué satélites pasan esta noche.",
-    tono: "text-sand",
-  },
-  {
-    momento: "De noche",
-    titulo: "Entendé lo que ves",
-    texto: "El cielo real desde ese lugar: la Luna, los planetas, las estrellas y sus constelaciones.",
-    tono: "text-sky",
-  },
-];
+/** Primera frase del resumen: el dato propio de cada destino. */
+function primeraFrase(texto: string) {
+  return texto.split(/(?<=\.)\s/)[0];
+}
 
 export default function Home() {
   return (
     <>
-      {/* Portada */}
-      <section className="bleed relative flex min-h-[min(88svh,760px)] items-end md:min-h-[min(82svh,860px)]">
-        <Image src={hero.src} alt={hero.alt} fill priority sizes="100vw" className="object-cover" />
-        <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-bg via-bg/55 to-bg/10" />
-        <div className="relative mx-auto w-full max-w-[1120px] px-4 pb-10 md:px-6 md:pb-16">
-          <p className="eyebrow text-sand">Jujuy · Quebrada de Humahuaca</p>
-          <h1 className="display mt-4 max-w-[12ch] text-[clamp(3rem,11vw,7rem)]">
-            Tu mejor <em className="text-sky">noche de cielo</em> en Jujuy.
-          </h1>
-          <p className="lead mt-6 max-w-[42ch] text-text/90">
-            A qué hora oscurece, cómo está la Luna y qué estás viendo, calculado para el lugar donde estás.
+      {/* Portada: el cielo calculado de esta noche, no una foto. */}
+      <section className="oscuro bleed relative flex min-h-[min(92svh,820px)] items-end overflow-hidden">
+        <div className="absolute inset-0">
+          <CieloDePortada place={lugarPortada} />
+        </div>
+        <div aria-hidden className="pointer-events-none absolute inset-0 bg-gradient-to-t from-bg via-bg/70 via-35% to-transparent" />
+        <div className="relative mx-auto w-full max-w-[1120px] px-4 pb-12 md:px-6 md:pb-20">
+          <p className="eyebrow text-puna-ink">
+            Esta noche · {lugarPortada.name} · {HORA_NOCHE}
           </p>
-          <div className="mt-8">
+          <h1 className="display mt-4 max-w-[11ch] text-[clamp(3rem,10.5vw,7.5rem)]">
+            Tu mejor <em className="acento">noche de cielo</em> en Jujuy.
+          </h1>
+          <p className="lead mt-6 max-w-[38ch] text-text/85">Cuándo salir, adónde mirar y qué estás viendo, calculado para el lugar donde estás.</p>
+          <div className="mt-8 flex flex-wrap items-center gap-x-8 gap-y-2">
             <LinkButton href="/explorar">Elegí un lugar</LinkButton>
+            <LinkButton variant="ghost" href={`/cielo?placeId=${lugarPortada.id}`}>
+              Explorar este cielo
+            </LinkButton>
           </div>
-          <div className="mt-8">
-            <PhotoCredit credit={`${hero.credit} — Cerro de los Siete Colores`} url={hero.creditUrl} />
-          </div>
+          <p className="mt-10 text-xs text-text-muted">El fondo no es una foto: es el cielo calculado para hoy a las {HORA_NOCHE} desde {lugarPortada.name}.</p>
         </div>
       </section>
 
-      {/* Un recorrido: el lugar de día y de noche */}
-      <section aria-labelledby="recorrido" className="py-16 md:py-24">
-        <h2 id="recorrido" className="headline max-w-[18ch] text-4xl md:text-5xl">
-          Tu noche, en tres pasos
+      {/* La noche, de la puesta del sol al alba */}
+      <section aria-labelledby="la-noche" className="py-16 md:py-28">
+        <h2 id="la-noche" className="eyebrow text-violeta-ink">
+          La noche en {lugarPortada.name}
         </h2>
-        <ol className="mt-10 grid gap-10 md:grid-cols-3 md:gap-12">
-          {pasos.map((paso, i) => (
-            <li key={paso.titulo} className="rule pt-6">
-              <p className={`eyebrow ${paso.tono}`}>
-                {String(i + 1).padStart(2, "0")} · {paso.momento}
-              </p>
-              <h3 className="headline mt-4 text-2xl md:text-3xl">{paso.titulo}</h3>
-              <p className="mt-3 max-w-[40ch] text-text-muted">{paso.texto}</p>
-            </li>
-          ))}
-        </ol>
+        <div className="mt-4">
+          <NocheEnLinea place={lugarPortada} />
+        </div>
       </section>
 
-      {/* Destinos */}
-      <section aria-labelledby="destinos" className="pb-8">
+      {/* Destinos: la foto protagoniza; el texto, un dato propio de cada lugar */}
+      <section aria-labelledby="destinos" className="rule pt-6 pb-8">
         <div className="flex items-baseline justify-between">
-          <h2 id="destinos" className="headline text-3xl md:text-4xl">
-            Destinos
+          <h2 id="destinos" className="headline text-4xl md:text-5xl">
+            Desde dónde mirar
           </h2>
-          <p className="eyebrow text-text-muted">{places.length} lugares</p>
+          <p className="eyebrow hidden text-text-muted sm:block">Quebrada de Humahuaca</p>
         </div>
-        <ul className="bleed mt-6 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4 md:mx-0 md:grid md:w-auto md:grid-cols-3 md:gap-6 md:overflow-visible md:px-0">
+        <ul className="mt-10 grid gap-14 md:grid-cols-12 md:gap-x-6 md:gap-y-16">
           {places.map((p, i) => {
             const f = fichas[p.id];
+            const grande = i === 0;
             return (
-              <li key={p.id} className="w-[78%] shrink-0 snap-start md:w-auto">
-                <Link href={`/explorar?placeId=${p.id}`} className="group block">
-                  <div className="relative aspect-[4/5] overflow-hidden">
+              <li key={p.id} className={grande ? "md:col-span-12" : "md:col-span-6"}>
+                <Link href={`/explorar?placeId=${p.id}`} className={`group block ${grande ? "lg:grid lg:grid-cols-12 lg:items-end lg:gap-6" : ""}`}>
+                  <div className={`bleed relative overflow-hidden md:mx-0 md:w-auto md:rounded-card ${grande ? "aspect-[4/3] md:aspect-[16/9] lg:col-span-8 lg:aspect-[16/10]" : "aspect-[4/3] md:aspect-[5/4]"}`}>
                     <Image
                       src={f.photo.src}
                       alt={f.photo.alt}
                       fill
-                      sizes="(max-width: 768px) 78vw, 360px"
-                      className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
+                      sizes={grande ? "(max-width: 768px) 100vw, 740px" : "(max-width: 768px) 100vw, 550px"}
+                      className="object-cover transition-transform duration-700 group-hover:scale-[1.02]"
                     />
                   </div>
-                  <p className="eyebrow mt-4 text-text-muted">{String(i + 1).padStart(2, "0")}</p>
-                  <h3 className="headline mt-1 text-2xl group-hover:text-earth">{p.name}</h3>
-                  <p className="mt-1 text-sm text-text-muted">{f.region}</p>
-                  <NocheBreve place={p} />
+                  <div className={grande ? "lg:col-span-4 lg:pb-2" : ""}>
+                    <p className="eyebrow mt-5 text-text-muted">
+                      {String(i + 1).padStart(2, "0")} · {f.region.split(" · ")[1]}
+                    </p>
+                    <h3 className={`display mt-2 group-hover:text-puna-ink ${grande ? "text-5xl lg:text-6xl" : "text-4xl lg:text-5xl"}`}>{p.name}</h3>
+                    <p className="mt-3 max-w-[48ch] leading-7 text-text-muted">{primeraFrase(f.summary)}</p>
+                    <span className="link-arrow mt-2 text-puna-ink">Ver el lugar</span>
+                  </div>
                 </Link>
               </li>
             );

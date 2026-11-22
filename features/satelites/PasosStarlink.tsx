@@ -48,7 +48,7 @@ export function PasosStarlink({ placeId, fecha }: { placeId: PlaceId; fecha: str
 
   return (
     <div className="mt-10">
-      <p className="eyebrow text-sky">Satélites Starlink</p>
+      <p className="eyebrow text-violeta-ink">Satélites Starlink</p>
       {s.estado === "cargando" ? (
         <p className="mt-3 text-sm text-text-muted">Calculando los pasos de esta noche…</p>
       ) : s.estado === "error" ? (

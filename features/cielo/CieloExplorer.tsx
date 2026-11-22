@@ -100,7 +100,9 @@ export function CieloExplorer() {
     return () => window.clearInterval(id);
   }, [viajando]);
   const place = getPlace(placeId);
-  const seleccionado = resultado?.objetos.find((o) => o.id === selectedId) ?? null;
+  // Sin elección, la ficha muestra el objeto más alto: la columna nunca queda vacía.
+  const masAlto = resultado?.objetos.filter((o) => o.isAboveHorizon).sort((a, b) => b.altitudeDeg - a.altitudeDeg)[0] ?? null;
+  const seleccionado = resultado?.objetos.find((o) => o.id === selectedId) ?? masAlto;
   const ningunoVisible = resultado !== null && resultado.objetos.every((o) => !o.isAboveHorizon);
 
   // Deja lugar y momento en la URL: se puede compartir y recargar sin perder el contexto.
@@ -138,19 +140,21 @@ export function CieloExplorer() {
   }
 
   return (
-    <section className="pt-8 md:pt-16">
-      <header>
-        <Badge tone="sky">De noche</Badge>
-        <h1 className="display mt-5 max-w-[14ch] text-[clamp(2.75rem,9vw,6rem)]">
+    <section className="pt-8 md:pt-12">
+      <header className="md:flex md:items-end md:justify-between md:gap-12">
+        <div>
+        <Badge tone="violeta">De noche</Badge>
+        <h1 className="display mt-5 max-w-[16ch] text-[clamp(2.75rem,8vw,5rem)]">
           {place ? (
             <>
-              El cielo desde <em className="text-sky">{place.name}</em>
+              El cielo desde <em className="acento">{place.name}</em>
             </>
           ) : (
             "Descubrí el cielo desde este lugar."
           )}
         </h1>
-        <p className="lead mt-5 max-w-[45ch] text-text-muted">Posiciones calculadas para la fecha y hora seleccionadas.</p>
+        </div>
+        <p className="mt-5 max-w-[32ch] text-text-muted md:mb-2 md:text-right">Posiciones calculadas para la fecha y hora seleccionadas.</p>
       </header>
 
       {!place && (
@@ -168,13 +172,13 @@ export function CieloExplorer() {
       )}
 
       {resultado && (
-        <div className="bleed mt-10 md:mt-14">
+        <div className="oscuro bleed mt-8 md:mt-10">
           <SkyCanvas
             location={resultado.place}
             datetimeISO={resultado.iso}
             solAlt={resultado.solAlt}
             objetos={resultado.objetos}
-            selectedId={selectedId}
+            selectedId={seleccionado?.id ?? null}
             onSelect={elegirDesdeMapa}
             nombreLugar={resultado.place.name}
             yacana={verYacana}
@@ -189,7 +193,7 @@ export function CieloExplorer() {
             type="button"
             aria-pressed={verYacana}
             onClick={() => setVerYacana(!verYacana)}
-            className="eyebrow min-h-11 border-b-2 border-transparent text-text-muted transition-colors hover:text-text aria-pressed:border-sand aria-pressed:text-sand"
+            className="eyebrow min-h-11 border-b-2 border-transparent text-text-muted transition-colors hover:text-text aria-pressed:border-puna aria-pressed:text-puna-ink"
           >
             {verYacana ? "Ocultar la Yacana" : "Ver la Yacana"}
           </button>
@@ -201,13 +205,15 @@ export function CieloExplorer() {
 
       {resultado && (
         <div className="mt-6 grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] md:items-center md:gap-12">
-          <div className="flex items-baseline justify-between gap-4 md:block">
+          <div>
             <label htmlFor="viaje-tiempo" className="eyebrow text-text-muted">
               Viajar en el tiempo
             </label>
-            <p className="headline text-3xl tabular-nums md:mt-2 md:text-4xl">
-              {resultado.iso.slice(8, 10)}/{resultado.iso.slice(5, 7)} · {resultado.iso.slice(11, 16)}
-              <span className={`ml-3 align-middle font-sans text-xs tracking-normal ${activo ? "text-sky" : "text-text-muted"}`}>
+            <p className="mt-2 flex items-baseline gap-3">
+              <span className="headline text-3xl tabular-nums md:text-4xl">
+                {resultado.iso.slice(8, 10)}/{resultado.iso.slice(5, 7)} · {resultado.iso.slice(11, 16)}
+              </span>
+              <span className={`text-sm tabular-nums ${activo || desfase !== 0 ? "text-violeta-ink" : "text-text-muted"}`}>
                 {activo ? "en vivo, mientras apuntás" : textoDesfase(desfase)}
               </span>
             </p>
@@ -237,11 +243,11 @@ export function CieloExplorer() {
                   setViajando(false);
                   setDesfase(Number(e.target.value));
                 }}
-                className="min-h-11 w-full accent-sky"
+                className="min-h-11 w-full accent-violeta"
               />
             </div>
             {desfase !== 0 && (
-              <button type="button" className="link-arrow text-sm text-sky" onClick={() => setDesfase(0)}>
+              <button type="button" className="link-arrow text-sm text-violeta-ink" onClick={() => setDesfase(0)}>
                 Volver a la hora elegida
               </button>
             )}
@@ -269,7 +275,7 @@ export function CieloExplorer() {
             </div>
             <ul className="mt-4 divide-y divide-border" aria-label="Objetos calculados">
               {resultado.objetos.map((o, i) => {
-                const activo = o.id === selectedId;
+                const activo = o.id === seleccionado?.id;
                 return (
                   <li key={o.id}>
                     <button
@@ -279,8 +285,8 @@ export function CieloExplorer() {
                       className="group flex min-h-14 w-full items-baseline gap-4 py-3 text-left"
                     >
                       <span className="eyebrow w-6 shrink-0 text-text-muted tabular-nums">{String(i + 1).padStart(2, "0")}</span>
-                      <span className={`headline text-xl md:text-2xl ${activo ? "text-sky" : "group-hover:text-sky"}`}>{o.name}</span>
-                      <span className={`ml-auto text-right text-sm ${o.isAboveHorizon ? "text-text-muted" : "text-text-muted/60"}`}>
+                      <span className={`headline text-xl md:text-2xl ${activo ? "text-violeta-ink" : "group-hover:text-violeta-ink"}`}>{o.name}</span>
+                      <span className={`ml-auto text-right text-sm ${o.isAboveHorizon ? "text-text-muted" : "text-text-muted"}`}>
                         {o.isAboveHorizon ? `Hacia el ${rumbo(o.azimuthDeg)}` : "Bajo el horizonte"}
                       </span>
                     </button>
@@ -296,7 +302,7 @@ export function CieloExplorer() {
                 <CelestialObjectCard object={seleccionado} info={SKY_OBJECT_INFO[seleccionado.id as SkyObjectId]} />
               </div>
             ) : (
-              <p className="rule pt-4 text-text-muted">Tocá un objeto del cielo o de la lista para ver su ficha.</p>
+              <p className="rule pt-4 text-text-muted">Tocá un objeto de la lista para ver su ficha.</p>
             )}
 
             {resultado.luz !== "noche" && (
@@ -318,7 +324,7 @@ export function CieloExplorer() {
 
       <div className="mt-12 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-8 md:mt-16">
         {place && (
-          <LinkButton variant="earth" href={`/explorar?placeId=${place.id}`}>
+          <LinkButton variant="puna" href={`/explorar?placeId=${place.id}`}>
             Volver al paisaje
           </LinkButton>
         )}

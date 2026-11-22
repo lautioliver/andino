@@ -24,11 +24,11 @@ export function FiguraAndina({ place, fecha }: { place: AndinoPlace; fecha: stri
       <p className="eyebrow text-text-muted">La llama del cielo andino</p>
       <p className="lead mt-4 text-text/85">
         En la Vía Láctea no solo hay figuras de estrellas: sus manchas oscuras también forman animales. Una de ellas es
-        la <span className="text-sand">Yacana</span>, una llama que camina por el centro del cielo. Sus ojos son las dos
+        la <span className="text-puna-ink">Yacana</span>, una llama que camina por el centro del cielo. Sus ojos son las dos
         estrellas brillantes que acompañan a la Cruz del Sur, α y β Centauri.
       </p>
 
-      <blockquote className="mt-6 border-l-2 border-sand/60 pl-4">
+      <blockquote className="mt-6 border-l-2 border-puna/60 pl-4">
         <p className="lead text-text/85">«… es una oscuridad del cielo».</p>
         <footer className="mt-2 text-sm leading-6 text-text-muted">
           Manuscrito de Huarochirí, hacia 1600. Traducción de José María Arguedas (1966).

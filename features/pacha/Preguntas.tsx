@@ -71,7 +71,7 @@ export function Preguntas({ place, sugerencias }: { place: AndinoPlace; sugerenc
 
   return (
     <section aria-labelledby="preguntas" className="rule mt-14 pt-6">
-      <p className="eyebrow text-earth">Preguntá</p>
+      <p className="eyebrow text-puna-ink">Preguntá</p>
       <h2 id="preguntas" className="headline mt-4 text-3xl md:text-4xl">
         ¿Qué más querés saber?
       </h2>
@@ -91,7 +91,7 @@ export function Preguntas({ place, sugerencias }: { place: AndinoPlace; sugerenc
               ) : (
                 <>
                   <p className="mt-2 leading-7 text-text/85">{t.respuesta}</p>
-                  {!t.enFuentes && <p className="eyebrow mt-2 text-sand">No está en nuestras fuentes</p>}
+                  {!t.enFuentes && <p className="eyebrow mt-2 text-puna-ink">No está en nuestras fuentes</p>}
                 </>
               )}
             </li>
@@ -100,11 +100,12 @@ export function Preguntas({ place, sugerencias }: { place: AndinoPlace; sugerenc
       )}
 
       {opciones.length > 0 && (
-        <ul className="mt-6 space-y-2">
+        <ul className="mt-6 flex flex-wrap gap-2">
           {opciones.map((p) => (
             <li key={p}>
-              <button type="button" disabled={pensando} onClick={() => enviar(p)} className="link-arrow text-left text-earth disabled:opacity-50">
+              <button type="button" disabled={pensando} onClick={() => enviar(p)} className="min-h-11 rounded-control border border-border bg-surface px-4 py-2 text-left text-sm font-medium text-text shadow-sm transition-colors hover:border-violeta hover:bg-arena disabled:opacity-50">
                 {p}
+                <span aria-hidden className="text-violeta-ink">&nbsp;→</span>
               </button>
             </li>
           ))}
@@ -112,7 +113,7 @@ export function Preguntas({ place, sugerencias }: { place: AndinoPlace; sugerenc
       )}
 
       <form
-        className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-end"
+        className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center"
         onSubmit={(e) => {
           e.preventDefault();
           enviar(texto);
@@ -125,10 +126,10 @@ export function Preguntas({ place, sugerencias }: { place: AndinoPlace; sugerenc
             onChange={(e) => setTexto(e.target.value)}
             maxLength={MAX_PREGUNTA}
             placeholder={`Preguntá algo sobre ${place.name}`}
-            className="w-full border-b border-text/30 bg-transparent py-2 text-base outline-none placeholder:text-text-muted focus:border-earth"
+            className="min-h-12 w-full rounded-control border border-border bg-surface px-4 text-base shadow-sm outline-none placeholder:text-text-muted focus:border-violeta focus:ring-2 focus:ring-violeta/25"
           />
         </label>
-        <Button type="submit" variant="ghost" disabled={pensando || !texto.trim()}>
+        <Button type="submit" variant="puna" disabled={pensando || !texto.trim()}>
           Preguntar
         </Button>
       </form>

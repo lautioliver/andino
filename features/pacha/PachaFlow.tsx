@@ -122,7 +122,7 @@ export function PachaFlow() {
           <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-bg via-bg/40 to-transparent" />
           <div className="relative mx-auto w-full max-w-[1120px] px-4 pb-8 md:px-6 md:pb-12">
             <div className="flex flex-wrap gap-x-6 gap-y-2">
-              <Badge tone="earth">De día</Badge>
+              <Badge tone="puna">De día</Badge>
               {photo?.isDemo && <Badge>Ejemplo precargado</Badge>}
             </div>
             <h1 className="display mt-4 text-[clamp(3.25rem,12vw,7.5rem)]">{place.name}</h1>
@@ -136,14 +136,14 @@ export function PachaFlow() {
               {isUserPhoto ? "Tu foto · no se guarda" : <PhotoCredit credit={ficha.photo.credit} url={ficha.photo.creditUrl} />}
             </p>
             {ia && (
-              <p className="mt-6 border-l-2 border-earth pl-4 text-text/85">
-                <span className="eyebrow block text-earth">En tu foto · IA, confianza {ia.confidenceLabel}</span>
+              <p className="mt-6 border-l-2 border-puna pl-4 text-text/85">
+                <span className="eyebrow block text-puna-ink">En tu foto · IA, confianza {ia.confidenceLabel}</span>
                 <span className="mt-2 block">{ia.summary}</span>
               </p>
             )}
             <p className="headline mt-6 text-[1.625rem] leading-[1.3] md:text-[2rem]">{ficha.summary}</p>
             <details className="group mt-8 rule pt-4">
-              <summary className="link-arrow cursor-pointer list-none text-earth [&::-webkit-details-marker]:hidden">
+              <summary className="link-arrow cursor-pointer list-none text-puna-ink [&::-webkit-details-marker]:hidden">
                 Conocer más
               </summary>
               <div className="lead mt-4 space-y-5 text-text/85">
@@ -153,13 +153,9 @@ export function PachaFlow() {
               </div>
             </details>
 
-            <Preguntas key={place.id} place={place} sugerencias={ia?.followUpSuggestions} />
-
             <EstaNoche place={place} />
 
-            <Button variant="ghost" className="mt-6" onClick={() => router.push("/explorar")}>
-              No es este lugar
-            </Button>
+            <Preguntas key={place.id} place={place} sugerencias={ia?.followUpSuggestions} />
           </div>
 
           <aside className="space-y-8 lg:pt-14">
@@ -172,9 +168,16 @@ export function PachaFlow() {
               </p>
             </div>
             <SourceList sources={ficha.sources} />
-            <Button variant="ghost" onClick={reset}>
-              Explorar otro paisaje
-            </Button>
+            <div className="rule flex flex-col items-start pt-2">
+              {isUserPhoto && (
+                <Button variant="ghost" onClick={() => router.push("/explorar")}>
+                  No es este lugar
+                </Button>
+              )}
+              <Button variant="ghost" onClick={reset}>
+                Explorar otro paisaje
+              </Button>
+            </div>
           </aside>
         </div>
       </article>
@@ -187,7 +190,7 @@ export function PachaFlow() {
     <section className="pt-8 md:pt-16">
       {inputs}
       <header className="max-w-[18ch]">
-        <Badge tone="earth">De día</Badge>
+        <Badge tone="puna">De día</Badge>
         <h1 className="display mt-5 text-[clamp(3rem,10vw,6.5rem)]">¿Qué estás viendo?</h1>
       </header>
       <p className="lead mt-6 max-w-[45ch] text-text-muted">
@@ -243,7 +246,7 @@ export function PachaFlow() {
                     className="object-cover transition-transform duration-500 group-hover:scale-[1.03]"
                   />
                 </div>
-                <span className="headline mt-3 block text-xl group-hover:text-earth md:text-2xl">{p.name}</span>
+                <span className="headline mt-3 block text-xl group-hover:text-puna-ink md:text-2xl">{p.name}</span>
                 <span className="mt-1 block text-sm text-text-muted">{fichas[p.id].region.split(" · ")[1]}</span>
               </button>
             </li>
@@ -262,7 +265,7 @@ export function PachaFlow() {
           <ul className="mt-4 flex flex-wrap gap-x-8 gap-y-1">
             {places.map((p) => (
               <li key={p.id}>
-                <button type="button" onClick={() => pickDemo(p.id)} className="link-arrow text-sand">
+                <button type="button" onClick={() => pickDemo(p.id)} className="link-arrow text-puna-ink">
                   {p.name}
                 </button>
               </li>
@@ -296,8 +299,8 @@ function Sugerencia({ reco, onConfirm }: { reco: Reconocimiento | null; onConfir
   }
   return (
     <div className="space-y-4">
-      <div className="border-l-2 border-earth py-1 pl-4" role="status">
-        <p className="eyebrow text-earth">IA · confianza {result.confidenceLabel}</p>
+      <div className="border-l-2 border-puna py-1 pl-4" role="status">
+        <p className="eyebrow text-puna-ink">IA · confianza {result.confidenceLabel}</p>
         <p className="headline mt-2 text-3xl">¿Es {candidato.name}?</p>
         <p className="mt-2 text-sm leading-6 text-text-muted">{result.summary}</p>
       </div>

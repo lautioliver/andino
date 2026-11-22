@@ -31,11 +31,12 @@ interface Catalogo {
 }
 const catalogo = catalogoJSON as unknown as Catalogo;
 
-// Colores del lienzo (el canvas no lee variables CSS): mismos tonos que los tokens de design.md.
-const SKY = "120, 200, 232"; // --sky
-const SAND = "231, 201, 156"; // --sand
-const TEXT = "245, 243, 238"; // --text
-const MUTED = "185, 195, 210"; // --text-muted
+// Colores del lienzo (el canvas no lee variables CSS): los tokens de .oscuro en design.md §6.
+const SKY = "179, 163, 255"; // --violeta-ink (oscuro): constelaciones
+const SAND = "255, 154, 110"; // --puna-ink (oscuro): horizonte y cardinales
+const TEXT = "248, 250, 252"; // --text (oscuro)
+const MUTED = "203, 213, 225"; // --text-muted (oscuro)
+const LUNA = "236, 228, 210"; // la Luna, pálida: no se tiñe con la marca
 
 const CARDINALES = [
   { label: "N", az: 0 },
@@ -56,9 +57,11 @@ interface Props {
   solAlt: number;
   objetos: Objeto[];
   selectedId: string | null;
-  onSelect: (id: string) => void;
+  onSelect?: (id: string) => void;
   nombreLugar: string;
-  /** Muestra la Yacana, la llama del cielo andino (ojos y nombre en arena). */
+  /** "fondo": quieto, sin arrastre ni barra, deja pasar el scroll (portada del Inicio). */
+  modo?: "interactivo" | "fondo";
+  /** Muestra la Yacana, la llama del cielo andino (ojos y nombre en Puna). */
   yacana?: boolean;
   /** Avisa cuando «Apuntá» se enciende o se apaga: el explorador pasa al cielo de este momento. */
   onApuntar?: (activa: boolean) => void;
@@ -96,15 +99,18 @@ const prefiereMenosMovimiento = () =>
  * Todo lo que se dibuja está calculado para el lugar y el instante; nada es decorativo.
  * Para lectores de pantalla, la lista de objetos de la página es el control accesible.
  */
-export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, onSelect, nombreLugar, yacana = false, onApuntar }: Props) {
+export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, onSelect, nombreLugar, modo = "interactivo", yacana = false, onApuntar }: Props) {
   const contenedorRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [tamanio, setTamanio] = useState({ ancho: 0, alto: 0 });
-  const [az, setAz] = useState(() => {
-    const visible = objetos.find((o) => o.isAboveHorizon);
-    return visible ? visible.azimuthDeg : 180;
-  });
-  const [alt, setAlt] = useState(40);
+  // De fondo, la cámara mira al objeto más alto y lo deja en la franja de arriba, lejos del texto de la portada.
+  const [destacado] = useState(() =>
+    modo === "fondo"
+      ? objetos.filter((o) => o.isAboveHorizon).sort((x, y) => y.altitudeDeg - x.altitudeDeg)[0]
+      : objetos.find((o) => o.isAboveHorizon),
+  );
+  const [az, setAz] = useState(() => destacado?.azimuthDeg ?? 180);
+  const [alt, setAlt] = useState(() => (modo === "fondo" && destacado ? Math.max(5, Math.min(80, destacado.altitudeDeg - 25)) : 40));
   // «Apuntá»: con la brújula encendida, el cielo sigue a la cámara de atrás del teléfono.
   const brujula = useBrujula((v) => {
     setAz(v.az);
@@ -326,7 +332,7 @@ export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, 
         if (!q || q.x < -20 || q.x > ancho + 20 || q.y < -20 || q.y > alto + 20) continue;
         nuevos.push({ id: o.id, x: q.x, y: q.y });
         const radio = o.kind === "satélite" ? 9 : o.kind === "planeta" ? 4 : 3.2;
-        const color = o.kind === "satélite" ? SAND : o.kind === "planeta" ? "255, 236, 200" : TEXT;
+        const color = o.kind === "satélite" ? LUNA : o.kind === "planeta" ? "255, 236, 200" : TEXT;
         ctx.fillStyle = `rgba(${color}, ${o.kind === "satélite" ? 1 : Math.max(0.6, oscuro)})`;
         ctx.beginPath();
         ctx.arc(q.x, q.y, radio, 0, Math.PI * 2);
@@ -386,14 +392,48 @@ export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, 
       const d = Math.hypot(o.x - x, o.y - y);
       if (d <= 28 && (!mejor || d < mejor.d)) mejor = { id: o.id, d };
     }
-    if (mejor) onSelect(mejor.id);
+    if (mejor) onSelect?.(mejor.id);
+  }
+
+  // Teclado: flechas para girar y subir o bajar la mirada (plan B sin gestos, design.md §8).
+  function alTeclear(e: React.KeyboardEvent) {
+    const paso = e.shiftKey ? 45 : 10;
+    if (e.key === "ArrowLeft") setAz((a) => (a - paso + 360) % 360);
+    else if (e.key === "ArrowRight") setAz((a) => (a + paso) % 360);
+    else if (e.key === "ArrowUp") setAlt((a) => Math.min(80, a + 5));
+    else if (e.key === "ArrowDown") setAlt((a) => Math.max(5, a - 5));
+    else return;
+    e.preventDefault();
+    brujula.apagar();
+  }
+
+  const cardinal =
+    "eyebrow -mb-px min-h-12 min-w-11 border-b-2 border-transparent text-text-muted transition-colors hover:text-text aria-pressed:border-violeta aria-pressed:text-text";
+  // Cardinal más cercano a la mirada: marca el botón activo.
+  const cardinalActivo = Math.round((((az % 360) + 360) % 360) / 90) % 4;
+
+  if (modo === "fondo") {
+    return (
+      <div ref={contenedorRef} className="h-full w-full">
+        <canvas
+          ref={canvasRef}
+          className="block h-full w-full"
+          role="img"
+          aria-label={`Cielo calculado para esta noche desde ${nombreLugar}, mirando hacia el ${rumbo(az)}.`}
+        />
+      </div>
+    );
   }
 
   return (
-    <div className="relative">
+    <div>
       <div
         ref={contenedorRef}
-        className="h-[68vh] max-h-[720px] min-h-[420px] w-full cursor-grab touch-none select-none active:cursor-grabbing"
+        tabIndex={0}
+        role="group"
+        aria-label={`Cielo desde ${nombreLugar}. Usá las flechas para girar.`}
+        className="h-[62svh] max-h-[720px] min-h-[380px] w-full cursor-grab touch-none select-none outline-offset-[-2px] active:cursor-grabbing"
+        onKeyDown={alTeclear}
         onPointerDown={alPresionar}
         onPointerMove={alMover}
         onPointerUp={alSoltar}
@@ -409,41 +449,43 @@ export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, 
         />
       </div>
 
-      <div className="pointer-events-none absolute inset-x-0 top-0 flex items-start justify-between p-4">
-        <p className="eyebrow bg-bg/70 px-3 py-2 text-text-muted">
-          Mirando al <span className="font-medium text-text">{rumbo(az)}</span> · arrastrá para girar
+      {/* Barra bajo el cielo: hacia dónde mirás y los cuatro rumbos. Nada flota sobre las estrellas. */}
+      <div className="mx-auto flex max-w-[1120px] items-center justify-between gap-4 border-b border-border px-4 md:px-6">
+        <p className="min-w-0 py-3 text-sm text-text-muted" aria-live="polite">
+          Mirando al <span className="text-text">{rumbo(az)}</span>
+          <span className="hidden sm:inline"> · arrastrá o usá las flechas para girar</span>
         </p>
-      </div>
-
-      <div className="absolute inset-x-0 bottom-0 flex justify-center gap-2 p-3">
-        {CARDINALES.filter((c) => c.label.length === 1).map((c) => (
-          <button
-            key={c.label}
-            type="button"
-            onClick={() => {
-              brujula.apagar();
-              setAz(c.az);
-            }}
-            aria-label={`Mirar al ${rumbo(c.az)}`}
-            className="eyebrow min-h-11 min-w-11 bg-bg/80 text-text aria-pressed:text-sky"
-          >
-            {c.label}
-          </button>
-        ))}
-        {brujula.disponible ? (
-          <button
-            type="button"
-            onClick={brujula.estado === "activa" ? brujula.apagar : brujula.encender}
-            aria-pressed={brujula.estado === "activa"}
-            className="eyebrow min-h-11 bg-bg/80 px-3 text-text aria-pressed:text-sky"
-          >
-            {brujula.estado === "activa" ? "Apuntando" : "Apuntá"}
-          </button>
-        ) : null}
+        <div role="group" aria-label="Mirar hacia" className="flex shrink-0">
+          {CARDINALES.filter((c) => c.label.length === 1).map((c, i) => (
+            <button
+              key={c.label}
+              type="button"
+              onClick={() => {
+                brujula.apagar();
+                setAz(c.az);
+              }}
+              aria-label={`Mirar al ${rumbo(c.az)}`}
+              aria-pressed={brujula.estado !== "activa" && i === cardinalActivo}
+              className={cardinal}
+            >
+              {c.label}
+            </button>
+          ))}
+          {brujula.disponible ? (
+            <button
+              type="button"
+              onClick={brujula.estado === "activa" ? brujula.apagar : brujula.encender}
+              aria-pressed={brujula.estado === "activa"}
+              className={`${cardinal} ml-2 px-2 text-violeta-ink`}
+            >
+              {brujula.estado === "activa" ? "Apuntando" : "Apuntá"}
+            </button>
+          ) : null}
+        </div>
       </div>
 
       {brujula.estado === "sin-brujula" || brujula.estado === "denegada" ? (
-        <p role="status" className="absolute inset-x-0 bottom-16 mx-auto w-fit max-w-[90%] bg-bg/80 px-3 py-2 text-center text-sm text-text-muted">
+        <p role="status" className="mx-auto max-w-[1120px] px-4 py-3 text-sm text-text-muted md:px-6">
           {brujula.estado === "denegada"
             ? "Sin permiso para usar la brújula. Girá el cielo con el dedo."
             : "Este dispositivo no informa hacia dónde está el norte. Girá el cielo con el dedo."}

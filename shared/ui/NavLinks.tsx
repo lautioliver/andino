@@ -16,13 +16,13 @@ function isActive(pathname: string, href: string) {
 export function TopNav() {
   const pathname = usePathname();
   return (
-    <ul className="hidden items-center gap-8 md:flex">
+    <ul className="hidden items-center gap-1 md:flex">
       {nav.map((item) => (
         <li key={item.href}>
           <Link
             href={item.href}
             aria-current={isActive(pathname, item.href) ? "page" : undefined}
-            className="eyebrow text-text-muted transition-colors hover:text-text aria-[current=page]:text-text"
+            className="flex min-h-11 items-center rounded-control px-3 text-sm font-medium text-text-muted transition-colors hover:bg-arena hover:text-text aria-[current=page]:bg-arena aria-[current=page]:text-violeta-ink"
           >
             {item.label}
           </Link>
@@ -43,7 +43,7 @@ export function BottomNav() {
             <Link
               href={item.href}
               aria-current={active ? "page" : undefined}
-              className={`eyebrow flex min-h-14 items-center justify-center border-t-2 ${active ? "border-earth text-text" : "border-transparent text-text-muted"}`}
+              className={`eyebrow flex min-h-14 items-center justify-center border-t-2 ${active ? "border-puna text-text" : "border-transparent text-text-muted"}`}
             >
               {item.label}
             </Link>

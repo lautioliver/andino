@@ -1,10 +1,10 @@
 import type { ReactNode } from "react";
 
-// Etiqueta textual (no pastilla): punto de color + mayúsculas espaciadas.
-export function Badge({ children, tone = "sand" }: { children: ReactNode; tone?: "sand" | "sky" | "earth" }) {
-  const color = { sand: "text-sand", sky: "text-sky", earth: "text-earth" }[tone];
+// Badge de Abra: fondo Arena, radio 8px, texto de alto contraste.
+export function Badge({ children, tone = "violeta" }: { children: ReactNode; tone?: "violeta" | "puna" }) {
+  const color = { violeta: "bg-arena text-violeta-ink", puna: "bg-warning-bg text-puna-ink" }[tone];
   return (
-    <span className={`eyebrow inline-flex items-center gap-2 ${color}`}>
+    <span className={`eyebrow inline-flex items-center gap-2 rounded-control px-2.5 py-1 ${color}`}>
       <span aria-hidden className="size-1.5 rounded-full bg-current" />
       {children}
     </span>

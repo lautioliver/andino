@@ -2,8 +2,8 @@ import { places } from "@/data/places";
 import type { PlaceId } from "@/shared/types";
 import { HORA_EJEMPLO } from "./cielo";
 
-// Campos editoriales: sin caja, solo filete inferior.
-const campo = "min-h-12 w-full border-0 border-b border-border bg-transparent px-0 text-lg text-text [color-scheme:dark] focus:border-sky";
+// Campos de Abra: caja blanca, borde suave, radio 8px.
+const campo = "mt-2 min-h-12 w-full rounded-control border border-border bg-surface px-3 text-base text-text shadow-sm focus:border-violeta";
 
 export function LocationSelector({
   value,
@@ -16,7 +16,7 @@ export function LocationSelector({
     <label className="block">
       <span className="eyebrow text-text-muted">Lugar</span>
       <select
-        className={`${campo} mt-1 appearance-none`}
+        className={`${campo} appearance-none`}
         value={value ?? ""}
         onChange={(e) => onChange(e.target.value as PlaceId)}
       >
@@ -66,7 +66,7 @@ export function DateTimePicker({
         />
       </div>
       {esEjemplo && (
-        <p className="mt-3 text-sm text-sand">
+        <p className="mt-3 text-sm text-puna-ink">
           Ejemplo: hoy a las {HORA_EJEMPLO}. Cambialo para ver otro momento.
         </p>
       )}

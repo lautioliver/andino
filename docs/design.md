@@ -24,43 +24,51 @@
 
 ## 2. Identidad visual
 
+Desde el 22/11/2026 ANDINO usa la identidad de Abra en modo claro, completa: paleta, tipografía, radios y componentes de [`~/abra-landing/DESING.md`](../../abra-landing/DESING.md). Reemplaza la dirección editorial oscura de las secciones 12 y 13. La página es clara; **el cielo es un bloque oscuro dentro de ella** (portada del Inicio y lienzo de /cielo), con la clase `.oscuro`, que invierte los mismos tokens.
+
 ### Paleta (tokens)
 
-| Token | Hex | Uso |
-|---|---|---|
-| `--bg` | `#0B1020` | Fondo general, modo noche |
-| `--surface` | `#172033` | Tarjetas, paneles |
-| `--surface-raised` | `#223047` | Elementos elevados |
-| `--text` | `#F5F3EE` | Texto principal |
-| `--text-muted` | `#B9C3D2` | Texto secundario |
-| `--earth` | `#E8794E` | CTA de día (ficha del lugar), acentos terrestres |
-| `--sky` | `#78C8E8` | Cielo, astronomía, indicadores |
-| `--sand` | `#E7C99C` | Detalles cálidos, chips |
-| `--success` | `#7CC9A7` | Estados confirmados |
-| `--danger` | `#F29A9A` | Errores |
-| `--border` | `#35435A` | Divisores y bordes |
+| Token | Claro | `.oscuro` | Uso |
+|---|---|---|---|
+| `--bg` | `#FFFAF7` Nube | `#0F172A` Noche | Fondo |
+| `--surface` | `#FFFFFF` | `#172033` | Tarjetas |
+| `--surface-subtle` | `#FAF8FF` | `#1E293B` | Tarjetas de fondo suave |
+| `--inset` | `#F8FAFC` | `#1E293B` | Controles segmentados, cajas |
+| `--text` | `#0F172A` Noche | `#F8FAFC` | Texto principal |
+| `--text-muted` | `#475569` | `#CBD5E1` | Texto secundario (nunca más claro que `#475569` sobre claro) |
+| `--puna` | `#FF7A45` | — | Relleno del CTA principal, marcas de la Luna |
+| `--puna-ink` | `#C2410C` | `#FF9A6E` | Puna como texto (5.0:1 sobre Nube) |
+| `--violeta` | `#7B61FF` | — | Rellenos y bordes interactivos, foco, barras |
+| `--violeta-ink` | `#6246EA` | `#B3A3FF` | Violeta como texto y enlaces (5.7:1 sobre Nube) |
+| `--arena` | `#F4E7FF` | — | Fondo de badges, hover, pista de barras |
+| `--border` | `#E2E8F0` | `#334155` | Bordes de tarjetas e inputs |
+| `--success` / `-bg` | `#047857` / `#ECFDF5` | — | Estados confirmados |
+| `--warning` / `-bg` | `#C2410C` / `#FFF7ED` | — | Avisos |
+| `--danger` / `-bg` | `#B91C1C` / `#FEF2F2` | — | Errores |
+| `--info` / `-bg` | `#2563EB` / `#EFF6FF` | — | Información, cargas |
 
-**Reglas:** usar `--earth` como acento de día (ficha del lugar) y `--sky` de noche (cielo); **sin neones, brillos, resplandores ni degradados metálicos**. Preferir superficies planas, contornos discretos y fotografías auténticas. No codificar información solo por color. Comprobar contraste WCAG AA, especialmente en texto pequeño y botones con fondos de acento. Si un par no alcanza contraste, usar texto oscuro o ajustar el tono.
+**Reglas:** Puna y Violeta puros no llegan a AA como texto chico sobre Nube: como texto se usan las variantes `-ink`. El botón principal es Puna con texto Noche (6.9:1), nunca blanco (2.6:1). El degradado Puna → Violeta (`.acento`) es solo para una palabra destacada de un título grande y para la barra de la mejor noche. No codificar información solo por color. El lienzo del cielo no lee variables CSS: sus constantes en `SkyCanvas.tsx` copian los tokens de `.oscuro`; la Luna se dibuja pálida, sin color de marca.
 
 ### Tipografía
 
-- **Títulos:** Space Grotesk (fallback: sans-serif).
-- **Cuerpo y controles:** Inter (fallback: system-ui).
+- **Títulos y números:** Space Grotesk 500–700 (`next/font`, `--font-display`), tracking −0.02em a −0.03em. Space Grotesk no tiene cursiva: el énfasis es `.acento`, no `<em>` en cursiva.
+- **Cuerpo y controles:** `system-ui, -apple-system, BlinkMacSystemFont, sans-serif`.
+- **Código:** `ui-monospace, SFMono-Regular, Menlo, monospace`.
 - **Escala móvil:** hero 36/40, H1 28/34, H2 22/28, H3 18/24, cuerpo 16/24, auxiliar 14/20, etiquetas 12/16 (no para contenido esencial).
-- Máximo dos familias; cargar fuentes con `font-display: swap` y fallback local.
 
 ### Espaciado, formas y profundidad
 
-- Escala: `4, 8, 12, 16, 24, 32, 48, 64px`.
-- Radios: controles `12px`, tarjetas `20px`, panel hero `28px`, pills `999px`.
+- Retícula de 8px: `8, 16, 24, 32, 48, 64, 80px`.
+- Radios: botones, inputs y badges `8px`; tarjetas `16px`; paneles hero `24px`; pastillas `9999px`.
 - Botones táctiles: mínimo `44×44px`, preferentemente `48px` de alto.
-- Sombras casi imperceptibles; bordes de 1px. **Evitar glassmorphism, glow y gradientes saturados**. La estética debe sentirse editorial, no como un template de IA.
+- Sombras: `shadow-sm` en tarjetas y botones, `shadow-md` en flotantes, `shadow-glow-puna` solo en el CTA principal.
+- Foco: anillo de 2px Violeta con 2px de separación.
 - Íconos de trazo uniforme (p. ej., Lucide); no mezclar estilos.
 
 ### Fotografía y recursos
 
 - Paisajes reales y reconocibles de Jujuy, con atribución y derechos de uso verificados.
-- Fotografía hero 16:9 o 4:5 según pantalla; overlay oscuro para legibilidad.
+- Fotografía hero 16:9 o 4:5 según pantalla; se funde hacia Nube abajo para que el título se lea en Noche.
 - Mapas estelares calculados: distinguir visualización ilustrativa de observación real.
 - Motivos culturales: no utilizar iconografía ceremonial o patrones de comunidades sin investigación y autorización pertinente.
 
@@ -161,27 +169,9 @@ Lo que antes era Pacha: ya no es un producto aparte, es la forma de llegar a la 
 
 **Regla de colaboración:** acordar los contratos de componentes compartidos en los primeros 30 minutos. No modificar archivos compartidos en paralelo sin avisar.
 
-## 6. Tokens CSS iniciales
+## 6. Tokens CSS
 
-```css
-:root {
-  color-scheme: dark;
-  --bg: #0b1020;
-  --surface: #172033;
-  --surface-raised: #223047;
-  --text: #f5f3ee;
-  --text-muted: #b9c3d2;
-  --earth: #e8794e;
-  --sky: #78c8e8;
-  --sand: #e7c99c;
-  --success: #7cc9a7;
-  --danger: #f29a9a;
-  --border: #35435a;
-  --radius-control: 12px;
-  --radius-card: 20px;
-  --radius-hero: 28px;
-}
-```
+La fuente de verdad es `app/globals.css`: `:root` con los valores claros de la tabla de §2 y `.oscuro` con los invertidos. Tailwind los expone como `bg-bg`, `text-text-muted`, `bg-puna`, `text-violeta-ink`, `bg-arena`, `rounded-control`, `rounded-card`, `shadow-glow-puna`, etc. (`@theme inline`). Componentes de apoyo: `.card` (tarjeta de Abra), `.acento` (degradado), `.eyebrow`, `.display`, `.headline`, `.link-arrow`.
 
 ## 7. Movimiento y transición Tierra → Cielo
 
@@ -282,8 +272,10 @@ Lo que antes era Pacha: ya no es un producto aparte, es la forma de llegar a la 
 
 ## 13. Decisiones de la revisión del POC
 
-1. **Rechazado:** estética neón, glow naranja/violeta, degradados artificiales, cristales translúcidos y exceso de tarjetas flotantes.
-2. **Aprobado como dirección:** interfaz oscura editorial, contraste marfil, terracota contenido, fotografía real de Jujuy y elementos espaciales discretos.
+> Los puntos 1 y 2 quedaron reemplazados el 22/11/2026 por la identidad de Abra en modo claro (§2). Se dejan como registro.
+
+1. ~~**Rechazado:** estética neón, glow naranja/violeta, degradados artificiales, cristales translúcidos y exceso de tarjetas flotantes.~~ Sigue rechazado el neón y el glassmorphism; el glow del CTA y el degradado Puna → Violeta se usan con los límites de §2.
+2. ~~**Aprobado como dirección:** interfaz oscura editorial, contraste marfil, terracota contenido, fotografía real de Jujuy y elementos espaciales discretos.~~
 3. **Logo Pacha en revisión:** nueva propuesta con órbita y estrella predominantes; mantener la marca provisional hasta su aprobación.
 4. **Navegación:** el usuario pidió sustituir el acceso señalado por un icono de **documento (`Docs`)**. Como el hackathon exige un MVP acotado, la pantalla Docs solo se incluye si presenta fichas/fuentes reales; de lo contrario se prioriza el acceso a Cielo y se deja Docs para P1. No implementar pestañas sin contenido.
 5. **No copiar literalmente los mockups generados:** contienen ejemplos visuales y afirmaciones astronómicas que deben verificarse antes de publicarse. En particular, no prometer visibilidad de Saturno o de la Vía Láctea sin cálculo para ubicación, fecha y hora.
@@ -291,8 +283,9 @@ Lo que antes era Pacha: ya no es un producto aparte, es la forma de llegar a la 
 ## 14. QA de identidad antes de merge
 
 - [ ] El símbolo Pacha se reconoce en 32 px sin depender de efectos.
-- [ ] La órbita, estrella y montañas se distinguen sobre fondo oscuro.
-- [ ] No hay glow/neón en botones, tarjetas ni logotipo.
+- [ ] La órbita, estrella y montañas se distinguen sobre Nube y sobre el bloque oscuro del cielo.
+- [ ] El glow está solo en el CTA principal (Puna) y el degradado solo donde lo permite §2.
+- [ ] Todo texto pasa AA: Puna y Violeta como texto, solo en su variante `-ink`.
 - [ ] Los CTA principales son claros sin sobrecargar la pantalla.
 - [ ] La navegación no tiene secciones vacías.
 - [ ] El contenido turístico y astronómico está marcado según su fuente y grado de certeza.

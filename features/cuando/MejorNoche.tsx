@@ -40,17 +40,17 @@ export function MejorNoche({ place, fecha }: { place: AndinoPlace; fecha: string
   const href = mejor ? hrefDelMedio(place.id, mejor) : null;
 
   return (
-    <div className="mt-8">
-      <div className="flex flex-wrap items-baseline justify-between gap-4">
+    <div className="card mt-8 p-5 md:p-6">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <p className="eyebrow text-text-muted">Cuándo</p>
-        <div role="group" aria-label="Noches de tu viaje" className="flex gap-1 text-sm">
+        <div role="group" aria-label="Noches de tu viaje" className="flex gap-1 rounded-control bg-inset p-1 text-sm">
           {DURACIONES.map((d) => (
             <button
               key={d}
               type="button"
               aria-pressed={d === noches}
               onClick={() => setNoches(d)}
-              className={`min-h-11 rounded-[4px] px-3 ${d === noches ? "bg-surface-raised text-text" : "text-text-muted hover:text-text"}`}
+              className={`min-h-10 rounded-[6px] px-3 font-medium ${d === noches ? "bg-surface text-violeta-ink shadow-sm" : "text-text-muted hover:text-text"}`}
             >
               {d} noches
             </button>
@@ -62,11 +62,11 @@ export function MejorNoche({ place, fecha }: { place: AndinoPlace; fecha: string
         <p className="lead mt-4 text-text/85">
           {mejor.fecha === fecha ? (
             <>
-              <span className="text-sky">Esta noche</span> es la mejor de las próximas {noches}
+              <span className="text-violeta-ink">Esta noche</span> es la mejor de las próximas {noches}
             </>
           ) : (
             <>
-              La mejor de las próximas {noches} es la del <span className="text-sky">{dia(mejor.fecha, diaLargo)}</span>
+              La mejor de las próximas {noches} es la del <span className="text-violeta-ink">{dia(mejor.fecha, diaLargo)}</span>
             </>
           )}
           : cielo oscuro y sin Luna de {hora(mejor.franja.desde)} a {hora(mejor.franja.hasta)} ({duracion(mejor.minutosOscuros)}).
@@ -79,11 +79,11 @@ export function MejorNoche({ place, fecha }: { place: AndinoPlace; fecha: string
 
       <ol className="mt-6" aria-label="Horas de cielo oscuro por noche">
         {lista.map((n) => (
-          <li key={n.fecha} className="rule grid grid-cols-[5.5rem_1fr_auto] items-center gap-4 py-2 text-sm">
-            <span className={n === mejor ? "font-semibold text-sky" : "text-text-muted"}>{dia(n.fecha, diaCorto)}</span>
-            <span className="h-2 overflow-hidden rounded-full bg-surface" aria-hidden="true">
+          <li key={n.fecha} className="grid grid-cols-[5.5rem_1fr_auto] border-t border-border-subtle items-center gap-4 py-2 text-sm">
+            <span className={n === mejor ? "font-semibold text-violeta-ink" : "text-text-muted"}>{dia(n.fecha, diaCorto)}</span>
+            <span className="h-2 overflow-hidden rounded-full bg-arena" aria-hidden="true">
               <span
-                className={`block h-full rounded-full ${n === mejor ? "bg-sky" : "bg-text-muted/50"}`}
+                className={`block h-full rounded-full ${n === mejor ? "bg-gradient-to-r from-puna to-violeta" : "bg-violeta/40"}`}
                 style={{ width: `${(n.minutosOscuros / maximo) * 100}%` }}
               />
             </span>

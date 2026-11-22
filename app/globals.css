@@ -1,41 +1,90 @@
 @import "tailwindcss";
 
-/* Tokens de docs/design.md §6. Sin glow, neón ni glassmorphism. */
+/* Identidad de Abra en modo claro (~/abra-landing/DESING.md), tokens en docs/design.md §6.
+   Puna y Violeta son rellenos: como texto sobre Nube no llegan a AA, por eso existen las versiones -ink. */
 :root {
+  color-scheme: light;
+  --bg: #fffaf7; /* Nube */
+  --surface: #ffffff;
+  --surface-subtle: #faf8ff;
+  --inset: #f8fafc;
+  --noche: #0f172a;
+  --text: #0f172a; /* Noche, 17:1 */
+  --text-muted: #475569; /* 7.3:1 sobre Nube */
+  --puna: #ff7a45;
+  --puna-hover: #ea580c;
+  --puna-ink: #c2410c; /* 5.0:1 sobre Nube */
+  --violeta: #7b61ff;
+  --violeta-ink: #6246ea; /* 5.7:1 sobre Nube */
+  --arena: #f4e7ff;
+  --border: #e2e8f0;
+  --border-subtle: rgba(15, 23, 42, 0.06);
+  --success: #047857;
+  --success-bg: #ecfdf5;
+  --warning: #c2410c;
+  --warning-bg: #fff7ed;
+  --danger: #b91c1c;
+  --danger-bg: #fef2f2;
+  --info: #2563eb;
+  --info-bg: #eff6ff;
+  --radius-control: 8px;
+  --radius-card: 16px;
+  --radius-hero: 24px;
+  --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
+  --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
+  --shadow-glow-puna: 0 10px 25px -5px rgba(255, 122, 69, 0.3);
+}
+
+/* Bloque oscuro dentro de la página clara: el cielo. Los mismos nombres de token, invertidos. */
+.oscuro {
   color-scheme: dark;
-  --bg: #0b1020;
+  --bg: #0f172a;
   --surface: #172033;
-  --surface-raised: #223047;
-  --text: #f5f3ee;
-  --text-muted: #b9c3d2;
-  --earth: #e8794e;
-  --sky: #78c8e8;
-  --sand: #e7c99c;
-  --success: #7cc9a7;
-  --danger: #f29a9a;
-  --border: #35435a;
-  --radius-control: 12px;
-  --radius-card: 20px;
-  --radius-hero: 28px;
+  --surface-subtle: #1e293b;
+  --inset: #1e293b;
+  --text: #f8fafc;
+  --text-muted: #cbd5e1; /* 12:1 sobre Noche */
+  --puna-ink: #ff9a6e;
+  --violeta-ink: #b3a3ff;
+  --border: #334155;
+  --border-subtle: rgba(248, 250, 252, 0.08);
+  background: var(--bg);
+  color: var(--text);
 }
 
 @theme inline {
   --color-bg: var(--bg);
   --color-surface: var(--surface);
-  --color-surface-raised: var(--surface-raised);
+  --color-surface-subtle: var(--surface-subtle);
+  --color-inset: var(--inset);
+  --color-noche: var(--noche);
   --color-text: var(--text);
   --color-text-muted: var(--text-muted);
-  --color-earth: var(--earth);
-  --color-sky: var(--sky);
-  --color-sand: var(--sand);
-  --color-success: var(--success);
-  --color-danger: var(--danger);
+  --color-puna: var(--puna);
+  --color-puna-hover: var(--puna-hover);
+  --color-puna-ink: var(--puna-ink);
+  --color-violeta: var(--violeta);
+  --color-violeta-ink: var(--violeta-ink);
+  --color-arena: var(--arena);
   --color-border: var(--border);
+  --color-border-subtle: var(--border-subtle);
+  --color-success: var(--success);
+  --color-success-bg: var(--success-bg);
+  --color-warning: var(--warning);
+  --color-warning-bg: var(--warning-bg);
+  --color-danger: var(--danger);
+  --color-danger-bg: var(--danger-bg);
+  --color-info: var(--info);
+  --color-info-bg: var(--info-bg);
   --radius-control: var(--radius-control);
   --radius-card: var(--radius-card);
   --radius-hero: var(--radius-hero);
-  --font-sans: var(--font-inter), system-ui, sans-serif;
-  --font-display: var(--font-fraunces), Georgia, serif;
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
+  --shadow-glow-puna: var(--shadow-glow-puna);
+  --font-sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-display: var(--font-space-grotesk), system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace;
 }
 
 body {
@@ -45,63 +94,77 @@ body {
   overflow-x: clip; /* .bleed usa 100vw */
 }
 
-/* ---------- Sistema editorial ---------- */
 @layer components {
   /* Rompe el contenedor y ocupa todo el ancho de la ventana. */
   .bleed {
     width: 100vw;
     margin-left: calc(50% - 50vw);
   }
+  /* Caption / Meta de Abra: 12px, peso 600, mayúsculas espaciadas. */
   .eyebrow {
     font-size: 0.75rem;
     line-height: 1rem;
     font-weight: 600;
-    letter-spacing: 0.16em;
+    letter-spacing: 0.08em;
     text-transform: uppercase;
   }
+  /* Hero Title: Space Grotesk, tracking -0.03em. */
   .display {
     font-family: var(--font-display);
-    font-weight: 400;
-    letter-spacing: -0.02em;
-    line-height: 0.98;
-    font-variation-settings: "opsz" 144;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
   }
+  /* Page / Section Title: 700, -0.02em. */
   .headline {
     font-family: var(--font-display);
-    font-weight: 400;
-    letter-spacing: -0.015em;
-    line-height: 1.1;
-    font-variation-settings: "opsz" 72;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
+  /* Acento de Abra: el degradado del abra, de Puna a Violeta. Sin cursiva (Space Grotesk no la tiene). */
+  .acento {
+    font-style: normal;
+    background: linear-gradient(90deg, var(--puna), var(--violeta));
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    padding-right: 0.04em;
   }
   .lead {
-    font-size: 1.1875rem;
-    line-height: 1.75rem;
+    font-size: 1.125rem;
+    line-height: 1.6;
   }
   .rule {
     border-top: 1px solid var(--border);
+  }
+  /* Tarjeta de Abra: blanca, borde suave, radio 16px. */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-card);
+    box-shadow: var(--shadow-sm);
   }
   .link-arrow {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    min-height: 48px;
-    font-weight: 500;
-    text-underline-offset: 6px;
+    min-height: 44px;
+    font-weight: 600;
   }
-  .link-arrow:hover {
-    text-decoration: underline;
-  }
+  /* Sin subrayado: en flex, texto y flecha se subrayan por separado. El hover corre la flecha. */
   .link-arrow::after {
     content: "→";
     transition: transform 200ms ease;
   }
-  .link-arrow:hover::after {
-    transform: translateX(3px);
+  .link-arrow:hover::after,
+  .group:hover .link-arrow::after {
+    transform: translateX(4px);
   }
 }
 
 :focus-visible {
-  outline: 2px solid var(--sky);
+  outline: 2px solid var(--violeta);
   outline-offset: 2px;
 }
 
