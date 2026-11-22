@@ -269,10 +269,12 @@ La fuente de verdad es `app/globals.css`: `:root` con los valores claros de la t
 - Trazos suficientemente gruesos para legibilidad a 24–32 px; reducir detalles hasta que la silueta sea reconocible.
 - Paleta: marfil `#F5F3EE`, terracota `#E8794E`, fondo noche `#0B1020`.
 - No introducir cohetes, logotipos de SpaceX, telescopios ni marcos de cámara.
-- Crear `public/brand/pacha-mark.svg` manualmente tras elegir la geometría definitiva; probar versiones a 24, 32, 48 y 128 px y monocromática.
+- Crear `public/brand/andino-mark.svg` manualmente tras elegir la geometría definitiva; probar versiones a 24, 32, 48 y 128 px y monocromática.
 - **Pacha es un módulo de ANDINO:** no sustituir automáticamente el logo principal de la plataforma.
 
 **Estado:** propuesta visual para revisión, no identidad aprobada. En el MVP puede utilizarse un icono geométrico provisional consistente con el sistema.
+
+**En uso (22/11/2026):** la persona aprobó usar este isotipo provisorio como logo de ANDINO, con los colores de Abra. En el encabezado (`shared/ui/AndinoMark.tsx`) la órbita y la estrella toman el color del texto y las cumbres van en Puna. El ícono de la pestaña y de la app instalada (`app/icon.svg`, `public/brand/andino-mark.svg`) es la misma figura en Nube y Puna sobre un cuadrado Noche. Sigue siendo provisorio hasta tener una geometría definitiva.
 
 ## 13. Decisiones de la revisión del POC
 
