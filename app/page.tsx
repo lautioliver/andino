@@ -3,9 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { getPlace, places } from "@/data/places";
+import { NocheDePortada } from "@/features/cuando/NocheDePortada";
 import { fichaEn, fichas } from "@/features/pacha/fichas";
 import { HORA_NOCHE } from "@/features/pacha/noche";
-import { CieloDePortada, NocheEnLinea } from "@/features/pacha/Portada";
+import { CieloDePortada } from "@/features/pacha/Portada";
 import { useLang, useT } from "@/shared/i18n/lang";
 import { LinkButton } from "@/shared/ui/Button";
 
@@ -76,13 +77,13 @@ export default function Home() {
         </div>
       </section>
 
-      {/* La noche, de la puesta del sol al alba */}
+      {/* La noche, de la puesta del sol al alba, con las nubes previstas y el recordatorio */}
       <section aria-labelledby="la-noche" className="py-16 md:py-28">
         <h2 id="la-noche" className="eyebrow text-violeta-ink">
           {t.laNoche} {lugarPortada.name}
         </h2>
         <div className="mt-4">
-          <NocheEnLinea place={lugarPortada} />
+          <NocheDePortada place={lugarPortada} />
         </div>
       </section>
 

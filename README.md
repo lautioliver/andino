@@ -39,7 +39,7 @@ Siete paradas. En cada una, ANDINO sabe qué hay por la ventana de día y qué v
 
 | Vagón | Qué pasa ahí |
 |---|---|
-| 🌙 **Cuándo** | La noche de hoy en tu parada: a qué hora se pone el sol, cuándo queda el cielo oscuro y cómo viene la Luna. Y de las noches de tu viaje, cuál conviene. |
+| 🌙 **Cuándo** | La noche de hoy en tu parada: a qué hora se pone el sol, cuándo queda el cielo oscuro, cómo viene la Luna y qué nubes se esperan. De las noches de tu viaje te dice cuál conviene, y con **«Avisame esta noche»** te deja un recordatorio en el calendario. |
 | 📱 **Apuntá** | Levantás el teléfono y el cielo tiene nombre. En vivo con la brújula, también de día, desde tu ubicación. Con la **cámara** detrás del dibujo, **luz roja** para no perder la vista nocturna y la pantalla siempre encendida. |
 | 🦙 **Qué significa** | La Yacana, la llama oscura de la Vía Láctea, con sus fuentes. Y «tu signo» como astronomía: dónde está de verdad esta noche, sin predicciones. |
 | 🏔️ **Pacha** | De día, sacás una foto por la ventana y te cuenta qué lugar es, su historia y de dónde sale el dato. Después le podés repreguntar. |
@@ -50,6 +50,7 @@ Siete paradas. En cada una, ANDINO sabe qué hay por la ventana de día y qué v
 - **El cielo se calcula.** Sol, Luna, planetas y estrellas salen de [astronomy-engine](https://github.com/cosinekitty/astronomy) para el lugar y la fecha. La IA no calcula nada: solo explica.
 - **Los satélites también.** Órbitas públicas de CelesTrak, propagadas con satellite.js.
 - **El cielo andino va con fuentes.** La Yacana es una tradición documentada en Perú y en el norte de Chile, en un cielo que también se ve desde Jujuy. No la presentamos como saber local jujeño. El detalle está en [`docs/fuentes-cielo-andino.md`](docs/fuentes-cielo-andino.md).
+- **Las nubes son un pronóstico, y lo decimos.** Vienen de [Open-Meteo](https://open-meteo.com/) y pueden cambiar. El cálculo sigue sin conocer los cerros.
 - **Astronomía, no astrología.**
 - **ANDINO no tiene afiliación con SpaceX.**
 
@@ -115,7 +116,6 @@ Para el detalle: [`docs/plan.md`](docs/plan.md) (plan del proyecto) y [`docs/des
 
 ## 🚉 Próximas paradas
 
-- **Nubes** en la mejor noche, con pronóstico, y **«Avisame esta noche»**: un recordatorio en el calendario para que el viaje de día termine mirando el cielo.
 - **Estación Espacial Internacional** y cuenta regresiva al próximo paso visible.
 - **Desde dónde mirar:** un punto oscuro por parada, contado por la gente del lugar.
 - Más teléfonos reales y más conversaciones con viajeros.
