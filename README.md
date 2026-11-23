@@ -41,6 +41,7 @@ Siete paradas. En cada una, ANDINO sabe qué hay por la ventana de día y qué v
 |---|---|
 | 🌙 **Cuándo** | La noche de hoy en tu parada: a qué hora se pone el sol, cuándo queda el cielo oscuro, cómo viene la Luna y qué nubes se esperan. De las noches de tu viaje te dice cuál conviene, y con **«Avisame esta noche»** te deja un recordatorio en Google Calendar o en el Calendario de Apple. |
 | 📱 **Apuntá** | Levantás el teléfono y el cielo tiene nombre. En vivo con la brújula, también de día, desde tu ubicación. Con **«Ver con la cámara»**, la cámara a pantalla completa detrás del dibujo; **luz roja** para no perder la vista nocturna y la pantalla siempre encendida. |
+| 💌 **Postal** | Con **«Compartir este cielo»** te llevás una imagen del cielo que tuviste en tu parada: el de ese lugar y ese momento, mirando hacia donde mirabas, con su leyenda. Se arma en el teléfono, sin subir nada, y sale por el menú de compartir (o se descarga). Es el cielo calculado, no una foto, y la postal lo dice. |
 | 🦙 **Qué significa** | La Yacana, la llama oscura de la Vía Láctea, con sus fuentes. Y «tu signo» como astronomía: dónde está de verdad esta noche, sin predicciones. |
 | 🔊 **Escuchar** | Tocás «Escuchar» y el teléfono te lee en voz alta lo que explica de un astro, de la Yacana o de tu signo, en español o en inglés: para seguir mirando el cielo y no la pantalla. |
 | 🏔️ **Pacha** | De día, sacás una foto por la ventana y te cuenta qué lugar es, su historia y de dónde sale el dato. Después le podés repreguntar. |
@@ -98,7 +99,7 @@ Las claves de IA van en `.env.local`, que nunca se commitea.
 ```text
 app/                rutas: / , /explorar , /cielo , y las de /api
 features/cuando     la mejor noche
-features/cielo      motor del cielo, Apuntá, cámara y Yacana
+features/cielo      motor del cielo, Apuntá, cámara, Yacana y la postal para compartir
 features/signo      tu signo en el cielo
 features/escuchar   leer en voz alta lo que explica la app
 features/satelites  pasos de la Estación Espacial y de Starlink
