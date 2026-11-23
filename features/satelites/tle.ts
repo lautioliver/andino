@@ -2,7 +2,7 @@
 // La copia sobrevive a los deploys: si tiene menos de 2 horas se usa sin llamar a CelesTrak, y si
 // CelesTrak falla se usa aunque sea más vieja (hasta 3 días). Cada set tiene su propia clave en Blob.
 import { get, put } from "@vercel/blob";
-import { limpiarTle, tleConRespaldo, type Respaldo } from "./respaldo";
+import { limpiarTle, tleConRespaldo, type Respaldo, type TleObtenido } from "./respaldo";
 
 export interface FuenteDeTle {
   /** URL de CelesTrak, formato TLE. */
@@ -40,19 +40,22 @@ async function bajar(url: string): Promise<string> {
   return res.text();
 }
 
-/** El set, sin caché propia: quien lo llama lo guarda con `"use cache: remote"` y VIDA_TLE. */
-export async function tleDeCelestrak(fuente: FuenteDeTle): Promise<string> {
-  try {
-    return await tleConRespaldo({
-      leerRespaldo: () => leerRespaldo(fuente.respaldo),
-      bajar: () => bajar(fuente.url),
-      guardarRespaldo: (texto) => guardarRespaldo(fuente.respaldo, texto),
-      valido: fuente.valido,
-      avisar,
-    });
-  } catch (e) {
-    // Se anota acá: en producción, un error que sale de una función con caché llega a la ruta sin su mensaje.
-    console.error(`[satelites] sin órbitas: CelesTrak falló y no hay respaldo utilizable (${fuente.respaldo})`, e);
-    throw e;
+/**
+ * El set y cuánto guardarlo, sin caché propia: quien lo llama usa `"use cache: remote"` y le pasa `vida`
+ * a cacheLife. No rechaza si CelesTrak falla: devuelve el respaldo, o `texto: null` si no hay.
+ */
+export async function tleDeCelestrak(fuente: FuenteDeTle): Promise<TleObtenido> {
+  const obtenido = await tleConRespaldo({
+    leerRespaldo: () => leerRespaldo(fuente.respaldo),
+    bajar: () => bajar(fuente.url),
+    guardarRespaldo: (texto) => guardarRespaldo(fuente.respaldo, texto),
+    valido: fuente.valido,
+    avisar,
+  });
+  // Se anota acá, con el motivo: lo que queda en la caché es solo que no hay órbitas, y el error que
+  // después sale de una función con caché llega a la ruta sin su mensaje.
+  if (obtenido.texto === null) {
+    console.error(`[satelites] sin órbitas: CelesTrak falló y no hay respaldo utilizable (${fuente.respaldo})`, obtenido.fallo);
   }
+  return obtenido;
 }

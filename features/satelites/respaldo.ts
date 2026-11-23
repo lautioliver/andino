@@ -1,6 +1,6 @@
-// Cuándo bajar un TLE de CelesTrak y cuándo usar la copia de respaldo. La misma regla para todos los
-// sets (Starlink, la Estación Espacial): CelesTrak devuelve 403 si se baja el mismo set dos veces en
-// menos de 2 horas desde la misma IP.
+// Cuándo bajar un TLE de CelesTrak, cuándo usar la copia de respaldo y cuánto guardar lo que salió.
+// La misma regla para todos los sets (Starlink, la Estación Espacial): CelesTrak devuelve 403 si se
+// baja el mismo set dos veces en menos de 2 horas desde la misma IP.
 //
 // Lógica pura, sin red ni imports de valor: quién lee, baja y guarda llega por parámetro (tle.ts), y
 // los tests corren este .ts directo con node.
@@ -12,6 +12,12 @@ export const RESPALDO_FRESCO_MS = 2 * HORA_MS;
 export const RESPALDO_MAXIMO_MS = 72 * HORA_MS;
 /** Vida del TLE en la caché remota, en segundos: se vuelve a pedir, como mucho, cada 3 horas. */
 export const VIDA_TLE = { stale: 3600, revalidate: 3 * 3600, expire: 24 * 3600 };
+/**
+ * Vida de lo que quedó cuando CelesTrak falla (el respaldo, o que no hay órbitas): durante 10 minutos
+ * nadie vuelve a llamarlo, y el primer pedido que llegue después lo reintenta. Pasados 15 minutos sin
+ * pedidos, lo guardado ya no se sirve ni mientras tanto: el siguiente espera el reintento.
+ */
+export const VIDA_TRAS_FALLO = { stale: 600, revalidate: 600, expire: 900 };
 
 export interface Respaldo {
   texto: string;
@@ -29,6 +35,16 @@ export interface OrigenDeTle {
   avisar?(mensaje: string, causa?: unknown): void;
 }
 
+/** Lo que salió de buscar un set, y cuánto vale la pena guardarlo. */
+export interface TleObtenido {
+  /** El set a usar. null si CelesTrak falló y no hay respaldo utilizable: no hay órbitas, y no se inventan. */
+  texto: string | null;
+  /** Cuánto guardarlo en la caché remota: VIDA_TLE si salió bien, VIDA_TRAS_FALLO si CelesTrak falló. */
+  vida: typeof VIDA_TLE;
+  /** El error de CelesTrak, si falló. */
+  fallo?: unknown;
+}
+
 /** Sin espacios de relleno ni líneas vacías: tres líneas por satélite. */
 export function limpiarTle(texto: string): string {
   return texto
@@ -40,12 +56,16 @@ export function limpiarTle(texto: string): string {
 
 /**
  * El TLE a usar: el respaldo si es fresco; si no, se baja y se guarda; y si la bajada falla, el
- * respaldo aunque sea más viejo, hasta RESPALDO_MAXIMO_MS. Sin ninguno de los dos, rechaza.
+ * respaldo aunque sea más viejo, hasta RESPALDO_MAXIMO_MS. Sin ninguno de los dos, no hay texto.
+ *
+ * Un fallo de CelesTrak no rechaza: vuelve como resultado, con VIDA_TRAS_FALLO. Así el que llama puede
+ * guardarlo en la caché (un error no se guarda) y los pedidos siguientes no insisten con CelesTrak
+ * justo cuando está caído o limitando.
  */
-export async function tleConRespaldo(origen: OrigenDeTle): Promise<string> {
+export async function tleConRespaldo(origen: OrigenDeTle): Promise<TleObtenido> {
   const leido = await origen.leerRespaldo();
   const respaldo = leido && origen.valido(leido.texto) ? leido : null;
-  if (respaldo && respaldo.edadMs < RESPALDO_FRESCO_MS) return respaldo.texto;
+  if (respaldo && respaldo.edadMs < RESPALDO_FRESCO_MS) return { texto: respaldo.texto, vida: VIDA_TLE };
 
   let texto: string;
   try {
@@ -54,11 +74,11 @@ export async function tleConRespaldo(origen: OrigenDeTle): Promise<string> {
   } catch (e) {
     if (respaldo && respaldo.edadMs < RESPALDO_MAXIMO_MS) {
       origen.avisar?.(`CelesTrak falló; uso el respaldo de hace ${Math.round(respaldo.edadMs / HORA_MS)} h`, e);
-      return respaldo.texto;
+      return { texto: respaldo.texto, vida: VIDA_TRAS_FALLO, fallo: e };
     }
-    throw e;
+    return { texto: null, vida: VIDA_TRAS_FALLO, fallo: e };
   }
   // Que no se pueda guardar la copia no es motivo para tirar lo que ya se bajó.
   await origen.guardarRespaldo(texto).catch((e) => origen.avisar?.("no se pudo guardar el respaldo de órbitas", e));
-  return texto;
+  return { texto, vida: VIDA_TLE };
 }
