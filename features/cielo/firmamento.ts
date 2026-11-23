@@ -49,7 +49,7 @@ export interface Vista {
 }
 
 /** Vector unitario este-norte-arriba para una altitud y acimut. */
-function direccion(alt: number, az: number): [number, number, number] {
+export function direccion(alt: number, az: number): [number, number, number] {
   const ca = Math.cos(alt * RAD);
   return [ca * Math.sin(az * RAD), ca * Math.cos(az * RAD), Math.sin(alt * RAD)];
 }
@@ -126,6 +126,65 @@ export function recortarPoligono(puntos: [number, number, number][], zMin = -0.2
     }
   }
   return salida;
+}
+
+/**
+ * Los polos galácticos, [AR, Dec] J2000 en grados (norte: 12 h 51,4 min, +27° 08′; el sur es su antípoda).
+ * La Vía Láctea no llega hasta ahí: son la referencia de «afuera» de sus regiones.
+ */
+export const POLOS_GALACTICOS: readonly (readonly [number, number])[] = [
+  [192.86, 27.13],
+  [12.86, -27.13],
+];
+
+/**
+ * Puntos [AR, Dec] J2000 (grados) → tira de vectores unitarios locales este-norte-arriba: x, y, z de cada
+ * punto, seguidos. Para lo que se recalcula en cada cuadro (la Vía Láctea), así no hay trigonometría por cuadro.
+ */
+export function tiraLocal(m: Matriz, puntos: readonly (readonly [number, number])[]): Float64Array {
+  const tira = new Float64Array(puntos.length * 3);
+  puntos.forEach(([ar, dec], i) => {
+    const { alt, az } = aHorizonte(m, ar, dec);
+    tira.set(direccion(alt, az), i * 3);
+  });
+  return tira;
+}
+
+/** Lo que se usa de un trazado de lienzo: lo cumple el contexto 2D y, en los tests, un registrador. */
+export interface Trazo {
+  moveTo(x: number, y: number): void;
+  lineTo(x: number, y: number): void;
+  closePath(): void;
+  rect(x: number, y: number, ancho: number, alto: number): void;
+}
+
+/**
+ * Agrega al trazado una región del cielo (para rellenar con la regla par-impar: los anillos interiores son
+ * huecos). Cada anillo es una tira de vectores unitarios este-norte-arriba: x, y, z de cada vértice, seguidos.
+ * Devuelve si hay que rellenar.
+ */
+export function trazarRegion(trazo: Trazo, c: Camara, anillos: readonly ArrayLike<number>[]): boolean {
+  for (const anillo of anillos) {
+    const puntos: [number, number, number][] = [];
+    for (let i = 0; i < anillo.length; i += 3) {
+      const [x, y, z] = [anillo[i], anillo[i + 1], anillo[i + 2]];
+      puntos.push([
+        x * c.derecha[0] + y * c.derecha[1] + z * c.derecha[2],
+        x * c.arriba[0] + y * c.arriba[1] + z * c.arriba[2],
+        x * c.frente[0] + y * c.frente[1] + z * c.frente[2],
+      ]);
+    }
+    const recortado = recortarPoligono(puntos);
+    if (recortado.length < 3) continue;
+    recortado.forEach((p, i) => {
+      const q = aPantalla(c, p);
+      if (!q) return;
+      if (i === 0) trazo.moveTo(q.x, q.y);
+      else trazo.lineTo(q.x, q.y);
+    });
+    trazo.closePath();
+  }
+  return true;
 }
 
 /** Color aproximado de una estrella según su índice B−V (de azulada a anaranjada), suavizado. */

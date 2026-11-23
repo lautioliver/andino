@@ -2,17 +2,23 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
+import { campoVisible } from "./camaraTrasera.ts";
 import {
   aHorizonte,
   camara,
   desplazarISO,
+  direccion,
   enCamara,
   matrizHorizonte,
   oscuridad,
+  POLOS_GALACTICOS,
   proyectar,
   recortarPoligono,
+  tiraLocal,
+  trazarRegion,
 } from "./firmamento.ts";
 import { computeSky } from "./motor.ts";
+import { POSTAL } from "./postal.ts";
 
 const PURMAMARCA = { latitude: -23.744, longitude: -65.499 };
 const DEMO = "2026-11-22T22:00:00-03:00";
@@ -158,4 +164,193 @@ describe("catálogo", () => {
   it("la Cruz del Sur se llama así", () => {
     assert.equal(cat.constelaciones.find((c) => c.id === "Cru").nombre, "Cruz del Sur");
   });
+});
+
+// --- Vía Láctea: lo que se rellena en la pantalla contra la región real, medida en la esfera ---
+
+const RAD = Math.PI / 180;
+const punto = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+const cruz = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const vertice = (tira, i) => [tira[3 * i], tira[3 * i + 1], tira[3 * i + 2]];
+
+/** ¿Se cruzan los arcos de círculo máximo a→b y c→d? (los dos de menos de 180°). */
+function seCruzan(a, b, c, d) {
+  const planoAB = cruz(a, b);
+  const c1 = punto(planoAB, c);
+  const d1 = punto(planoAB, d);
+  if (c1 > 0 === d1 > 0) return false;
+  const planoCD = cruz(c, d);
+  const a2 = punto(planoCD, a);
+  const b2 = punto(planoCD, b);
+  if (a2 > 0 === b2 > 0) return false;
+  // Cada arco corta el plano del otro en un punto: se cruzan si es el mismo, y no su antípoda.
+  const enCD = [0, 1, 2].map((i) => c[i] * Math.abs(d1) + d[i] * Math.abs(c1));
+  const enAB = [0, 1, 2].map((i) => a[i] * Math.abs(b2) + b[i] * Math.abs(a2));
+  return punto(enCD, enAB) > 0;
+}
+
+/** Cuántas veces cruza los bordes de la región el arco de círculo máximo a→b. */
+function crucesDelArco(anillos, a, b) {
+  const plano = cruz(a, b);
+  const lado = (tira, i) => plano[0] * tira[3 * i] + plano[1] * tira[3 * i + 1] + plano[2] * tira[3 * i + 2] > 0;
+  let cruces = 0;
+  for (const tira of anillos) {
+    const n = tira.length / 3;
+    let antes = lado(tira, n - 1);
+    for (let i = 0; i < n; i++) {
+      const ahora = lado(tira, i);
+      // Solo un borde que pasa de un lado al otro del plano del arco puede cruzarlo.
+      if (ahora !== antes && seCruzan(a, b, vertice(tira, (i + n - 1) % n), vertice(tira, i))) cruces++;
+      antes = ahora;
+    }
+  }
+  return cruces;
+}
+
+/**
+ * La verdad, sin proyección: `p` está en la región si el arco de círculo máximo hasta un punto de afuera
+ * (el polo galáctico más cercano) cruza sus bordes una cantidad impar de veces.
+ */
+function dentroReal(anillos, p, polos) {
+  const polo = punto(p, vertice(polos, 0)) >= 0 ? vertice(polos, 0) : vertice(polos, 1);
+  return crucesDelArco(anillos, p, polo) % 2 === 1;
+}
+
+/** A menos de `grados` de un vértice del borde no se compara: ahí decide el redondeo (los bordes miden menos de 0,6°). */
+function pegadoAlBorde(anillos, p, grados = 0.5) {
+  const minimo = Math.cos(grados * RAD);
+  for (const tira of anillos) {
+    for (let i = 0; i < tira.length; i += 3) if (p[0] * tira[i] + p[1] * tira[i + 1] + p[2] * tira[i + 2] > minimo) return true;
+  }
+  return false;
+}
+
+/** Un trazado que anota lo que le piden, en vez de un lienzo: cada subtrazado, como x, y seguidos. */
+function registrador() {
+  const subtrazados = [];
+  return {
+    subtrazados,
+    moveTo: (x, y) => subtrazados.push([x, y]),
+    lineTo: (x, y) => subtrazados.at(-1).push(x, y),
+    closePath: () => {},
+    rect: (x, y, ancho, alto) => subtrazados.push([x, y, x + ancho, y, x + ancho, y + alto, x, y + alto]),
+  };
+}
+
+/** Lo que pintaría `fill("evenodd")` en el punto (x, y) de la pantalla. */
+function rellenoEn(subtrazados, x, y) {
+  let cruces = 0;
+  for (const s of subtrazados) {
+    for (let i = 0, j = s.length - 2; i < s.length; j = i, i += 2) {
+      if (s[i + 1] > y !== s[j + 1] > y && x < s[i] + ((y - s[i + 1]) * (s[j] - s[i])) / (s[j + 1] - s[i + 1])) cruces++;
+    }
+  }
+  return cruces % 2 === 1;
+}
+
+/** La dirección del cielo (vector local) que cae en el punto (x, y) de la pantalla: la estereográfica al revés. */
+function direccionEnPantalla(c, x, y) {
+  const X = (x - c.ancho / 2) / c.escala;
+  const Y = (c.alto / 2 - y) / c.escala;
+  const z = (4 - X * X - Y * Y) / (4 + X * X + Y * Y);
+  const k = (1 + z) / 2;
+  return [0, 1, 2].map((i) => X * k * c.derecha[i] + Y * k * c.arriba[i] + z * c.frente[i]);
+}
+
+/** Lo que `dibujarCielo` rellena de un nivel: el trazado, o nada si la función dice que no se rellene. */
+function trazar(c, anillos, afuera) {
+  const trazo = registrador();
+  return trazarRegion(trazo, c, anillos, afuera) ? trazo.subtrazados : [];
+}
+
+/**
+ * Compara, en una grilla de puntos de la pantalla, lo que se rellena con la región real. Devuelve cuántos
+ * puntos comparó de cada lado y cuáles no coinciden.
+ */
+function comparar(c, anillos, polos, rotulo = "", columnas = 6, filas = 8) {
+  const subtrazados = trazar(c, anillos, polos);
+  const r = { dentro: 0, fuera: 0, distintos: [] };
+  for (let i = 0; i < columnas; i++) {
+    for (let j = 0; j < filas; j++) {
+      const x = ((i + 0.5) / columnas) * c.ancho;
+      const y = ((j + 0.5) / filas) * c.alto;
+      const p = direccionEnPantalla(c, x, y);
+      if (pegadoAlBorde(anillos, p)) continue;
+      const real = dentroReal(anillos, p, polos);
+      if (real) r.dentro++;
+      else r.fuera++;
+      if (rellenoEn(subtrazados, x, y) !== real) r.distintos.push(`${rotulo} (${Math.round(x)}, ${Math.round(y)}): ${real ? "falta relleno" : "relleno de más"}`);
+    }
+  }
+  return r;
+}
+
+describe("Vía Láctea: lo que se rellena en pantalla es la región real", () => {
+  const cat = JSON.parse(readFileSync(new URL("../../data/cielo/catalogo.json", import.meta.url), "utf8"));
+  const TILCARA = { latitude: -23.5768, longitude: -65.3934 };
+  const m = matrizHorizonte(TILCARA, "2026-11-23T23:30:00-03:00");
+  const niveles = cat.viaLactea.map((n) => ({ nivel: n.nivel, anillos: n.poligonos.map((p) => tiraLocal(m, p)) }));
+  const polos = tiraLocal(m, POLOS_GALACTICOS);
+  const [norte, sur] = [vertice(polos, 0), vertice(polos, 1)];
+  const centroGalactico = vertice(tiraLocal(m, [[266.4, -29.0]]), 0);
+
+  it("la tira local de un punto es su dirección en el horizonte", () => {
+    const { alt, az } = aHorizonte(m, 101.287155, -16.716116);
+    assert.deepEqual([...tiraLocal(m, [[101.287155, -16.716116]])], direccion(alt, az));
+  });
+
+  it("la vuelta de pantalla a cielo deshace la proyección", () => {
+    const c = camara({ az: 200, alt: 35, fov: 80, giro: 25 }, 390, 844);
+    const q = proyectar(c, 50, 170);
+    const p = direccionEnPantalla(c, q.x, q.y);
+    direccion(50, 170).forEach((v, i) => assert.ok(Math.abs(v - p[i]) < 1e-12, `${p}`));
+  });
+
+  it("los polos galácticos, la referencia de «afuera», están lejos de todo borde y del mismo lado", () => {
+    // Un punto del ecuador galáctico cada 30° de longitud, desde el centro.
+    const haciaElCentro = centroGalactico.map((v, i) => v - punto(centroGalactico, norte) * norte[i]);
+    const perpendicular = cruz(norte, haciaElCentro);
+    for (const { nivel, anillos } of niveles) {
+      for (const polo of [norte, sur]) assert.equal(pegadoAlBorde(anillos, polo, 60), false, `nivel ${nivel}`);
+      for (let l = 0; l < 360; l += 30) {
+        const ecuador = haciaElCentro.map((v, i) => v * Math.cos(l * RAD) + perpendicular[i] * Math.sin(l * RAD));
+        // De polo a polo, un meridiano galáctico entra y sale de la región: cruza sus bordes un número par de veces.
+        assert.equal((crucesDelArco(anillos, norte, ecuador) + crucesDelArco(anillos, ecuador, sur)) % 2, 0, `nivel ${nivel}, longitud ${l}`);
+      }
+    }
+  });
+
+  it("control astronómico: el centro galáctico queda dentro del nivel más extendido", () => {
+    assert.equal(dentroReal(niveles.find((n) => n.nivel === 1).anillos, centroGalactico, polos), true);
+  });
+
+  // Los formatos en que se dibuja: la pantalla en el teléfono y en la computadora, «Ver con la cámara»
+  // (teléfono vertical y ladeado, con el campo de su cámara) y el cielo de la postal.
+  const FORMATOS = {
+    "teléfono (375 × 420, campo de 80°)": { ancho: 375, alto: 420, fov: 80 },
+    "computadora (1280 × 640, campo de 100°)": { ancho: 1280, alto: 640, fov: 100 },
+    "cámara vertical ladeada 25°": { ancho: 390, alto: 844, fov: campoVisible({ ancho: 1080, alto: 1920 }, { ancho: 390, alto: 844 }), giro: 25 },
+    "cámara con campo de 55°, casi acostada": { ancho: 390, alto: 844, fov: 55, giro: -70 },
+    "postal": { ancho: POSTAL.cielo.ancho / POSTAL.escalaCielo, alto: POSTAL.cielo.alto / POSTAL.escalaCielo, fov: POSTAL.campoCielo },
+  };
+
+  for (const [nombre, { ancho, alto, fov, giro }] of Object.entries(FORMATOS)) {
+    it(`${nombre}: en todos los rumbos (cada 30°) y a 5°, 40° y 80° de altura`, () => {
+      const total = { dentro: 0, fuera: 0, distintos: [] };
+      for (const alt of [5, 40, 80]) {
+        for (let az = 0; az < 360; az += 30) {
+          const c = camara({ az, alt, fov, giro }, ancho, alto);
+          for (const { nivel, anillos } of niveles) {
+            const r = comparar(c, anillos, polos, `nivel ${nivel}, rumbo ${az}, altura ${alt}`);
+            total.dentro += r.dentro;
+            total.fuera += r.fuera;
+            total.distintos.push(...r.distintos);
+          }
+        }
+      }
+      // Que la comparación no sea vacía: hay puntos de los dos lados.
+      assert.ok(total.dentro > 200 && total.fuera > 2000, JSON.stringify({ dentro: total.dentro, fuera: total.fuera }));
+      assert.deepEqual(total.distintos.slice(0, 8), [], `${total.distintos.length} de ${total.dentro + total.fuera} puntos no coinciden`);
+    });
+  }
 });
