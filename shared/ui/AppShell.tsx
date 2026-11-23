@@ -3,7 +3,7 @@ import { Suspense, type ReactNode } from "react";
 import { AndinoMark } from "./AndinoMark";
 import { LangToggle } from "./LangToggle";
 import { LuzRojaEncendida } from "./LuzRoja";
-import { BottomNav, Pie, TopNav } from "./NavLinks";
+import { Dock, Pie, TopNav } from "./NavLinks";
 
 export function AppShell({ children }: { children: ReactNode }) {
   return (
@@ -24,18 +24,13 @@ export function AppShell({ children }: { children: ReactNode }) {
         </nav>
       </header>
       <main className="mx-auto w-full max-w-[1120px] flex-1 px-4 pb-16 md:px-6">{children}</main>
-      <footer className="mx-auto w-full max-w-[1120px] px-4 pb-28 text-xs text-text-muted md:px-6 md:pb-8">
+      {/* En el teléfono el pie deja lugar para el dock, que flota: 76px + el área segura, más aire. */}
+      <footer className="mx-auto w-full max-w-[1120px] px-4 pb-[calc(110px+env(safe-area-inset-bottom))] text-xs text-text-muted md:px-6 md:pb-8">
         <Pie />
       </footer>
-      <nav
-        aria-label="Principal móvil"
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-border bg-bg/95 backdrop-blur-md md:hidden"
-        style={{ paddingBottom: "env(safe-area-inset-bottom)" }}
-      >
-        <Suspense>
-          <BottomNav />
-        </Suspense>
-      </nav>
+      <Suspense>
+        <Dock />
+      </Suspense>
     </div>
   );
 }

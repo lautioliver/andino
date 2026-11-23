@@ -33,6 +33,12 @@
   --shadow-sm: 0 1px 2px 0 rgba(15, 23, 42, 0.05);
   --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.07), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
   --shadow-glow-puna: 0 10px 25px -5px rgba(255, 122, 69, 0.3);
+  /* Dock del teléfono: oscuro aunque la página sea clara, con las tintas de .oscuro.
+     En Abra el vidrio oscuro va al 72% sobre páginas oscuras; acá flota sobre Nube y al 72% queda gris: va al 92%. */
+  --dock: rgb(23 32 51 / 92%); /* --surface de .oscuro */
+  --dock-borde: rgb(255 250 247 / 9%);
+  --dock-tinta: #94a3b8; /* destinos inactivos: 5:1 sobre el dock */
+  --dock-activo: #b3a3ff; /* --violeta-ink de .oscuro */
 }
 
 /* Bloque oscuro dentro de la página clara: el cielo. Los mismos nombres de token, invertidos. */
@@ -78,6 +84,16 @@ html[data-luz="roja"] .acento {
   background: none;
   color: inherit;
 }
+/* El dock es oscuro: en rojo solo una tinta casi blanca llega a 4.5:1, así que los destinos van en Nube.
+   El activo ya no se distingue por el violeta: se invierte, píldora Nube con tinta Noche. */
+html[data-luz="roja"] .dock {
+  --dock-borde: rgb(255 250 247 / 20%);
+  --dock-tinta: var(--bg);
+}
+html[data-luz="roja"] .dock-item[aria-current="page"] {
+  background: var(--bg);
+  color: var(--noche);
+}
 
 @theme inline {
   --color-bg: var(--bg);
@@ -119,6 +135,13 @@ body {
   color: var(--text);
   -webkit-font-smoothing: antialiased;
   overflow-x: clip; /* .bleed usa 100vw */
+}
+
+/* En el teléfono, lo que el navegador trae a la vista (foco, scrollIntoView) frena arriba del dock. */
+@media (width < 48rem) {
+  html {
+    scroll-padding-bottom: calc(86px + env(safe-area-inset-bottom));
+  }
 }
 
 @layer components {
@@ -172,6 +195,31 @@ body {
     border-radius: var(--radius-card);
     box-shadow: var(--shadow-sm);
   }
+  /* Dock del teléfono (shared/ui/NavLinks.tsx), el de Abra Tickets: una píldora de vidrio oscuro
+     despegada de los bordes y del indicador de inicio. Medidas de .glass y .dock de Abra. */
+  .dock {
+    position: fixed;
+    inset-inline: 12px;
+    bottom: calc(10px + env(safe-area-inset-bottom));
+    z-index: 30;
+    max-width: 440px;
+    margin-inline: auto;
+    padding: 6px;
+    border: 1px solid var(--dock-borde);
+    border-radius: 26px;
+    background: var(--dock);
+    -webkit-backdrop-filter: saturate(180%) blur(24px);
+    backdrop-filter: saturate(180%) blur(24px);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 6%),
+      0 18px 40px -16px rgb(15 23 42 / 45%);
+    color: var(--dock-tinta);
+  }
+  /* El destino activo: su propia píldora, un poco más clara que el dock. */
+  .dock-item[aria-current="page"] {
+    background: color-mix(in oklab, var(--dock-activo) 13%, transparent);
+    color: var(--dock-activo);
+  }
   .link-arrow {
     display: inline-flex;
     align-items: center;
@@ -193,6 +241,10 @@ body {
 :focus-visible {
   outline: 2px solid var(--violeta);
   outline-offset: 2px;
+}
+/* Sobre el dock oscuro el anillo Violeta no llega a 3:1 con la luz roja: va en Nube. */
+.dock-item:focus-visible {
+  outline-color: var(--bg);
 }
 
 @media (prefers-reduced-motion: reduce) {
