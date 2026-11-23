@@ -220,6 +220,20 @@ body {
     background: color-mix(in oklab, var(--dock-activo) 13%, transparent);
     color: var(--dock-activo);
   }
+  /* Alto del cielo de /cielo (features/cielo/SkyCanvas.tsx). En el teléfono, con el cielo arriba de todo tienen
+     que entrar debajo la barra de rumbos y «Compartir este cielo» sin que los tape el dock: del alto visible
+     se descuentan el encabezado (57px), la barra (hasta 64px), el botón (68px), el dock (76px) y algo de aire. */
+  .alto-cielo {
+    height: min(62svh, 100svh - 17.5rem - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    min-height: 280px;
+    max-height: 720px;
+  }
+  @media (width >= 48rem) {
+    .alto-cielo {
+      height: 62svh;
+      min-height: 380px;
+    }
+  }
   .link-arrow {
     display: inline-flex;
     align-items: center;

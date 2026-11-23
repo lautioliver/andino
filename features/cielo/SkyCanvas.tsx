@@ -411,7 +411,7 @@ export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, 
         tabIndex={0}
         role="group"
         aria-label={en ? `Sky from ${nombreLugar}. Use the arrow keys to turn.` : `Cielo desde ${nombreLugar}. Usá las flechas para girar.`}
-        className="relative h-[62svh] max-h-[720px] min-h-[380px] w-full cursor-grab touch-none select-none outline-offset-[-2px] active:cursor-grabbing"
+        className="alto-cielo relative w-full cursor-grab touch-none select-none outline-offset-[-2px] active:cursor-grabbing"
         onKeyDown={alTeclear}
         onPointerDown={alPresionar}
         onPointerMove={alMover}
@@ -445,9 +445,10 @@ export function SkyCanvas({ location, datetimeISO, solAlt, objetos, selectedId, 
         ) : null}
       </div>
 
-      {/* Barra bajo el cielo: hacia dónde mirás y los cuatro rumbos. */}
-      <div className="mx-auto flex max-w-[1120px] items-center justify-between gap-4 border-b border-border px-4 md:px-6">
-        <p className="min-w-0 py-3 text-sm text-text-muted" aria-live="polite">
+      {/* Barra bajo el cielo: hacia dónde mirás y los cuatro rumbos. En los teléfonos más angostos el texto no
+          entra al lado de los botones (quedaba partido en tres renglones): va en su propio renglón, arriba. */}
+      <div className="mx-auto flex max-w-[1120px] items-center justify-between gap-4 border-b border-border px-4 max-[359px]:flex-wrap max-[359px]:gap-y-0 md:px-6">
+        <p className="min-w-0 py-3 text-sm text-text-muted max-[359px]:w-full max-[359px]:pb-0" aria-live="polite">
           {en ? "Facing " : "Mirando al "}
           <span className="text-text">{rumbo(az, lang)}</span>
           <span className="hidden sm:inline">{en ? " · drag or use the arrow keys to turn" : " · arrastrá o usá las flechas para girar"}</span>

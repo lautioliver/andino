@@ -37,10 +37,12 @@ export function useBrujula(alMover: (v: Vista) => void, enPausa = false) {
   }, [alMover]);
   const huboLectura = useRef(false);
 
-  // En el servidor no hay sensores: se decide al hidratar, sin desajuste.
+  // En el servidor no hay sensores: se decide al hidratar, sin desajuste. Las computadoras también exponen
+  // DeviceOrientationEvent aunque no tengan brújula, y ofrecerles «Apuntá» o «Ver con la cámara» termina
+  // siempre en «sin brújula»: se ofrece solo donde hay pantalla táctil.
   const disponible = useSyncExternalStore(
     sinSuscripcion,
-    () => "DeviceOrientationEvent" in window,
+    () => "DeviceOrientationEvent" in window && window.matchMedia("(any-pointer: coarse)").matches,
     () => false,
   );
 
