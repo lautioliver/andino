@@ -1,4 +1,5 @@
-// Pasos visibles de satélites Starlink sobre un lugar, calculados con los TLE públicos de CelesTrak (SGP4).
+// Pasos visibles de satélites (Starlink y la Estación Espacial Internacional) sobre un lugar, calculados
+// con los TLE públicos de CelesTrak (SGP4).
 // Módulo aparte para poder enchufarlo al mapa de Cielo: la función pura es `calcularPasos`.
 //
 // Un satélite se ve a simple vista cuando el observador ya está a oscuras y el satélite, muy arriba,
@@ -13,6 +14,7 @@ export interface PasoVisible {
   fin: string; // ISO del punto más alto del último de la fila
   inicio: string; // ISO
   maximo: string; // ISO del punto más alto
+  termina: string; // ISO de la última muestra en que se ve: después baja de 10° o entra en la sombra
   alturaMaxDeg: number;
   desdeAzDeg: number;
   hastaAzDeg: number;
@@ -27,12 +29,30 @@ export interface PasosDeLaNoche {
   tleActualizado: string; // ISO, época más reciente del set
 }
 
-const ALTURA_MIN = (10 * Math.PI) / 180;
-const PASO_MS = 30_000;
+/** Altura mínima para contar un paso: más abajo lo tapan el horizonte y la bruma. */
+export const ALTURA_MIN_DEG = 10;
+const ALTURA_MIN = (ALTURA_MIN_DEG * Math.PI) / 180;
+/** Resolución del barrido: los horarios de un paso salen con este margen. */
+export const PASO_MS = 30_000;
 const VENTANA_MS = 4 * 3600_000;
 const LANZAMIENTOS_RECIENTES = 3;
 const MIN_FILA = 3;
 const ALTURA_DESTACADO = 20;
+/** Las órbitas pierden precisión con los días: solo se calculan noches a esta distancia de hoy. */
+export const DIAS_CALCULABLES = 3;
+
+/**
+ * ¿Se puede calcular la noche de `fecha` (YYYY-MM-DD, la tarde en que empieza)? Tiene que ser un día
+ * que exista en el calendario y estar a no más de DIAS_CALCULABLES del momento `ahoraMs`.
+ */
+export function nocheCalculable(fecha: string | null | undefined, ahoraMs: number): boolean {
+  const partes = /^(\d{4})-(\d{2})-(\d{2})$/.exec(fecha ?? "");
+  if (!partes) return false;
+  const mediodia = Date.UTC(Number(partes[1]), Number(partes[2]) - 1, Number(partes[3]), 15); // 12:00 en UTC−3
+  // Un día que no existe («2026-11-31») se corre al mes siguiente: se exige que vuelva igual.
+  if (new Date(mediodia).toISOString().slice(0, 10) !== partes[0]) return false;
+  return Math.abs(mediodia - ahoraMs) <= DIAS_CALCULABLES * 86_400_000;
+}
 
 interface Tle {
   nombre: string;
@@ -66,6 +86,7 @@ interface Crudo {
   tle: Tle;
   inicio: number;
   maximo: number;
+  ultimo: number;
   alt: number;
   desde: number;
   hasta: number;
@@ -76,6 +97,7 @@ export function calcularPasos(
   lugar: { latitude: number; longitude: number },
   mediodiaISO: string,
   maxDestacados = 6,
+  alturaDestacadoDeg = ALTURA_DESTACADO,
 ): PasosDeLaNoche | null {
   const desde = finDelCrepusculo(lugar.latitude, lugar.longitude, mediodiaISO);
   if (!desde) return null;
@@ -97,9 +119,10 @@ export function calcularPasos(
       const visible = la.elevation >= ALTURA_MIN && sat.shadowFraction(sol, pos) < 0.5;
       const a = abiertos.get(tle);
       if (visible) {
-        if (!a) abiertos.set(tle, { tle, inicio: t, maximo: t, alt: la.elevation, desde: az, hasta: az });
+        if (!a) abiertos.set(tle, { tle, inicio: t, maximo: t, ultimo: t, alt: la.elevation, desde: az, hasta: az });
         else {
           a.hasta = az;
+          a.ultimo = t;
           if (la.elevation > a.alt) Object.assign(a, { alt: la.elevation, maximo: t });
         }
       } else if (a) {
@@ -111,7 +134,9 @@ export function calcularPasos(
   pasos.push(...abiertos.values());
 
   // Lanzamientos recientes: los designadores internacionales más altos (año + número de lanzamiento).
-  const recientes = new Set([...new Set(tles.map((t) => t.lanzamiento))].sort().slice(-LANZAMIENTOS_RECIENTES));
+  // Solo tiene sentido en un set con muchos lanzamientos: con uno solo (la Estación) no hay «recientes».
+  const lanzamientos = [...new Set(tles.map((t) => t.lanzamiento))].sort();
+  const recientes = new Set(lanzamientos.length > LANZAMIENTOS_RECIENTES ? lanzamientos.slice(-LANZAMIENTOS_RECIENTES) : []);
 
   // Satélites de un lanzamiento reciente viajan todavía en fila por la misma órbita: se agrupan si llegan
   // a su punto más alto con menos de 6 min entre uno y el siguiente. Menos de 90 s de media es un "tren".
@@ -143,6 +168,7 @@ export function calcularPasos(
       fin: new Date(Math.max(...g.map((x) => x.maximo))).toISOString(),
       inicio: new Date(Math.min(...g.map((x) => x.inicio))).toISOString(),
       maximo: new Date(p.maximo).toISOString(),
+      termina: new Date(Math.max(...g.map((x) => x.ultimo))).toISOString(),
       alturaMaxDeg: Math.round(sat.radiansToDegrees(p.alt)),
       desdeAzDeg: Math.round(p.desde),
       hastaAzDeg: Math.round(p.hasta),
@@ -153,7 +179,7 @@ export function calcularPasos(
 
   // Primero lo que más se ve: trenes y recién lanzados, después los pasos más altos.
   const peso = (p: PasoVisible) => (p.satelites > 1 ? 1000 + p.satelites : 0) + (p.recienLanzado ? 500 : 0) + p.alturaMaxDeg;
-  const destacados = candidatos.filter((p) => p.alturaMaxDeg >= ALTURA_DESTACADO).sort((a, b) => peso(b) - peso(a)).slice(0, maxDestacados);
+  const destacados = candidatos.filter((p) => p.alturaMaxDeg >= alturaDestacadoDeg).sort((a, b) => peso(b) - peso(a)).slice(0, maxDestacados);
   destacados.sort((a, b) => a.maximo.localeCompare(b.maximo));
 
   const epoca = Math.max(...tles.map((t) => t.rec.jdsatepoch));

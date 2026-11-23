@@ -53,7 +53,7 @@ El punto de observación es el eje: cada paso trabaja sobre un lugar concreto (l
 
 El viajero indica dónde está y qué noches tiene. ANDINO calcula, con el motor actual, la puesta del Sol, el fin del crepúsculo, la fase de la Luna y su salida y puesta, y recomienda **la mejor noche y la franja horaria más oscura**, explicando por qué.
 
-**Ya existe:** «Esta noche» en la ficha del lugar (puesta del Sol, fase de la Luna, objetos visibles) y los pasos visibles de satélites Starlink. **Falta:** comparar varias noches del viaje y calcular la franja oscura.
+**Ya existe:** «Esta noche» en la ficha del lugar (puesta del Sol, fase de la Luna, objetos visibles) y los pasos visibles de la Estación Espacial Internacional y de satélites Starlink, con cuenta regresiva al próximo. **Falta:** comparar varias noches del viaje y calcular la franja oscura.
 
 **Límite:** sin datos meteorológicos confiables no prometemos cielo despejado; lo decimos.
 

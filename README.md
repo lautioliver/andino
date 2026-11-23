@@ -43,7 +43,7 @@ Siete paradas. En cada una, ANDINO sabe qué hay por la ventana de día y qué v
 | 📱 **Apuntá** | Levantás el teléfono y el cielo tiene nombre. En vivo con la brújula, también de día, desde tu ubicación. Con la **cámara** detrás del dibujo, **luz roja** para no perder la vista nocturna y la pantalla siempre encendida. |
 | 🦙 **Qué significa** | La Yacana, la llama oscura de la Vía Láctea, con sus fuentes. Y «tu signo» como astronomía: dónde está de verdad esta noche, sin predicciones. |
 | 🏔️ **Pacha** | De día, sacás una foto por la ventana y te cuenta qué lugar es, su historia y de dónde sale el dato. Después le podés repreguntar. |
-| 🛰️ **Satélites** | Los pasos visibles de Starlink para tu parada y tu noche. |
+| 🛰️ **Satélites** | Los pasos visibles de la Estación Espacial Internacional y de Starlink para tu parada y tu noche, con cuenta regresiva al próximo. |
 
 ## 🔭 Regla de la casa: acá no se inventa nada
 
@@ -99,7 +99,7 @@ app/                rutas: / , /explorar , /cielo , y las de /api
 features/cuando     la mejor noche
 features/cielo      motor del cielo, Apuntá, cámara y Yacana
 features/signo      tu signo en el cielo
-features/satelites  pasos de Starlink
+features/satelites  pasos de la Estación Espacial y de Starlink
 features/pacha      foto → lugar, con IA
 shared/             contratos (types.ts), UI base e idioma (i18n/lang.ts) — coordinar antes de cambiar
 data/               dataset compartido (places.ts) — coordinar antes de cambiar
@@ -116,7 +116,6 @@ Para el detalle: [`docs/plan.md`](docs/plan.md) (plan del proyecto) y [`docs/des
 
 ## 🚉 Próximas paradas
 
-- **Estación Espacial Internacional** y cuenta regresiva al próximo paso visible.
 - **Desde dónde mirar:** un punto oscuro por parada, contado por la gente del lugar.
 - Más teléfonos reales y más conversaciones con viajeros.
 

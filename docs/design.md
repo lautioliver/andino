@@ -122,7 +122,7 @@ Lo que antes era Pacha: ya no es un producto aparte, es la forma de llegar a la 
 ### 4.3 Ficha del punto de observación
 
 - Foto, nombre del lugar (sugerido si viene de la IA) y opción `No es este lugar` si hay ambigüedad.
-- **Cuándo**, arriba de todo: la mejor noche entre las del viaje y la franja más oscura, con el porqué en una línea (Luna, fin del crepúsculo). Hoy existe «Esta noche en {lugar}» (puesta del sol, fase de la Luna, objetos sobre el horizonte, pasos de Starlink): es la base de este bloque.
+- **Cuándo**, arriba de todo: la mejor noche entre las del viaje y la franja más oscura, con el porqué en una línea (Luna, fin del crepúsculo). Hoy existe «Esta noche en {lugar}» (puesta del sol, fase de la Luna, objetos sobre el horizonte, pasos de la Estación Espacial Internacional y de Starlink con cuenta regresiva al próximo paso visible): es la base de este bloque.
 - **Para observar:** horizonte despejado o con cerros, luz cercana, cómo llegar, cuidados (altura, frío). Solo datos con fuente; si no hay dato, se dice.
 - Explicación breve del lugar (2–4 frases), `Conocer más` y fuentes visibles.
 - Campo `Preguntá sobre este lugar…` con pregunta de seguimiento.
