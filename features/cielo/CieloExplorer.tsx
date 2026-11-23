@@ -298,10 +298,11 @@ export function CieloExplorer() {
     }
   }
 
-  // Desde el mapa, la ficha queda fuera de pantalla en el celular: la traemos a la vista.
-  function elegirDesdeMapa(id: string) {
+  // Desde el mapa, la ficha queda fuera de pantalla en el celular: la traemos a la vista. Desde «Ver con la
+  // cámara» no: el visor muestra la ficha encima y la página de atrás se queda donde estaba.
+  function elegirDesdeMapa(id: string, desdeVisor = false) {
     setSelectedId(id);
-    requestAnimationFrame(() => document.getElementById("ficha-cielo")?.scrollIntoView({ behavior: "smooth", block: "nearest" }));
+    if (!desdeVisor) requestAnimationFrame(() => document.getElementById("ficha-cielo")?.scrollIntoView({ behavior: "smooth", block: "nearest" }));
   }
 
   function elegirMomento(nuevaFecha: string, nuevaHora: string) {

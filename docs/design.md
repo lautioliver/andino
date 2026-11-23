@@ -134,7 +134,7 @@ Lo que antes era Pacha: ya no es un producto aparte, es la forma de llegar a la 
 - Encabezado: «El cielo desde [lugar]».
 - Selector de lugar, fecha y hora; valor inicial: la noche recomendada, o una de ejemplo claramente etiquetada.
 - **Apuntá:** con permiso de orientación, el cielo sigue al celular (brújula y giroscopio). **Plan B siempre disponible:** girar el cielo con el dedo. Si la brújula no es confiable en el dispositivo, se muestra solo el plan B; nunca se simula orientación. Funciona también de día (dónde está la Luna, por dónde saldrá una constelación).
-  - **Cámara:** mientras se apunta, un control bajo el cielo enciende la cámara de atrás y la muestra detrás del dibujo (lienzo transparente con un velo de Noche). El campo visual del dibujo se ajusta al de una cámara de teléfono típica: la coincidencia es aproximada y la interfaz lo dice. La imagen no se guarda ni se envía. Se apaga al dejar de apuntar, al salir de la página y con la pestaña oculta; sin permiso o sin cámara, un mensaje y el cielo sigue como estaba.
+  - **Ver con la cámara:** un botón sobre el cielo, que se ofrece si el equipo tiene sensores de orientación y cámara, pide en un toque el permiso de movimiento y el de la cámara y abre un visor a pantalla completa (por encima del encabezado y del dock, por debajo de la luz roja): la cámara de atrás a sangre y el cielo dibujado encima (lienzo transparente con un velo de Noche), que acompaña también la inclinación lateral del teléfono. En los bordes, con el vidrio oscuro del dock: salir, hacia dónde apunta el teléfono (rumbo y altura), una mira en el centro y el nombre de lo que quedó en ella; tocarlo, o tocar un objeto, abre su ficha. Arrastrar el dedo no hace nada: se sale con el botón, con Escape o con «atrás». El campo visual del dibujo se ajusta al de una cámara de teléfono típica: la coincidencia es aproximada, y lo dice —junto con que la imagen no se guarda ni se envía— una ayuda breve que aparece al entrar, se va sola y vuelve con el botón de información. La cámara se apaga al salir del visor, al salir de la página y con la pestaña oculta. Si falta un permiso, no hay brújula o la cámara no se puede usar, el visor lo explica y ofrece reintentar o volver al cielo, que sigue como estaba.
   - **Pantalla encendida:** mientras se apunta se pide Wake Lock, si el navegador lo tiene.
 - **Luz roja:** un control bajo el cielo tiñe toda la app de rojo para cuidar la vista acostumbrada a la oscuridad (capa `multiply` y tintas en Noche, en `app/globals.css`). Se recuerda en el navegador y, encendida, también se apaga desde el encabezado.
 - **Qué significa**, al tocar un objeto o figura: nombre, tipo, posición, explicación y fuente.
@@ -172,8 +172,9 @@ Lo que antes era Pacha: ya no es un producto aparte, es la forma de llegar a la 
 | `CelestialObjectCard` | Detalle astronómico | `jehp23` |
 | `StatusMessage` | Vacío, error, offline | `lautioliver` |
 | `MejorNoche` | Cuándo: noches del viaje → recomendada y franja oscura | `lautioliver` (#24) |
-| `useBrujula` / `orientacion` | Apuntá: brújula con plan B de arrastre, dentro de `SkyCanvas` | `lautioliver` (#26) |
-| `useCamara` / `camaraTrasera` / `usePantallaEncendida` | Apuntá: cámara detrás del cielo y pantalla encendida, dentro de `SkyCanvas` | `lautioliver` |
+| `useBrujula` / `orientacion` | Apuntá: brújula (rumbo, altura e inclinación lateral) con plan B de arrastre, dentro de `SkyCanvas` | `lautioliver` (#26) |
+| `VisorCamara` / `mira` / `useCamara` / `camaraTrasera` | Ver con la cámara: visor a pantalla completa con la cámara detrás del cielo, abierto desde `SkyCanvas` | `lautioliver` |
+| `usePantallaEncendida` | Apuntá: pantalla encendida mientras se apunta, dentro de `SkyCanvas` | `lautioliver` |
 | `LuzRoja` | Luz roja para toda la app: control en /cielo y apagado desde el encabezado | `lautioliver` |
 | `FiguraAndina` / `TuSigno` | Qué significa: cielo andino y signo en su posición real | `lautioliver` (`TuSigno` en #25; `FiguraAndina` pendiente) |
 

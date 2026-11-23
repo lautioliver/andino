@@ -64,6 +64,16 @@ export function rumbo(acimutDeg: number, lang: "es" | "en" = "es"): string {
   return RUMBOS[lang][Math.round(normalizado / 45) % 8];
 }
 
+/**
+ * Hacia dónde apunta el teléfono, en corto: «Norte · 35°». La altura va en grados enteros sobre el
+ * horizonte; debajo de él, con signo menos.
+ */
+export function rumboYAltura(acimutDeg: number, altitudDeg: number, lang: "es" | "en" = "es"): string {
+  const nombre = rumbo(acimutDeg, lang);
+  const grados = Math.round(Math.max(-90, Math.min(90, altitudDeg)));
+  return `${nombre[0].toUpperCase()}${nombre.slice(1)} · ${grados < 0 ? "−" : ""}${Math.abs(grados)}°`;
+}
+
 const ALTURAS = {
   es: ["bajo el horizonte", "muy bajo, cerca del horizonte", "a media altura", "alto en el cielo", "casi sobre tu cabeza"],
   en: ["below the horizon", "very low, near the horizon", "halfway up", "high in the sky", "almost overhead"],

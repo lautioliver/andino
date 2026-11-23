@@ -44,6 +44,8 @@ export interface Vista {
   alt: number;
   /** Campo visual horizontal, grados. */
   fov: number;
+  /** Inclinación lateral de la cámara, grados (`Vista.giro` de orientacion.ts). Sin ella, el horizonte queda nivelado. */
+  giro?: number;
 }
 
 /** Vector unitario este-norte-arriba para una altitud y acimut. */
@@ -74,7 +76,18 @@ export function camara(vista: Vista, ancho: number, alto: number): Camara {
     derecha[0] * frente[1] - derecha[1] * frente[0],
   ];
   const escala = ancho / 2 / (2 * Math.tan((vista.fov * RAD) / 4));
-  return { derecha, arriba, frente, escala, ancho, alto };
+  if (!vista.giro) return { derecha, arriba, frente, escala, ancho, alto };
+  // Teléfono ladeado: los ejes de la imagen giran alrededor de la mirada y el horizonte se inclina al revés.
+  const c = Math.cos(vista.giro * RAD);
+  const s = Math.sin(vista.giro * RAD);
+  return {
+    derecha: [c * derecha[0] + s * arriba[0], c * derecha[1] + s * arriba[1], c * derecha[2] + s * arriba[2]],
+    arriba: [c * arriba[0] - s * derecha[0], c * arriba[1] - s * derecha[1], c * arriba[2] - s * derecha[2]],
+    frente,
+    escala,
+    ancho,
+    alto,
+  };
 }
 
 /** Coordenadas de cámara (x a la derecha, y arriba, z hacia adelante) de un punto del cielo. */
