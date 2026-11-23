@@ -2,12 +2,16 @@
 // Escrito a mano y sin dependencias. Lo registra shared/ui/SinSenal.tsx, solo en producción.
 //
 // Qué hace con cada pedido (solo GET del mismo origen; todo lo demás pasa sin tocarse):
-// - Primero la red: las páginas, los pedidos de datos del router de Next (los de ?_rsc= o cabecera RSC),
-//   /api/* y lo demás. Con señal siempre se ve lo último; la copia guardada se usa solo si la red falla.
+// - Primero la red, con plazo: las páginas, los pedidos de datos del router de Next (los de ?_rsc= o cabecera
+//   RSC), /api/* y lo demás. Con señal siempre se ve lo último. La copia guardada se usa si la red falla o si no
+//   contestó dentro del plazo (señal colgada: hay conexión, pero no responde); lo que la red conteste después
+//   igual renueva la copia. Sin copia se sigue esperando a la red. Los plazos: PLAZO_PAGINA_MS y PLAZO_DATOS_MS.
+// - Las copias de /api vencen (VENCIMIENTOS): pasado su tiempo no se sirven, y la app muestra su aviso de
+//   «no disponible» en vez de un pronóstico viejo.
 // - Primero la copia: lo que no cambia. /_next/static/ (nombres con hash; ahí están también las fuentes)
-//   y las fotos de las paradas (/places/* y sus medidas de /_next/image).
-// - Nunca se guarda: respuestas con error, parciales, opacas o marcadas no-store; tampoco /api/pacha/*
-//   ni /api/recordatorio.
+//   y las fotos de las paradas (/places/* y sus medidas de /_next/image). Con tope de entradas: MAX_FIJOS.
+// - Nunca se guarda: respuestas con error, parciales, opacas o marcadas no-store; tampoco /api/pacha/*,
+//   /api/recordatorio ni las rutas de /api que no tienen vencimiento declarado.
 // - Página sin copia y sin red: la pantalla «Sin señal» del final de este archivo.
 //
 // INTERRUPTOR. Si el service worker da problemas: poné ACTIVO en false y desplegá. Cada teléfono, la próxima
@@ -21,7 +25,7 @@
 const ACTIVO = true;
 
 // Subir el número tira todo lo guardado en cada teléfono y lo arma de nuevo (por ejemplo, si se reemplaza
-// una foto de /places sin cambiarle el nombre, o para liberar los archivos de despliegues viejos).
+// una foto de /places sin cambiarle el nombre). Los archivos de despliegues viejos se van solos: MAX_FIJOS.
 const VERSION = "v1";
 
 const PREFIJO = "andino-";
@@ -33,9 +37,48 @@ const PRINCIPALES = { "/": ["Inicio", "Home"], "/explorar": ["De día", "By day"
 const SIN_GUARDAR = ["/api/pacha/", "/api/recordatorio"];
 const MAX_PAGINAS = 40;
 const MAX_DATOS = 120;
+// Tope de la caché de archivos fijos. Un teléfono usa entre 20 y 30 entradas por despliegue (unos 15 archivos de
+// /_next/static/ y las fotos) y cada despliegue nuevo deja ahí las del anterior: 120 da lugar al vigente y a
+// unos cuatro anteriores, para que una pestaña que quedó abierta con una versión vieja siga encontrando lo suyo.
+const MAX_FIJOS = 120;
 const ANCHO_FOTO = 750; // la medida de cada foto que se guarda al instalar: la de un teléfono de 375 px a 2x
 const ESPERA_MS = 15000; // tope de cada pedido propio al guardar
 const SIN_VARY = { ignoreVary: true }; // la URL ya distingue las variantes (?_rsc=, medidas de foto)
+
+// PLAZOS de la red. Señal colgada: el teléfono dice que hay conexión, pero la respuesta no llega. Si la red no
+// contestó en este tiempo y hay copia, se sirve la copia; el pedido sigue en marcha y, si llega, renueva la copia.
+// - Páginas y datos del router: 3 s. Son lo que frena la pantalla. Una página de ANDINO es estática y sale de una
+//   CDN: con una conexión nueva son unas 4 idas y vueltas (DNS, TCP, TLS y el pedido), 1,6 s con un 3G lento de
+//   400 ms por vuelta. 3 s es casi el doble: pasado eso, la señal se da por colgada. Y servir la copia de más
+//   cuesta poco, porque es la misma página salvo que haya habido un despliegue en el medio.
+// - Datos (/api y lo demás): 5 s. No frenan la pantalla (la página ya se ve y dice «buscando…»), el servidor a
+//   veces tarda de verdad (los pasos de satélites, cuando los calcula) y acá lo fresco sí puede ser distinto de
+//   la copia: se espera un poco más. Tiene que quedar por debajo de los 8 s que features/cuando/Nubes.tsx espera
+//   antes de darse por vencida; con un plazo mayor la copia llegaría tarde.
+const PLAZO_PAGINA_MS = 3000;
+const PLAZO_DATOS_MS = 5000;
+// Cuánto se mantiene despierto el service worker esperando una respuesta que ya no hace falta para la pantalla,
+// solo para guardarla. Pasado eso el navegador puede dormirlo: esa renovación la hará la próxima visita con señal.
+const ESPERA_TARDIA_MS = 30000;
+
+// VENCIMIENTOS de las copias de /api: cuánto valen, contado desde que la respuesta salió del servidor (si venía
+// de la CDN, se le suma lo que llevaba ahí: cabecera Age). Una copia más vieja no se sirve: mostrar como vigente
+// un pronóstico vencido es engañar, y cada parte de la app ya sabe decir que no tiene el dato. Lo que no es de
+// /api (páginas, datos del router, manifest, íconos) es la app misma y no vence.
+// - /api/nubes: 3 h. El servidor le vuelve a pedir el pronóstico a Open-Meteo cada hora y deja de servir el suyo
+//   a las 3 h (`revalidate` y `expire` en features/cuando/pronostico.ts): acá, la misma regla.
+// - /api/satelites/: 12 h. El servidor vuelve a bajar las órbitas cada 3 h y las da por buenas hasta 72 h
+//   (features/satelites/respaldo.ts); medio día queda bien adentro de eso. Alcanza para mirar los pasos a la tarde
+//   con wifi y salir de noche sin señal; lo que se miró a la mañana ya no se muestra a la noche.
+// - Una ruta de /api que no está en la lista no se guarda: antes de servir guardado un dato nuevo, alguien tiene
+//   que decidir acá cuánto vale.
+const HORA_MS = 3600000;
+const VENCIMIENTOS = [
+  ["/api/nubes", 3 * HORA_MS],
+  ["/api/satelites/", 12 * HORA_MS],
+];
+const GUARDADO = "x-andino-guardado"; // cabecera de la copia: cuándo salió del servidor, en ms
+const MARGEN_RELOJ_MS = 60000; // lo que se le perdona al reloj del teléfono si se corrige hacia atrás
 
 if (!ACTIVO) {
   self.addEventListener("install", () => self.skipWaiting());
@@ -62,7 +105,7 @@ if (!ACTIVO) {
     }
     if (navega) event.respondWith(navegar(event, url));
     else if (url.pathname.startsWith("/_next/static/") || fotoDe(url)) event.respondWith(primeroLaCopia(event, url));
-    else event.respondWith(primeroLaRed(event));
+    else event.respondWith(primeroLaRed(event, url));
   });
 }
 
@@ -89,11 +132,12 @@ function fotoDe(url) {
 
 const etag = (res) => (res.headers.get("etag") || "").replace(/^W\//, "");
 
-/** Guarda sin frenar la respuesta. Si no entra (cuota llena), se sigue sin copia. */
+/** Guarda sin frenar la respuesta (`res` puede ser una promesa). Si no entra (cuota llena), se sigue sin copia. */
 async function guardar(nombre, req, res, max) {
   try {
+    const lista = await res;
     const cache = await caches.open(nombre);
-    await cache.put(req, res);
+    await cache.put(req, lista);
     if (max) await recortar(cache, max);
   } catch {}
 }
@@ -104,30 +148,113 @@ async function recortar(cache, max) {
   for (const k of claves.slice(0, Math.max(0, claves.length - max))) await cache.delete(k);
 }
 
-// Primero la red. La copia, solo si la red falla; sin copia, el pedido falla como fallaría sin service worker
-// y cada parte de la app muestra su aviso de «no disponible».
-async function primeroLaRed(event) {
+/** Cuánto vale la copia de esta ruta, en ms: Infinity si no vence (no es de /api) y 0 si no se guarda. */
+function vidaDe(ruta) {
+  if (!ruta.startsWith("/api/")) return Infinity;
+  const regla = VENCIMIENTOS.find(([prefijo]) => ruta.startsWith(prefijo));
+  return regla ? regla[1] : 0;
+}
+
+/**
+ * ¿Se puede servir todavía una copia? `guardado` es el texto de su cabecera GUARDADO. Sin fecha (las copias de
+ * antes de que hubiera vencimientos; Number(null) es 0 y la edad da enorme), con una fecha rota o con una fecha
+ * del futuro (alguien atrasó el reloj del teléfono), no: no se sabe cuánto tiene. Lo que no vence, siempre.
+ */
+function vigente(guardado, vidaMs, ahoraMs) {
+  const edad = ahoraMs - Number(guardado);
+  return vidaMs === Infinity || (edad > -MARGEN_RELOJ_MS && edad < vidaMs);
+}
+
+/** Cuándo salió del servidor una respuesta que llega ahora: si la tenía la CDN, Age dice hace cuántos segundos. */
+function nacimiento(ahoraMs, age) {
+  return ahoraMs - (/^\d+$/.test(age || "") ? Number(age) * 1000 : 0);
+}
+
+/**
+ * La misma respuesta con esa fecha anotada en la cabecera GUARDADO, para guardarla. Lee el cuerpo entero (son
+ * respuestas de /api, chicas), que ya llega descomprimido: las cabeceras que hablan del cuerpo comprimido se van.
+ */
+async function conFecha(res, cuando) {
+  const cabeceras = new Headers(res.headers);
+  cabeceras.set(GUARDADO, String(cuando));
+  cabeceras.delete("content-encoding");
+  cabeceras.delete("content-length");
+  return new Response(await res.blob(), { status: res.status, statusText: res.statusText, headers: cabeceras });
+}
+
+const SIN_RESPUESTA = {}; // marca: pasó el plazo y la red todavía no contestó
+
+/**
+ * La carrera entre la red y el plazo. `red` es la promesa de la respuesta de la red; `buscarCopia` devuelve la
+ * copia guardada o undefined.
+ * - La red contesta dentro del plazo: su respuesta.
+ * - Pasa el plazo sin respuesta: la copia, y `red` sigue en marcha (pedirYGuardar guarda lo que llegue). Sin
+ *   copia se sigue esperando a la red.
+ * - La red falla, antes o después del plazo: la copia, o undefined si no hay.
+ */
+async function redOCopia(red, buscarCopia, plazoMs) {
+  const copia = () => Promise.resolve().then(buscarCopia).catch(() => undefined);
+  let reloj;
+  const plazo = new Promise((ok) => (reloj = setTimeout(ok, plazoMs, SIN_RESPUESTA)));
   try {
-    const res = await fetch(event.request);
-    if (guardable(res)) event.waitUntil(guardar(DATOS, event.request, res.clone(), MAX_DATOS));
-    return res;
+    const primero = await Promise.race([red, plazo]);
+    if (primero !== SIN_RESPUESTA) return primero;
+    return (await copia()) || (await red);
   } catch {
-    return (await (await caches.open(DATOS)).match(event.request, SIN_VARY)) || Response.error();
+    return copia();
+  } finally {
+    clearTimeout(reloj);
   }
 }
 
-// Primero la copia. De una foto, sin red, sirve cualquier medida guardada: el navegador la escala.
+/**
+ * Pide a la red y guarda lo que llegue con `guardarla`, que clona la respuesta antes de que nadie la lea. El
+ * service worker sigue despierto hasta que la copia quede escrita, también cuando la respuesta llega después de
+ * haber servido la copia; si la red no contesta, hasta ESPERA_TARDIA_MS.
+ */
+function pedirYGuardar(event, guardarla) {
+  let guardando;
+  const red = fetch(event.request).then((res) => {
+    guardando = guardarla(res);
+    return res;
+  });
+  let reloj;
+  const tope = new Promise((ok) => (reloj = setTimeout(ok, ESPERA_TARDIA_MS)));
+  event.waitUntil(
+    Promise.race([red, tope])
+      .then(() => guardando)
+      .catch(() => {})
+      .finally(() => clearTimeout(reloj)),
+  );
+  return red;
+}
+
+// Primero la red, con plazo. La copia, si la red falla o no contesta a tiempo. Sin copia, o con la copia vencida,
+// el pedido falla como fallaría sin service worker y cada parte de la app muestra su aviso de «no disponible».
+function primeroLaRed(event, url) {
+  const vida = vidaDe(url.pathname);
+  const red = pedirYGuardar(event, (res) => {
+    if (vida === 0 || !guardable(res)) return undefined;
+    const copia = res.clone();
+    const conSuFecha = vida === Infinity ? copia : conFecha(copia, nacimiento(Date.now(), res.headers.get("age")));
+    return guardar(DATOS, event.request, conSuFecha, MAX_DATOS);
+  });
+  const copia = async () => {
+    const guardada = await (await caches.open(DATOS)).match(event.request, SIN_VARY);
+    return guardada && vigente(guardada.headers.get(GUARDADO), vida, Date.now()) ? guardada : undefined;
+  };
+  const delRouter = event.request.headers.has("rsc") || url.searchParams.has("_rsc");
+  return redOCopia(red, copia, delRouter ? PLAZO_PAGINA_MS : PLAZO_DATOS_MS).then((res) => res || Response.error());
+}
+
+// Primero la copia; si falta, la red. De una foto sirve cualquier medida guardada (el navegador la escala) cuando
+// la red falla o no contesta a tiempo: es la misma foto, así que el plazo es el corto.
 async function primeroLaCopia(event, url) {
   const fijos = await caches.open(FIJOS);
   const copia = await fijos.match(event.request, SIN_VARY);
   if (copia) return copia;
-  try {
-    const res = await fetch(event.request);
-    if (guardable(res)) event.waitUntil(guardar(FIJOS, event.request, res.clone()));
-    return res;
-  } catch {
-    return (await otraMedida(fijos, fotoDe(url))) || Response.error();
-  }
+  const red = pedirYGuardar(event, (res) => (guardable(res) ? guardar(FIJOS, event.request, res.clone()) : undefined));
+  return (await redOCopia(red, () => otraMedida(fijos, fotoDe(url)), PLAZO_PAGINA_MS)) || Response.error();
 }
 
 async function otraMedida(fijos, foto) {
@@ -136,17 +263,16 @@ async function otraMedida(fijos, foto) {
   return clave && fijos.match(clave, SIN_VARY);
 }
 
-// Páginas: primero la red. Sin red, la copia de esa URL; si no, la de la misma ruta sin la consulta
-// (las páginas de ANDINO son estáticas: ?placeId= y compañía se leen en el teléfono); si no, «Sin señal».
-async function navegar(event, url) {
-  try {
-    const res = await fetch(event.request);
-    if (esPagina(res)) event.waitUntil(guardarPagina(event.request, url, res.clone()));
-    return res;
-  } catch {
+// Páginas: primero la red, con plazo. Si falla o no contesta a tiempo, la copia de esa URL; si no, la de la misma
+// ruta sin la consulta (las páginas de ANDINO son estáticas: ?placeId= y compañía se leen en el teléfono). Sin
+// ninguna copia se espera a la red y, si falla, «Sin señal».
+function navegar(event, url) {
+  const red = pedirYGuardar(event, (res) => (esPagina(res) ? guardarPagina(event.request, url, res.clone()) : undefined));
+  const copia = async () => {
     const paginas = await caches.open(PAGINAS);
-    return (await paginas.match(event.request, SIN_VARY)) || (await paginas.match(url.pathname, SIN_VARY)) || sinSenal();
-  }
+    return (await paginas.match(event.request, SIN_VARY)) || (await paginas.match(url.pathname, SIN_VARY));
+  };
+  return redOCopia(red, copia, PLAZO_PAGINA_MS).then((res) => res || sinSenal());
 }
 
 async function guardarPagina(req, url, res) {
@@ -177,8 +303,8 @@ let cola = Promise.resolve();
  * Guarda las tres pantallas principales y lo que necesitan para abrir sin red: los archivos de /_next/static/
  * que nombra su HTML (la primera visita los bajó antes de que existiera este service worker) y una medida de
  * cada foto de parada de la portada. Con `renovar` (al instalar y cuando aparece un despliegue nuevo) vuelve a
- * pedir las tres pantallas; sin él, parte de las copias y solo pide a la red lo que falta. De a una corrida
- * por vez. Lo que falle se saltea: nada de esto hace caer la instalación.
+ * pedir las tres pantallas; sin él, parte de las copias y solo pide a la red lo que falta. Al final recorta los
+ * archivos fijos al tope. De a una corrida por vez. Lo que falle se saltea: nada de esto hace caer la instalación.
  */
 function precargar(renovar) {
   cola = cola.then(() => precargarTodo(renovar)).catch(() => {});
@@ -199,13 +325,9 @@ async function precargarTodo(renovar) {
           if (!esPagina(res)) return;
           await paginas.put(ruta, res.clone());
         }
-        const html = await res.text();
-        for (const [archivo] of html.matchAll(/\/_next\/static\/[^"'\\\s<>)]+/g)) archivos.add(archivo);
-        // El paquete de compatibilidad para navegadores viejos (noModule) no se baja: los que tienen service worker no lo usan.
-        for (const [, archivo] of html.matchAll(/<script src="([^"]+)" noModule/gi)) archivos.delete(archivo);
-        for (const [foto] of html.matchAll(/\/_next\/image\?url=%2Fplaces%2F[^&"]+&(?:amp;)?w=\d+&(?:amp;)?q=\d+/g)) {
-          if (foto.includes(`w=${ANCHO_FOTO}&`)) fotos.add(foto.replaceAll("&amp;", "&"));
-        }
+        const nombrados = nombradosEn(await res.text());
+        for (const archivo of nombrados.archivos) archivos.add(archivo);
+        for (const foto of nombrados.fotos) if (foto.includes(`w=${ANCHO_FOTO}&`)) fotos.add(foto);
       } catch {}
     }),
   );
@@ -219,6 +341,62 @@ async function precargarTodo(renovar) {
       } catch {}
     }),
   );
+  await recortarFijos(paginas, fijos);
+}
+
+/**
+ * Lo que nombra el HTML de una página: sus archivos de /_next/static/ y las fotos de paradas, cada una en todas
+ * las medidas de su srcset.
+ */
+function nombradosEn(html) {
+  const archivos = new Set();
+  for (const [archivo] of html.matchAll(/\/_next\/static\/[^"'\\\s<>)]+/g)) archivos.add(archivo);
+  // El paquete de compatibilidad para navegadores viejos (noModule) no cuenta: los que tienen service worker no lo usan.
+  for (const [, archivo] of html.matchAll(/<script src="([^"]+)" noModule/gi)) archivos.delete(archivo);
+  const fotos = new Set();
+  for (const [foto] of html.matchAll(/\/_next\/image\?url=%2Fplaces%2F[^&"]+&(?:amp;)?w=\d+&(?:amp;)?q=\d+/g)) {
+    fotos.add(foto.replaceAll("&amp;", "&"));
+  }
+  return { archivos, fotos };
+}
+
+/**
+ * Qué entradas sobran para volver al tope: las más viejas primero (`direcciones` viene en el orden en que se
+ * guardaron), salteando las protegidas. Si lo protegido solo ya pasa el tope, sobra todo lo demás y nada más.
+ */
+function sobrantes(direcciones, max, protegida) {
+  const sobran = [];
+  for (const direccion of direcciones) {
+    if (direcciones.length - sobran.length <= max) break;
+    if (!protegida(direccion)) sobran.push(direccion);
+  }
+  return sobran;
+}
+
+/**
+ * Tope de los archivos fijos: cuando pasan de MAX_FIJOS se van los más viejos (keys() los da en el orden en que
+ * se guardaron), que son los de despliegues anteriores. Nunca lo que nombra el HTML de una página guardada, en
+ * cualquier medida si es una foto: eso es lo que hace falta para abrirla sin red.
+ */
+async function recortarFijos(paginas, fijos) {
+  try {
+    const claves = await fijos.keys();
+    if (claves.length <= MAX_FIJOS) return;
+    const archivos = new Set();
+    const fotos = new Set();
+    for (const clave of await paginas.keys()) {
+      const pagina = await paginas.match(clave, SIN_VARY);
+      if (!pagina) continue;
+      const nombrados = nombradosEn(await pagina.text());
+      for (const archivo of nombrados.archivos) archivos.add(archivo);
+      for (const foto of nombrados.fotos) fotos.add(fotoDe(new URL(foto, self.location.origin)));
+    }
+    const protegida = (direccion) => {
+      const url = new URL(direccion);
+      return archivos.has(url.pathname + url.search) || fotos.has(fotoDe(url));
+    };
+    for (const sobra of sobrantes(claves.map((clave) => clave.url), MAX_FIJOS, protegida)) await fijos.delete(sobra, SIN_VARY);
+  } catch {}
 }
 
 // «Sin señal»: lo que se ve al abrir una página que no está guardada cuando no hay red. En los dos idiomas
