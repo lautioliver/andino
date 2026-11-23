@@ -3,17 +3,30 @@
 // crepúsculo astronómico) y la Luna no está arriba, o es tan fina que casi no ilumina.
 // Las nubes salen de un pronóstico horario (Open-Meteo, ver pronostico.ts): si no hay, se elige solo por la oscuridad.
 //
+// Las horas quedan al minuto y con los criterios de la línea de tiempo de la portada
+// (features/pacha/linea.ts), para que la misma noche no muestre dos horas distintas del mismo hecho.
+//
 // Lógica pura, sin DOM ni imports relativos de valor: los tests corren este .ts directo con node.
-import { Body, Equator, Horizon, Illumination, MakeTime, MoonPhase, Observer } from "astronomy-engine";
+import { Body, Equator, Horizon, Illumination, KM_PER_AU, MakeTime, MoonPhase, Observer, RAD2DEG } from "astronomy-engine";
 
 /** Se muestran las horas en la de Argentina (UTC−3, sin horario de verano). */
 const OFFSET_MS = -3 * 3600_000;
-/** Resolución del barrido de la noche. */
+const MINUTO_MS = 60_000;
+/** Resolución del barrido de la noche; cada cambio se afina después al minuto. */
 export const PASO_MIN = 5;
 /** Sol más bajo que esto: terminó el crepúsculo astronómico. */
 export const SOL_NOCHE = -18;
+/**
+ * Salida y puesta de la Luna como las define astronomy-engine (SearchRiseSet), que es lo que muestra
+ * la línea de tiempo: asoma el borde superior, con 34′ de refracción en el horizonte. El radio es el
+ * ecuatorial que usa la biblioteca.
+ */
+const REFRACCION_HORIZONTE = 34 / 60;
+const RADIO_LUNA_AU = 1738.1 / KM_PER_AU;
 /** Debajo de esta fracción iluminada, la Luna no arruina el cielo aunque esté arriba. */
 export const LUNA_FINA = 0.1;
+/** Una franja más corta que esto no se anuncia en el titular de la portada: esa noche se cuenta como con Luna. */
+export const FRANJA_ANUNCIABLE_MIN = 30;
 /**
  * Cómo se nombra la nubosidad (% de cielo cubierto): hasta DESPEJADO_HASTA, «despejado»; hasta
  * ALGO_NUBLADO_HASTA, «algo nublado»; más que eso, «nublado». Son umbrales nuestros para leer el
@@ -54,14 +67,14 @@ export type EstadoDelCielo = "despejado" | "algo-nublado" | "nublado";
 export interface NocheDeCielo {
   /** YYYY-MM-DD de la tarde en que empieza la noche. */
   fecha: string;
-  /** Sol a −18° de tarde y de madrugada; null si esa noche no llega a oscurecer del todo. */
+  /** Sol a −18° de tarde y de madrugada, al minuto; null si esa noche no llega a oscurecer del todo. */
   nocheCerrada: string | null;
   alba: string | null;
   /** Fracción iluminada de la Luna (0 a 1) a la medianoche. */
   lunaIluminada: number;
-  /** Minutos con Sol bajo −18° y sin Luna que moleste. */
+  /** Minutos de la franja: de `franja.desde` a `franja.hasta`. 0 si no hay franja. */
   minutosOscuros: number;
-  /** El tramo oscuro más largo de la noche. */
+  /** El tramo más largo con Sol bajo −18° y sin Luna que moleste, al minuto. */
   franja: Franja | null;
   /**
    * Nubosidad media prevista (%, entero) en la franja oscura; si no hay franja, en toda la noche
@@ -76,16 +89,41 @@ function aISOLocal(ms: number): string {
   return `${new Date(ms + OFFSET_MS).toISOString().slice(0, 19)}-03:00`;
 }
 
-/** "HH:MM" de una hora ISO, en UTC−3. */
+/** "HH:MM" de una hora ISO, en UTC−3. Sin redondear: el minuto en curso, como la línea de tiempo. */
 export function hora(datetimeISO: string): string {
   return new Date(new Date(datetimeISO).getTime() + OFFSET_MS).toISOString().slice(11, 16);
 }
 
-/** Altitud del Sol sin refracción (como jornada.ts y motor.ts); la de la Luna, con refracción. */
-function altitud(body: Body, ms: number, obs: Observer): number {
+/** El Sol (su centro, sin refracción) más bajo que SOL_NOCHE: lo que busca SearchAltitude en la línea de tiempo. */
+function esNocheCerrada(ms: number, obs: Observer): boolean {
   const time = MakeTime(new Date(ms));
-  const eq = Equator(body, time, obs, true, true);
-  return Horizon(time, obs, eq.ra, eq.dec, body === Body.Moon ? "normal" : undefined).altitude;
+  const eq = Equator(Body.Sun, time, obs, true, true);
+  return Horizon(time, obs, eq.ra, eq.dec).altitude < SOL_NOCHE;
+}
+
+/** La Luna asoma sobre el horizonte, aunque sea el borde: entre su salida y su puesta de la línea de tiempo. */
+function hayLuna(ms: number, obs: Observer): boolean {
+  const time = MakeTime(new Date(ms));
+  const eq = Equator(Body.Moon, time, obs, true, true);
+  const radio = RAD2DEG * Math.asin(RADIO_LUNA_AU / eq.dist);
+  return Horizon(time, obs, eq.ra, eq.dec).altitude + radio >= -REFRACCION_HORIZONTE;
+}
+
+/**
+ * Entre dos muestras vecinas del barrido que dan distinto (`antes` da `alEmpezar`; `despues`, lo
+ * contrario), el último minuto en punto que todavía da `alEmpezar`. El cambio cae dentro de ese minuto,
+ * y ese es el que se muestra: las horas no se redondean, igual que en la línea de tiempo.
+ * Búsqueda binaria entre minutos en punto: 2 o 3 evaluaciones por borde.
+ */
+function minutoDelCambio(antes: number, despues: number, alEmpezar: boolean, cumple: (ms: number) => boolean): number {
+  let [igual, distinto] = [antes, despues];
+  while (distinto - igual > MINUTO_MS) {
+    // Al menos un minuto más que `igual` y siempre antes que `distinto`: cada vuelta achica el tramo.
+    const medio = igual + Math.ceil((distinto - igual) / (2 * MINUTO_MS)) * MINUTO_MS;
+    if (cumple(medio) === alEmpezar) igual = medio;
+    else distinto = medio;
+  }
+  return igual;
 }
 
 /**
@@ -159,39 +197,52 @@ export function puntaje(minutosOscuros: number, nubes: number | null): number {
 }
 
 /**
- * Recorre la noche de `fecha` (de 18:00 a 08:00 del día siguiente) cada PASO_MIN minutos.
+ * Recorre la noche de `fecha` (de 18:00 a 08:00 del día siguiente) cada PASO_MIN minutos y afina al
+ * minuto cada borde: dónde cambia entre dos muestras vecinas, se deba al Sol o a la Luna.
  * Con `nubes`, suma la nubosidad prevista para la franja oscura.
  */
 export function nocheDeCielo(lugar: Lugar, fecha: string, nubes: NubesHorarias | null = null): NocheDeCielo {
   const obs = new Observer(lugar.latitude, lugar.longitude, 0);
   const inicio = new Date(`${fecha}T18:00:00-03:00`).getTime();
   const fin = inicio + 14 * 3600_000;
-  const paso = PASO_MIN * 60_000;
+  const paso = PASO_MIN * MINUTO_MS;
   const lunaIluminada = Illumination(Body.Moon, MakeTime(new Date(inicio + 6 * 3600_000))).phase_fraction;
   const lunaFina = lunaIluminada < LUNA_FINA;
+  const esNoche = (t: number) => esNocheCerrada(t, obs);
+  const sinLuna = (t: number) => lunaFina || !hayLuna(t, obs);
+  const estaOscuro = (t: number) => esNoche(t) && sinLuna(t);
 
-  const muestras: { t: number; esNoche: boolean; oscuro: boolean }[] = [];
+  const muestras: { esNoche: boolean; oscuro: boolean }[] = [];
   for (let t = inicio; t < fin; t += paso) {
-    const esNoche = altitud(Body.Sun, t, obs) < SOL_NOCHE;
-    const oscuro = esNoche && (lunaFina || altitud(Body.Moon, t, obs) < 0);
-    muestras.push({ t, esNoche, oscuro });
+    const noche = esNoche(t);
+    muestras.push({ esNoche: noche, oscuro: noche && sinLuna(t) });
   }
-  const noche = muestras.filter((m) => m.esNoche);
-  const primeraNoche = noche.at(0)?.t ?? null;
-  const ultimaNoche = noche.at(-1)?.t ?? null;
+  // Un tramo de muestras [desde, hasta) que cumplen, con cada borde afinado al minuto entre la última
+  // muestra de un lado y la primera del otro. En las puntas del barrido no hay vecina: queda la punta.
+  const alMinuto = (tramo: { desde: number; hasta: number }, cumple: (ms: number) => boolean) => {
+    const cambio = (i: number, alEmpezar: boolean) => minutoDelCambio(inicio + (i - 1) * paso, inicio + i * paso, alEmpezar, cumple);
+    return {
+      desde: tramo.desde === 0 ? inicio : cambio(tramo.desde, false),
+      hasta: tramo.hasta === muestras.length ? fin : cambio(tramo.hasta, true),
+    };
+  };
+
+  const noches = muestras.map((m) => m.esNoche);
+  const cerrada = noches.includes(true) ? alMinuto({ desde: noches.indexOf(true), hasta: noches.lastIndexOf(true) + 1 }, esNoche) : null;
   const tramo = tramoMasLargo(muestras.map((m) => m.oscuro));
-  const mejor = tramo ? { desde: inicio + tramo.desde * paso, hasta: inicio + tramo.hasta * paso } : null;
-  const oscuros = muestras.filter((m) => m.oscuro).length * PASO_MIN;
+  const mejor = tramo ? alMinuto(tramo, estaOscuro) : null;
+  // La duración sale de los mismos bordes que se muestran: «de 21:20 a 00:56» son 3 h 36 min.
+  const oscuros = mejor ? (mejor.hasta - mejor.desde) / MINUTO_MS : 0;
   // Las nubes se miran donde importa: en la franja oscura; sin franja, en toda la noche cerrada.
-  const ventana = mejor ?? (primeraNoche === null || ultimaNoche === null ? null : { desde: primeraNoche, hasta: ultimaNoche + paso });
+  const ventana = mejor ?? cerrada;
   const media = ventana ? nubosidadMedia(nubes, ventana.desde, ventana.hasta) : null;
   // Entero: el mismo número que se muestra es el que se usa para elegir.
   const nubosidad = media === null ? null : Math.round(media);
 
   return {
     fecha,
-    nocheCerrada: primeraNoche === null ? null : aISOLocal(primeraNoche),
-    alba: ultimaNoche === null ? null : aISOLocal(ultimaNoche + paso),
+    nocheCerrada: cerrada ? aISOLocal(cerrada.desde) : null,
+    alba: cerrada ? aISOLocal(cerrada.hasta) : null,
     lunaIluminada,
     minutosOscuros: oscuros,
     franja: mejor ? { desde: aISOLocal(mejor.desde), hasta: aISOLocal(mejor.hasta) } : null,
@@ -211,6 +262,39 @@ export function ventanaDeNubes(n: NocheDeCielo): Franja | null {
  */
 export function inicioDelCielo(n: NocheDeCielo): string | null {
   return n.franja?.desde ?? n.nocheCerrada;
+}
+
+export interface TitularDeLaNoche {
+  texto: string;
+  /** El titular da las horas de la franja: «esas horas» son las mismas en las que se miraron las nubes. */
+  conFranja: boolean;
+}
+
+/**
+ * El titular de «La noche en <lugar>» de la portada. Con una franja oscura de al menos
+ * FRANJA_ANUNCIABLE_MIN, sus horas: las de `nocheDeCielo`, que son las de la línea de tiempo, las nubes
+ * y el recordatorio. Sin franja, o con una más corta, cómo viene la Luna. null si esa noche no llega a
+ * oscurecer: no hay nada que anunciar.
+ * `luna` es la de esa noche: la fase ya en el idioma del titular y la parte iluminada en % (0 a 100).
+ */
+export function titularDeLaNoche(n: NocheDeCielo, luna: { fase: string; iluminada: number }, en: boolean): TitularDeLaNoche | null {
+  if (n.nocheCerrada === null) return null;
+  if (n.franja && n.minutosOscuros >= FRANJA_ANUNCIABLE_MIN) {
+    const [desde, hasta] = [hora(n.franja.desde), hora(n.franja.hasta)];
+    // Una Luna fina no corta la franja aunque esté arriba: esas noches no se promete «sin Luna».
+    const sinLuna = n.lunaIluminada >= LUNA_FINA;
+    const texto = en
+      ? `Dark sky${sinLuna ? " with no Moon" : ""} from ${desde} to ${hasta}.`
+      : `Cielo oscuro${sinLuna ? " y sin Luna" : ""} de ${desde} a ${hasta}.`;
+    return { texto, conFranja: true };
+  }
+  if (luna.iluminada > 60) {
+    const texto = en
+      ? `${luna.fase} all night: great for seeing the moonlit mountains, not so much the Milky Way.`
+      : `${luna.fase} toda la noche: ideal para ver los cerros iluminados, no tanto la Vía Láctea.`;
+    return { texto, conFranja: false };
+  }
+  return { texto: en ? "The Moon is up for much of the night." : "La Luna acompaña buena parte de la noche.", conFranja: false };
 }
 
 /** Fase de la Luna a la medianoche de esa noche, en octavos del ciclo: 0 nueva, 2 cuarto creciente, 4 llena, 6 cuarto menguante. */
