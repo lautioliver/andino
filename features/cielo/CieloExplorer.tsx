@@ -23,6 +23,7 @@ import {
 import { desplazarISO } from "./firmamento";
 import { aISOLocal } from "./jornada";
 import { computeSky, type SkyLocation, type SkyObjectId, sunAltitudeDeg } from "./motor";
+import type { LugarPostal } from "./postal";
 import { SkyCanvas } from "./SkyCanvas";
 import { type Coordenadas, LEJOS_KM, paradaMasCercana, posicionValida, textoDistancia } from "./ubicacion";
 
@@ -207,6 +208,13 @@ export function CieloExplorer() {
   const nombreLugar = pos ? t.tuUbicacion : (place?.name ?? "");
   // La ficha del paisaje: la parada elegida o, desde la ubicación, la más cercana.
   const parada = place ?? cercana?.parada;
+  // La postal nombra la parada elegida. Desde la ubicación, la más cercana si el teléfono está sobre el
+  // recorrido («cerca de»); lejos de él no nombra ninguna. Las coordenadas no salen del teléfono.
+  const lugarPostal: LugarPostal = place
+    ? { nombre: place.name, placeId: place.id }
+    : cercana && cercana.km <= LEJOS_KM
+      ? { nombre: cercana.parada.name, placeId: cercana.parada.id, cerca: true }
+      : { nombre: null, placeId: null };
 
   const resultado = useMemo(
     () => (vivo ? calcular(location, ahora.slice(0, 10), ahora.slice(11, 16), 0) : calcular(location, fecha, hora, desfase)),
@@ -380,6 +388,7 @@ export function CieloExplorer() {
             nombreLugar={nombreLugar}
             yacana={verYacana}
             onApuntar={alApuntar}
+            postal={lugarPostal}
           />
         </div>
       )}
