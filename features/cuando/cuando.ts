@@ -25,6 +25,8 @@ const REFRACCION_HORIZONTE = 34 / 60;
 const RADIO_LUNA_AU = 1738.1 / KM_PER_AU;
 /** Debajo de esta fracción iluminada, la Luna no arruina el cielo aunque esté arriba. */
 export const LUNA_FINA = 0.1;
+/** Una franja más corta que esto no se anuncia en el titular de la portada: esa noche se cuenta como con Luna. */
+export const FRANJA_ANUNCIABLE_MIN = 30;
 /**
  * Cómo se nombra la nubosidad (% de cielo cubierto): hasta DESPEJADO_HASTA, «despejado»; hasta
  * ALGO_NUBLADO_HASTA, «algo nublado»; más que eso, «nublado». Son umbrales nuestros para leer el
@@ -260,6 +262,39 @@ export function ventanaDeNubes(n: NocheDeCielo): Franja | null {
  */
 export function inicioDelCielo(n: NocheDeCielo): string | null {
   return n.franja?.desde ?? n.nocheCerrada;
+}
+
+export interface TitularDeLaNoche {
+  texto: string;
+  /** El titular da las horas de la franja: «esas horas» son las mismas en las que se miraron las nubes. */
+  conFranja: boolean;
+}
+
+/**
+ * El titular de «La noche en <lugar>» de la portada. Con una franja oscura de al menos
+ * FRANJA_ANUNCIABLE_MIN, sus horas: las de `nocheDeCielo`, que son las de la línea de tiempo, las nubes
+ * y el recordatorio. Sin franja, o con una más corta, cómo viene la Luna. null si esa noche no llega a
+ * oscurecer: no hay nada que anunciar.
+ * `luna` es la de esa noche: la fase ya en el idioma del titular y la parte iluminada en % (0 a 100).
+ */
+export function titularDeLaNoche(n: NocheDeCielo, luna: { fase: string; iluminada: number }, en: boolean): TitularDeLaNoche | null {
+  if (n.nocheCerrada === null) return null;
+  if (n.franja && n.minutosOscuros >= FRANJA_ANUNCIABLE_MIN) {
+    const [desde, hasta] = [hora(n.franja.desde), hora(n.franja.hasta)];
+    // Una Luna fina no corta la franja aunque esté arriba: esas noches no se promete «sin Luna».
+    const sinLuna = n.lunaIluminada >= LUNA_FINA;
+    const texto = en
+      ? `Dark sky${sinLuna ? " with no Moon" : ""} from ${desde} to ${hasta}.`
+      : `Cielo oscuro${sinLuna ? " y sin Luna" : ""} de ${desde} a ${hasta}.`;
+    return { texto, conFranja: true };
+  }
+  if (luna.iluminada > 60) {
+    const texto = en
+      ? `${luna.fase} all night: great for seeing the moonlit mountains, not so much the Milky Way.`
+      : `${luna.fase} toda la noche: ideal para ver los cerros iluminados, no tanto la Vía Láctea.`;
+    return { texto, conFranja: false };
+  }
+  return { texto: en ? "The Moon is up for much of the night." : "La Luna acompaña buena parte de la noche.", conFranja: false };
 }
 
 /** Fase de la Luna a la medianoche de esa noche, en octavos del ciclo: 0 nueva, 2 cuarto creciente, 4 llena, 6 cuarto menguante. */

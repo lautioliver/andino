@@ -10,6 +10,7 @@ import {
   estadoDelCielo,
   faseDeLaLuna,
   fechasDesde,
+  FRANJA_ANUNCIABLE_MIN,
   hora,
   inicioDelCielo,
   leerOpenMeteo,
@@ -18,6 +19,7 @@ import {
   nocheDeCielo,
   nubosidadMedia,
   puntaje,
+  titularDeLaNoche,
   tramoMasLargo,
   ventanaDeNubes,
 } from "./cuando.ts";
@@ -143,6 +145,80 @@ describe("las horas de una noche, contra la línea de tiempo de la portada", () 
     assert.equal(n.nocheCerrada, "2026-11-22T21:14:00-03:00");
     assert.equal(n.alba, "2026-11-23T05:02:00-03:00");
     assert.deepEqual(ventanaDeNubes(n), { desde: "2026-11-22T21:14:00-03:00", hasta: "2026-11-23T05:02:00-03:00" });
+  });
+
+  it("en todas las paradas, las dos horas del titular de la portada están en la línea de tiempo de esa noche", async () => {
+    const { places } = await import("../../data/places.ts");
+    let conHoras = 0;
+    for (const place of places) {
+      for (const fecha of fechasDesde("2026-11-22", 60)) {
+        const linea = lineaDeLaNoche(place, fecha);
+        if (linea.eventos.some((e) => alFilo(e.iso))) continue;
+        const horasDe = (...tipos) => linea.eventos.filter((e) => tipos.includes(e.tipo)).map((e) => formato.format(new Date(e.iso)));
+        const titular = titularDeLaNoche(nocheDeCielo(place, fecha), { fase: "Luna llena", iluminada: 100 }, false);
+        const horas = titular.texto.match(/\d\d:\d\d/g) ?? [];
+        assert.equal(horas.length, titular.conFranja ? 2 : 0, `${place.id} ${fecha}: «${titular.texto}»`);
+        if (!titular.conFranja) continue;
+        conHoras++;
+        // Empieza al cerrarse la noche o cuando se pone la Luna; termina cuando sale o al alba.
+        assert.ok(horasDe("oscuro", "puesta-luna").includes(horas[0]), `${place.id} ${fecha}: «${titular.texto}» no empieza en ${horasDe("oscuro", "puesta-luna")}`);
+        assert.ok(horasDe("salida-luna", "alba").includes(horas[1]), `${place.id} ${fecha}: «${titular.texto}» no termina en ${horasDe("salida-luna", "alba")}`);
+      }
+    }
+    assert.ok(conHoras >= places.length * 30, `este caso necesita titulares con horas: hubo ${conHoras}`);
+  });
+});
+
+describe("el titular de la portada", () => {
+  const GIBOSA = { fase: "Luna gibosa menguante", iluminada: 97 };
+  const WANING = { fase: "Waning gibbous", iluminada: 97 };
+  const CUARTO = { fase: "Cuarto creciente", iluminada: 50 };
+
+  it("14/12 en Purmamarca, con Luna creciente: de la puesta de la Luna al alba, 00:10 a 05:01", () => {
+    // La línea de tiempo de esa noche: «Se pone la Luna 00:10» y «Empieza a clarear 05:01».
+    const n = nocheDeCielo(PURMAMARCA, "2026-12-14");
+    assert.deepEqual(titularDeLaNoche(n, CUARTO, false), { texto: "Cielo oscuro y sin Luna de 00:10 a 05:01.", conFranja: true });
+    assert.deepEqual(titularDeLaNoche(n, CUARTO, true), { texto: "Dark sky with no Moon from 00:10 to 05:01.", conFranja: true });
+  });
+
+  it("29/11, con Luna menguante: de la noche cerrada a la salida de la Luna, 21:20 a 00:56", () => {
+    const n = nocheDeCielo(PURMAMARCA, "2026-11-29");
+    assert.equal(titularDeLaNoche(n, CUARTO, false).texto, "Cielo oscuro y sin Luna de 21:20 a 00:56.");
+  });
+
+  it("con la Luna casi nueva (5/12) la franja es toda la noche aunque la Luna salga antes del alba: no dice «sin Luna»", () => {
+    const n = nocheDeCielo(PURMAMARCA, "2026-12-05");
+    assert.ok(n.lunaIluminada < LUNA_FINA);
+    assert.ok(lineaDeLaNoche(PURMAMARCA, "2026-12-05").eventos.some((e) => e.tipo === "salida-luna"), "este caso necesita que la Luna salga de noche");
+    assert.deepEqual(titularDeLaNoche(n, CUARTO, false), { texto: "Cielo oscuro de 21:25 a 05:00.", conFranja: true });
+    assert.equal(titularDeLaNoche(n, CUARTO, true).texto, "Dark sky from 21:25 to 05:00.");
+  });
+
+  it("si la Luna no deja franja (22/11), cuenta cómo viene la Luna, según cuánto ilumina", () => {
+    const n = nocheDeCielo(PURMAMARCA, "2026-11-22");
+    assert.equal(n.franja, null);
+    assert.deepEqual(titularDeLaNoche(n, GIBOSA, false), {
+      texto: "Luna gibosa menguante toda la noche: ideal para ver los cerros iluminados, no tanto la Vía Láctea.",
+      conFranja: false,
+    });
+    assert.equal(titularDeLaNoche(n, WANING, true).texto, "Waning gibbous all night: great for seeing the moonlit mountains, not so much the Milky Way.");
+    assert.deepEqual(titularDeLaNoche(n, { fase: "Luna gibosa creciente", iluminada: 60 }, false), { texto: "La Luna acompaña buena parte de la noche.", conFranja: false });
+    assert.equal(titularDeLaNoche(n, { fase: "Waxing gibbous", iluminada: 60 }, true).texto, "The Moon is up for much of the night.");
+  });
+
+  it("una franja de menos de media hora (25/11, 10 minutos) no se anuncia: se cuenta como noche con Luna", () => {
+    const n = nocheDeCielo(PURMAMARCA, "2026-11-25");
+    assert.equal(n.minutosOscuros, 10);
+    assert.deepEqual(titularDeLaNoche(n, GIBOSA, false), titularDeLaNoche({ ...n, franja: null, minutosOscuros: 0 }, GIBOSA, false));
+    assert.equal(titularDeLaNoche(n, GIBOSA, false).conFranja, false);
+    // Justo en el límite sí se anuncia.
+    const larga = nocheDeCielo(PURMAMARCA, "2026-11-29");
+    assert.equal(titularDeLaNoche({ ...larga, minutosOscuros: FRANJA_ANUNCIABLE_MIN }, GIBOSA, false).conFranja, true);
+    assert.equal(titularDeLaNoche({ ...larga, minutosOscuros: FRANJA_ANUNCIABLE_MIN - 1 }, GIBOSA, false).conFranja, false);
+  });
+
+  it("si esa noche no llega a oscurecer no hay titular, en vez de una frase sobre la Luna", () => {
+    assert.equal(titularDeLaNoche(nocheDeCielo({ latitude: -54.8, longitude: -68.3 }, "2026-12-21"), GIBOSA, false), null);
   });
 });
 

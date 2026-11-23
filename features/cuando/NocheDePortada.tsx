@@ -9,7 +9,7 @@ import { HORA_NOCHE, nocheEn } from "@/features/pacha/noche";
 import { useLang } from "@/shared/i18n/lang";
 import type { AndinoPlace } from "@/shared/types";
 import { Avisame } from "./Avisame";
-import { hora as horaDeCuando, nocheDeCielo, ventanaDeNubes } from "./cuando";
+import { hora as horaDeCuando, nocheDeCielo, titularDeLaNoche, ventanaDeNubes } from "./cuando";
 import { CreditoOpenMeteo, palabraDeNubes, porciento, useNubes } from "./Nubes";
 
 const hora = new Intl.DateTimeFormat("es-AR", {
@@ -34,30 +34,18 @@ export function NocheDePortada({ place }: { place: AndinoPlace }) {
     () => (fecha ? { linea: lineaDeLaNoche(place, fecha), noche: nocheEn(place, fecha, lang) } : null),
     [place, fecha, lang],
   );
-  // La misma noche con el motor de «Cuándo»: de ahí salen las horas de las nubes y el recordatorio.
+  // La misma noche con el motor de «Cuándo»: de ahí salen el titular, las horas de las nubes y el recordatorio.
   const cielo = useMemo(() => (fecha ? nocheDeCielo(place, fecha, pronostico.nubes) : null), [place, fecha, pronostico.nubes]);
 
-  // Mismo alto mientras calcula en el cliente: sin saltos.
-  if (!datos || !datos.linea || !cielo) return <div className="min-h-[22rem]" aria-busy />;
-  const { linea, noche } = datos;
+  // Las horas del titular son las de la franja de «Cuándo», al minuto: las mismas de la línea de tiempo de abajo.
+  const titular = datos && cielo ? titularDeLaNoche(cielo, datos.noche.luna, en) : null;
 
-  const desde = linea.sinLuna ? hora.format(new Date(linea.sinLuna.desde)) : "";
-  const hasta = linea.sinLuna ? hora.format(new Date(linea.sinLuna.hasta)) : "";
-  const conclusion = linea.sinLuna
-    ? en
-      ? `Dark sky with no Moon from ${desde} to ${hasta}.`
-      : `Cielo oscuro y sin Luna de ${desde} a ${hasta}.`
-    : noche.luna.iluminada > 60
-      ? en
-        ? `${noche.luna.fase} all night: great for seeing the moonlit mountains, not so much the Milky Way.`
-        : `${noche.luna.fase} toda la noche: ideal para ver los cerros iluminados, no tanto la Vía Láctea.`
-      : en
-        ? "The Moon is up for much of the night."
-        : "La Luna acompaña buena parte de la noche.";
+  // Mismo alto mientras calcula en el cliente: sin saltos. También si esa noche no llega a oscurecer.
+  if (!datos || !datos.linea || !cielo || !titular) return <div className="min-h-[22rem]" aria-busy />;
+  const { linea, noche } = datos;
 
   // Las nubes se miran en la franja oscura; si la Luna no deja franja, en toda la noche cerrada.
   const ventana = ventanaDeNubes(cielo);
-  const esasHoras = linea.sinLuna && cielo.franja;
   const horasDeNubes = ventana
     ? en
       ? `from ${horaDeCuando(ventana.desde)} to ${horaDeCuando(ventana.hasta)}`
@@ -67,7 +55,7 @@ export function NocheDePortada({ place }: { place: AndinoPlace }) {
   return (
     <div>
       <p className="eyebrow text-text-muted first-letter:uppercase">{diaLargo(lang).format(new Date(`${fecha}T12:00:00-03:00`))}</p>
-      <p className="headline mt-4 max-w-[22ch] text-[clamp(2rem,5vw,3.5rem)]">{conclusion}</p>
+      <p className="headline mt-4 max-w-[22ch] text-[clamp(2rem,5vw,3.5rem)]">{titular.texto}</p>
       <p className="lead mt-4 text-text/85" aria-live="polite">
         {pronostico.estado === "cargando" ? (
           <span className="text-text-muted">{en ? "Checking the cloud forecast…" : "Buscando el pronóstico de nubes…"}</span>
@@ -75,7 +63,7 @@ export function NocheDePortada({ place }: { place: AndinoPlace }) {
           <span className="text-text-muted">{en ? "No cloud forecast for tonight right now." : "Ahora no hay pronóstico de nubes para esta noche."}</span>
         ) : (
           <>
-            {esasHoras ? (en ? "Clouds during those hours" : "Nubes en esas horas") : en ? `Clouds ${horasDeNubes}` : `Nubes ${horasDeNubes}`}:{" "}
+            {titular.conFranja ? (en ? "Clouds during those hours" : "Nubes en esas horas") : en ? `Clouds ${horasDeNubes}` : `Nubes ${horasDeNubes}`}:{" "}
             <span className="text-violeta-ink">{palabraDeNubes(cielo.nubes, en)}</span> ({porciento(cielo.nubes, en)}).
           </>
         )}
