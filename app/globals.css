@@ -52,6 +52,33 @@
   color: var(--text);
 }
 
+/* Luz roja (shared/ui/LuzRoja.tsx): una capa fija que deja pasar solo el canal rojo de toda la app.
+   100lvh: en el teléfono cubre también la franja que aparece cuando se esconde la barra del navegador. */
+html[data-luz="roja"] body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  height: 100lvh;
+  z-index: 2147483647;
+  background: #ff0000;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+/* Solo en rojo, los tonos cálidos se confunden con el fondo claro: como texto pasan a Noche y el CTA
+   cambia el glow por un borde. Los bloques .oscuro conservan sus tintas claras. */
+html[data-luz="roja"] {
+  --text-muted: #334155;
+  --puna-ink: var(--noche);
+  --violeta-ink: var(--noche);
+  --warning: var(--noche);
+  --danger: var(--noche);
+  --shadow-glow-puna: 0 0 0 2px var(--noche);
+}
+html[data-luz="roja"] .acento {
+  background: none;
+  color: inherit;
+}
+
 @theme inline {
   --color-bg: var(--bg);
   --color-surface: var(--surface);
