@@ -40,7 +40,7 @@ Siete paradas. En cada una, ANDINO sabe qué hay por la ventana de día y qué v
 | Vagón | Qué pasa ahí |
 |---|---|
 | 🌙 **Cuándo** | La noche de hoy en tu parada: a qué hora se pone el sol, cuándo queda el cielo oscuro, cómo viene la Luna y qué nubes se esperan. De las noches de tu viaje te dice cuál conviene, y con **«Avisame esta noche»** te deja un recordatorio en Google Calendar o en el Calendario de Apple. |
-| 📱 **Apuntá** | Levantás el teléfono y el cielo tiene nombre. En vivo con la brújula, también de día, desde tu ubicación. Con la **cámara** detrás del dibujo, **luz roja** para no perder la vista nocturna y la pantalla siempre encendida. |
+| 📱 **Apuntá** | Levantás el teléfono y el cielo tiene nombre. En vivo con la brújula, también de día, desde tu ubicación. Con **«Ver con la cámara»**, la cámara a pantalla completa detrás del dibujo; **luz roja** para no perder la vista nocturna y la pantalla siempre encendida. |
 | 🦙 **Qué significa** | La Yacana, la llama oscura de la Vía Láctea, con sus fuentes. Y «tu signo» como astronomía: dónde está de verdad esta noche, sin predicciones. |
 | 🔊 **Escuchar** | Tocás «Escuchar» y el teléfono te lee en voz alta lo que explica de un astro, de la Yacana o de tu signo, en español o en inglés: para seguir mirando el cielo y no la pantalla. |
 | 🏔️ **Pacha** | De día, sacás una foto por la ventana y te cuenta qué lugar es, su historia y de dónde sale el dato. Después le podés repreguntar. |

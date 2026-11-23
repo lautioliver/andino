@@ -82,6 +82,51 @@ describe("proyección a pantalla", () => {
   });
 });
 
+describe("cámara ladeada (giro)", () => {
+  const vista = { az: 180, alt: 20, fov: 90 };
+  const derecha = camara(vista, 400, 600);
+  // Tope del teléfono volcado 20° a la izquierda: en la pantalla, el mundo se ve girado 20° a la derecha.
+  const ladeada = camara({ ...vista, giro: 20 }, 400, 600);
+
+  it("sin giro, o con una vuelta entera, la cámara es la de siempre", () => {
+    assert.deepEqual(camara({ ...vista, giro: 0 }, 400, 600), derecha);
+    // El giro va en grados: 360 es una vuelta completa.
+    const vuelta = proyectar(camara({ ...vista, giro: 360 }, 400, 600), 40, 150);
+    const sinGiro = proyectar(derecha, 40, 150);
+    assert.ok(Math.abs(vuelta.x - sinGiro.x) < 1e-6 && Math.abs(vuelta.y - sinGiro.y) < 1e-6, JSON.stringify(vuelta));
+  });
+
+  it("el centro de la vista no se mueve", () => {
+    const p = proyectar(ladeada, 20, 180);
+    assert.ok(Math.abs(p.x - 200) < 1e-6 && Math.abs(p.y - 300) < 1e-6);
+  });
+
+  it("lo que está más alto en el cielo se corre hacia la derecha de la pantalla", () => {
+    const p = proyectar(ladeada, 40, 180);
+    assert.ok(p.x > 200 && p.y < 300, JSON.stringify(p));
+  });
+
+  it("el horizonte baja hacia la derecha", () => {
+    // Mirando al sur, el oeste (acimut 210) queda a la derecha.
+    assert.ok(proyectar(ladeada, 0, 210).y > proyectar(ladeada, 0, 150).y);
+    assert.ok(Math.abs(proyectar(derecha, 0, 210).y - proyectar(derecha, 0, 150).y) < 1e-6);
+  });
+
+  it("es un giro alrededor del centro: la distancia al centro no cambia y el ángulo es el pedido", () => {
+    const a = proyectar(derecha, 40, 180);
+    const b = proyectar(ladeada, 40, 180);
+    assert.ok(Math.abs(Math.hypot(a.x - 200, a.y - 300) - Math.hypot(b.x - 200, b.y - 300)) < 1e-6);
+    // «a» queda justo arriba del centro; «b», 20° hacia la derecha.
+    const angulo = (Math.atan2(b.x - 200, 300 - b.y) * 180) / Math.PI;
+    assert.ok(Math.abs(angulo - 20) < 1e-6, `${angulo}`);
+  });
+
+  it("acostado (giro 90), lo que estaba arriba queda a la derecha", () => {
+    const p = proyectar(camara({ ...vista, giro: 90 }, 400, 600), 40, 180);
+    assert.ok(p.x > 200 && Math.abs(p.y - 300) < 1e-6, JSON.stringify(p));
+  });
+});
+
 describe("tiempo y luz", () => {
   it("desplaza minutos manteniendo la zona de Argentina", () => {
     assert.equal(desplazarISO("2026-11-22T22:00:00-03:00", 150), "2026-11-23T00:30:00-03:00");

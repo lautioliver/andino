@@ -8,12 +8,13 @@ export type EstadoCamara = "apagada" | "pidiendo" | "activa" | FalloDeCamara;
 const sinSuscripcion = () => () => {};
 
 /**
- * «Cámara»: la cámara de atrás como fondo del cielo mientras se apunta (`permitida`).
+ * «Ver con la cámara»: la cámara de atrás como fondo del cielo mientras el visor está abierto (`permitida`).
  * La imagen solo se muestra en el `<video>` de `videoRef`: no se guarda ni se envía.
- * Se apaga sola (stop de cada pista) al dejar de apuntar, al salir de la página, al desmontar y con la
- * pestaña oculta; para volver a verla hay que tocar «Cámara» otra vez. `encender` va en un toque.
+ * Se apaga sola (stop de cada pista) cuando deja de estar permitida, al salir de la página, al desmontar y
+ * con la pestaña oculta. Si se apaga sin que nadie lo pida (pestaña oculta, o el sistema la corta), avisa
+ * con `alCortarse`. `encender` va en un toque.
  */
-export function useCamara(permitida: boolean) {
+export function useCamara(permitida: boolean, alCortarse?: () => void) {
   const [estado, setEstado] = useState<EstadoCamara>("apagada");
   /** Tamaño real del video, para calcular qué campo visual queda a la vista. */
   const [imagen, setImagen] = useState<Tamanio | null>(null);
@@ -21,6 +22,11 @@ export function useCamara(permitida: boolean) {
   const streamRef = useRef<MediaStream | null>(null);
   // Cada pedido lleva su número: si mientras el teléfono pregunta por el permiso se apagó, el stream que llega se descarta.
   const pedido = useRef(0);
+  const pidiendo = useRef(false);
+  const alCortarseRef = useRef(alCortarse);
+  useEffect(() => {
+    alCortarseRef.current = alCortarse;
+  }, [alCortarse]);
 
   // En el servidor no hay cámara: se decide al hidratar. Sin HTTPS, `mediaDevices` no existe.
   const disponible = useSyncExternalStore(
@@ -31,6 +37,7 @@ export function useCamara(permitida: boolean) {
 
   const apagar = useCallback(() => {
     pedido.current++;
+    pidiendo.current = false;
     streamRef.current?.getTracks().forEach((pista) => pista.stop());
     streamRef.current = null;
     if (videoRef.current) videoRef.current.srcObject = null;
@@ -38,14 +45,25 @@ export function useCamara(permitida: boolean) {
     setEstado("apagada");
   }, []);
 
+  /** La cámara se apaga sin que nadie lo pida: si estaba encendida o por encenderse, se avisa. */
+  const cortar = useCallback(() => {
+    const habia = streamRef.current !== null || pidiendo.current;
+    apagar();
+    if (habia) alCortarseRef.current?.();
+  }, [apagar]);
+
+  // No mira `permitida`: se llama en el mismo toque que abre el visor, antes de que React lo vuelva a dibujar.
+  // Si el visor se cierra mientras el teléfono pregunta, `apagar` descarta el stream que llegue.
   const encender = useCallback(async () => {
-    if (!disponible || !permitida) return;
+    if (!disponible) return;
     const mio = ++pedido.current;
+    pidiendo.current = true;
     setEstado("pidiendo");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { ideal: "environment" } }, audio: false });
       const soltar = () => stream.getTracks().forEach((pista) => pista.stop());
       if (mio !== pedido.current) return soltar();
+      pidiendo.current = false;
       const [pista] = stream.getVideoTracks();
       if (!pista || !esCamaraDeAtras(pista.getSettings().facingMode)) {
         soltar();
@@ -54,14 +72,17 @@ export function useCamara(permitida: boolean) {
       }
       streamRef.current = stream;
       // Si el sistema corta la cámara (otra app, permiso revocado), se vuelve al cielo dibujado.
+      // `stop()` no dispara «ended»: esto solo corre cuando la corta otro.
       pista.addEventListener("ended", () => {
-        if (streamRef.current === stream) apagar();
+        if (streamRef.current === stream) cortar();
       });
       setEstado("activa");
     } catch (error) {
-      if (mio === pedido.current) setEstado(falloDeCamara(error));
+      if (mio !== pedido.current) return;
+      pidiendo.current = false;
+      setEstado(falloDeCamara(error));
     }
-  }, [disponible, permitida, apagar]);
+  }, [disponible, cortar]);
 
   // El video se conecta cuando ya está a la vista: oculto, en iPhone podría no arrancar.
   useEffect(() => {
@@ -76,7 +97,7 @@ export function useCamara(permitida: boolean) {
   useLayoutEffect(() => {
     if (!permitida) return;
     const alOcultar = () => {
-      if (document.hidden) apagar();
+      if (document.hidden) cortar();
     };
     document.addEventListener("visibilitychange", alOcultar);
     window.addEventListener("pagehide", apagar);
@@ -85,7 +106,7 @@ export function useCamara(permitida: boolean) {
       window.removeEventListener("pagehide", apagar);
       apagar();
     };
-  }, [permitida, apagar]);
+  }, [permitida, apagar, cortar]);
 
   const alMedir = useCallback((e: { currentTarget: HTMLVideoElement }) => {
     const { videoWidth: ancho, videoHeight: alto } = e.currentTarget;

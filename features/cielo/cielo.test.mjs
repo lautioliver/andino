@@ -8,6 +8,7 @@ import {
   luzDelCielo,
   proyectarEnDomo,
   rumbo,
+  rumboYAltura,
 } from "./cielo.ts";
 import { sunAltitudeDeg } from "./motor.ts";
 
@@ -64,6 +65,30 @@ describe("rumbo y altura", () => {
     assert.equal(describirAltura(40.8), "a media altura");
     assert.equal(describirAltura(65.2), "alto en el cielo");
     assert.equal(describirAltura(85), "casi sobre tu cabeza");
+  });
+});
+
+describe("rumboYAltura (hacia dónde apunta el teléfono)", () => {
+  it("rumbo con mayúscula y altura en grados enteros", () => {
+    assert.equal(rumboYAltura(2, 35.4), "Norte · 35°");
+    assert.equal(rumboYAltura(226, 61.5), "Suroeste · 62°");
+  });
+
+  it("en inglés", () => {
+    assert.equal(rumboYAltura(268, 12, "en"), "West · 12°");
+  });
+
+  it("bajo el horizonte lleva signo menos (el tipográfico, no el guion)", () => {
+    assert.equal(rumboYAltura(180, -4.6), "Sur · −5°");
+  });
+
+  it("apenas bajo el horizonte no escribe «−0°»", () => {
+    assert.equal(rumboYAltura(90, -0.2), "Este · 0°");
+  });
+
+  it("la altura no pasa de ±90°", () => {
+    assert.equal(rumboYAltura(0, 120), "Norte · 90°");
+    assert.equal(rumboYAltura(0, -120), "Norte · −90°");
   });
 });
 
