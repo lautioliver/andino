@@ -141,6 +141,7 @@ Lo que antes era Pacha: ya no es un producto aparte, es la forma de llegar a la 
   - Constelaciones occidentales principales visibles.
   - **Cielo andino:** constelaciones oscuras de la Vía Láctea (por ejemplo la Yacana), con autor y obra de la fuente ([`fuentes-cielo-andino.md`](./fuentes-cielo-andino.md)) y dónde está documentada: Perú y norte de Chile, no Jujuy. Visualmente distintas de las occidentales; nunca una encima de la otra como si fueran equivalentes.
   - **Tu signo en el cielo:** el usuario elige su signo y se resalta la constelación en su posición real esa noche, con la diferencia respecto de las fechas del horóscopo. Sin predicciones ni lenguaje esotérico.
+  - **Escuchar:** en la ficha de un objeto, en la Yacana y en «tu signo», un botón lee en voz alta lo que se ve en esa tarjeta (título y explicación; no las cifras, la cita ni las fuentes), en el idioma de la app y con la síntesis de voz del navegador (`features/escuchar`). Hay una sola lectura a la vez y se corta al cambiar de objeto, de idioma o de pantalla y con la pestaña oculta; si el navegador no tiene una voz para ese idioma, el botón no aparece.
 - Indicador «Posiciones calculadas para la fecha y hora seleccionadas»; **no** prometer visibilidad real si no se consideran clima, obstáculos y contaminación lumínica.
 - CTA `Volver al lugar` conservando el lugar.
 

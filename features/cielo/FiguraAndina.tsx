@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { Escuchar } from "@/features/escuchar/Escuchar";
 import { useLang } from "@/shared/i18n/lang";
 import type { AndinoPlace } from "@/shared/types";
 import { LinkButton } from "@/shared/ui/Button";
@@ -23,9 +24,15 @@ export function FiguraAndina({ place, fecha }: { place: AndinoPlace; fecha: stri
   }, [place, fecha]);
 
   return (
-    <div className="mt-12">
-      <p className="eyebrow text-text-muted">{en ? "The llama of the Andean sky" : "La llama del cielo andino"}</p>
-      <p className="lead mt-4 text-text/85">
+    <div className="mt-12" data-escuchable>
+      {/* Se lee el título y la explicación: ni la cita ni su fuente. */}
+      <div className="flex min-h-11 flex-wrap items-center justify-between gap-x-4 gap-y-2">
+        <p className="eyebrow text-text-muted" data-leer>
+          {en ? "The llama of the Andean sky" : "La llama del cielo andino"}
+        </p>
+        <Escuchar clave={`${place.id} ${fecha}`} />
+      </div>
+      <p className="lead mt-4 text-text/85" data-leer>
         {en ? (
           <>
             The Milky Way doesn&apos;t only hold star figures: its dark patches form animals too. One of them is the{" "}
@@ -50,7 +57,7 @@ export function FiguraAndina({ place, fecha }: { place: AndinoPlace; fecha: stri
         </footer>
       </blockquote>
 
-      <p className="lead mt-6 text-text/85" aria-live="polite">
+      <p className="lead mt-6 text-text/85" aria-live="polite" data-leer>
         {momento
           ? en
             ? `Tonight, the best time to see its eyes is at ${momento.hora}${momento.hora < "12:00" ? ", before dawn" : ""}: to the ${rumbo(momento.az, lang)}, ${describirAltura(momento.alt, lang)}. To see the whole llama you need a moonless sky far from lights.`
@@ -60,7 +67,7 @@ export function FiguraAndina({ place, fecha }: { place: AndinoPlace; fecha: stri
             : "Esta noche sus ojos no suben con el cielo oscuro. Se ve mejor en las noches de otoño e invierno."}
       </p>
 
-      <p className="mt-4 text-sm leading-6 text-text-muted">
+      <p className="mt-4 text-sm leading-6 text-text-muted" data-leer>
         {en
           ? "An Andean tradition documented in Peru and northern Chile, in a sky that can also be seen from Jujuy."
           : "Una tradición andina documentada en Perú y en el norte de Chile, en un cielo que también se ve desde Jujuy."}
