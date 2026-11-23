@@ -1,5 +1,7 @@
 import type { NextRequest } from "next/server";
 import { getPlace } from "@/data/places";
+import { urlDeGoogleCalendar } from "@/features/cuando/google";
+import { armarIcs } from "@/features/cuando/ics";
 import { recordatorio } from "@/features/cuando/recordatorio";
 import { fechaDeLaNoche } from "@/features/pacha/noche";
 
@@ -12,8 +14,9 @@ function error(status: number, message: string) {
 }
 
 /**
- * «Avisame esta noche»: /api/recordatorio?placeId=purmamarca&fecha=2026-11-28&lang=es devuelve un .ics
- * con el evento de esa noche. Un enlace común alcanza: el navegador lo baja y el teléfono lo abre en el calendario.
+ * «Avisame esta noche»: /api/recordatorio?placeId=purmamarca&fecha=2026-11-28&lang=es&para=apple entrega
+ * el evento de esa noche. Con para=apple (o sin `para`), un .ics que el teléfono abre en su calendario;
+ * con para=google, una redirección a Google Calendar con el mismo evento ya cargado. Un enlace común alcanza.
  */
 export async function GET(request: NextRequest) {
   const q = request.nextUrl.searchParams;
@@ -22,6 +25,11 @@ export async function GET(request: NextRequest) {
 
   const lang = q.get("lang") ?? "es";
   if (lang !== "es" && lang !== "en") return error(400, "Idioma desconocido: es o en.");
+
+  // Sin `para`, el .ics de siempre. Repetido o con otro valor (también vacío) no se adivina cuál quiso.
+  const paras = q.getAll("para");
+  const para = paras.length === 0 ? "apple" : paras.length === 1 ? paras[0] : null;
+  if (para !== "google" && para !== "apple") return error(400, "Calendario desconocido: google o apple.");
 
   // El formato solo no alcanza: 2026-02-31 lo cumple y no existe.
   const fecha = q.get("fecha") ?? "";
@@ -34,13 +42,25 @@ export async function GET(request: NextRequest) {
     return error(400, `Fecha fuera de rango: solo desde esta noche hasta dentro de ${NOCHES_MAX} días.`);
   }
 
-  const ics = recordatorio(place, fecha, lang, request.nextUrl.origin, Date.now());
-  if (!ics) return error(422, "Esa noche no llega a oscurecer en ese lugar.");
-  return new Response(ics, {
+  const evento = recordatorio(place, fecha, lang, request.nextUrl.origin, Date.now());
+  if (!evento) return error(422, "Esa noche no llega a oscurecer en ese lugar.");
+
+  if (para === "google") {
+    // No es una redirección abierta: el destino es siempre calendar.google.com (constante en google.ts).
+    // El evento sale del lugar, la fecha y el idioma ya validados y viaja en la consulta, codificado:
+    // nada del pedido elige a dónde va.
+    return new Response(null, {
+      status: 302,
+      headers: { location: urlDeGoogleCalendar(evento), "cache-control": "no-store" },
+    });
+  }
+
+  return new Response(armarIcs(evento), {
     headers: {
       "content-type": "text/calendar; charset=utf-8",
+      // inline y no attachment, para que Safari de iPhone abra la hoja de agregar al calendario en vez de mandarlo a Descargas.
       // placeId y fecha ya están validados: solo letras, números y guiones.
-      "content-disposition": `attachment; filename="andino-${place.id}-${fecha}.ics"`,
+      "content-disposition": `inline; filename="andino-${place.id}-${fecha}.ics"`,
       "cache-control": "no-store",
       "x-content-type-options": "nosniff",
     },

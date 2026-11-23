@@ -16,7 +16,7 @@ const EVENTO = {
   uid: "cielo-2026-11-28-purmamarca@andino.test",
   creado: Date.UTC(2026, 10, 22, 23, 0, 0),
   inicio: Date.UTC(2026, 10, 29, 0, 20, 0),
-  duracionMin: 60,
+  fin: Date.UTC(2026, 10, 29, 1, 20, 0),
   alarmaMin: 30,
   titulo: "Cielo oscuro en Purmamarca",
   descripcion:
@@ -122,12 +122,12 @@ describe("el archivo .ics", () => {
     assert.equal(valor(ics, "UID"), EVENTO.uid);
   });
 
-  it("escribe las horas en UTC, terminadas en Z, y el evento dura lo pedido", () => {
+  it("escribe las horas en UTC, terminadas en Z, y el evento termina cuando se pide", () => {
     assert.equal(fechaUTC(Date.UTC(2026, 0, 2, 3, 4, 5)), "20260102T030405Z");
     assert.equal(valor(ics, "DTSTAMP"), "20261122T230000Z");
     assert.equal(valor(ics, "DTSTART"), "20261129T002000Z");
     assert.equal(valor(ics, "DTEND"), "20261129T012000Z");
-    assert.equal(valor(armarIcs({ ...EVENTO, duracionMin: 90 }), "DTEND"), "20261129T015000Z");
+    assert.equal(valor(armarIcs({ ...EVENTO, fin: Date.UTC(2026, 10, 29, 1, 50, 0) }), "DTEND"), "20261129T015000Z");
   });
 
   it("la alarma avisa los minutos pedidos antes del inicio, mostrando el título", () => {

@@ -1,9 +1,10 @@
 // «Avisame esta noche»: el evento de calendario de una noche en un lugar, con el mismo motor que «Cuándo».
 // El tren pasa de día y el cielo se ve de noche: el recordatorio suena cuando está por empezar.
+// De acá salen los datos del evento; ics.ts y google.ts los escriben, cada uno en su formato.
 import { queryCielo } from "@/features/cielo/cielo";
 import type { AndinoPlace } from "@/shared/types";
 import { ALARMA_MIN, faseDeLaLuna, hora, inicioDelCielo, nocheDeCielo, RECORDATORIO_MIN } from "./cuando";
-import { armarIcs } from "./ics";
+import type { EventoDeCalendario } from "./evento";
 
 type Lang = "es" | "en";
 
@@ -14,11 +15,11 @@ const FASES: Record<Lang, string[]> = {
 };
 
 /**
- * El .ics de la noche de `fecha` en `place`: empieza con el cielo oscuro (o, si la Luna no deja franja
+ * El evento de la noche de `fecha` en `place`: empieza con el cielo oscuro (o, si la Luna no deja franja
  * oscura, al cerrarse la noche, y lo dice). `origen` es el del pedido, para el enlace a /cielo.
  * null si esa noche no llega a oscurecer.
  */
-export function recordatorio(place: AndinoPlace, fecha: string, lang: Lang, origen: string, ahoraMs: number): string | null {
+export function recordatorio(place: AndinoPlace, fecha: string, lang: Lang, origen: string, ahoraMs: number): EventoDeCalendario | null {
   const noche = nocheDeCielo(place, fecha);
   const inicio = inicioDelCielo(noche);
   if (!inicio) return null;
@@ -52,16 +53,17 @@ export function recordatorio(place: AndinoPlace, fecha: string, lang: Lang, orig
     en ? `The sky at that moment: ${url}` : `El cielo de ese momento: ${url}`,
   ].join("\n");
 
-  return armarIcs({
+  const inicioMs = new Date(inicio).getTime();
+  return {
     uid: `cielo-${fecha}-${place.id}@${new URL(origen).hostname}`,
     creado: ahoraMs,
-    inicio: new Date(inicio).getTime(),
-    duracionMin: RECORDATORIO_MIN,
+    inicio: inicioMs,
+    fin: inicioMs + RECORDATORIO_MIN * 60_000,
     alarmaMin: ALARMA_MIN,
     titulo,
     descripcion,
     lugar: `${place.name}, Jujuy, Argentina`,
     geo: { latitude: place.latitude, longitude: place.longitude },
     url,
-  });
+  };
 }

@@ -1,21 +1,6 @@
 // Arma un archivo .ics (iCalendar, RFC 5545) con un solo evento y una alarma: el recordatorio de
-// «Avisame esta noche». Función pura, sin imports: los tests corren este .ts directo con node.
-
-export interface EventoIcs {
-  /** Identificador estable: bajar dos veces el mismo recordatorio no duplica el evento. */
-  uid: string;
-  /** Instantes en milisegundos desde la época; se escriben en UTC (terminados en Z). */
-  creado: number;
-  inicio: number;
-  duracionMin: number;
-  /** Minutos antes del inicio en que avisa la alarma. */
-  alarmaMin: number;
-  titulo: string;
-  descripcion: string;
-  lugar: string;
-  geo: { latitude: number; longitude: number };
-  url: string;
-}
+// «Avisame esta noche». Función pura, sin imports de código: los tests corren este .ts directo con node.
+import type { EventoDeCalendario } from "./evento";
 
 /** Máximo de octetos por línea, sin contar el salto (RFC 5545, 3.1). */
 const MAX_OCTETOS = 75;
@@ -69,7 +54,7 @@ export function plegar(linea: string): string {
 }
 
 /** El .ics completo: líneas plegadas y terminadas en CRLF, también la última. */
-export function armarIcs(e: EventoIcs): string {
+export function armarIcs(e: EventoDeCalendario): string {
   const titulo = escaparTexto(e.titulo);
   const lineas = [
     "BEGIN:VCALENDAR",
@@ -80,7 +65,7 @@ export function armarIcs(e: EventoIcs): string {
     `UID:${sinControl(e.uid)}`,
     `DTSTAMP:${fechaUTC(e.creado)}`,
     `DTSTART:${fechaUTC(e.inicio)}`,
-    `DTEND:${fechaUTC(e.inicio + e.duracionMin * 60_000)}`,
+    `DTEND:${fechaUTC(e.fin)}`,
     `SUMMARY:${titulo}`,
     `DESCRIPTION:${escaparTexto(e.descripcion)}`,
     `LOCATION:${escaparTexto(e.lugar)}`,

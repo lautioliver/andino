@@ -1,6 +1,6 @@
 "use client";
 
-import { useSyncExternalStore } from "react";
+import { useId, useSyncExternalStore } from "react";
 import { useLang } from "@/shared/i18n/lang";
 import type { PlaceId } from "@/shared/types";
 import { buttonClass } from "@/shared/ui/Button";
@@ -13,12 +13,14 @@ function cadaMedioMinuto(avisar: () => void) {
 }
 
 /**
- * «Avisame esta noche»: baja un evento de calendario (.ics) que empieza con el cielo de esa noche y
- * avisa ALARMA_MIN minutos antes. Si el cielo de esa noche ya empezó, no hay nada que recordar y lo dice.
+ * «Avisame esta noche»: el evento de calendario que empieza con el cielo de esa noche, para Google Calendar
+ * (se abre con el evento ya cargado) o para el Calendario de Apple (un .ics, que avisa ALARMA_MIN minutos antes).
+ * Si el cielo de esa noche ya empezó, no hay nada que recordar y lo dice.
  */
 export function Avisame({ placeId, noche, esHoy }: { placeId: PlaceId; noche: NocheDeCielo; esHoy: boolean }) {
   const lang = useLang();
   const en = lang === "en";
+  const rotulo = useId();
   const inicio = inicioDelCielo(noche);
   const inicioMs = inicio ? new Date(inicio).getTime() : null;
   const yaEmpezo = useSyncExternalStore(
@@ -42,16 +44,28 @@ export function Avisame({ placeId, noche, esHoy }: { placeId: PlaceId; noche: No
     );
   }
 
+  const enlace = (para: "google" | "apple") => `/api/recordatorio?${new URLSearchParams({ placeId, fecha: noche.fecha, lang, para })}`;
+
   return (
-    <div>
-      {/* Enlace común y no <Link>: es un archivo que se baja, no una pantalla de la app. */}
-      <a href={`/api/recordatorio?${new URLSearchParams({ placeId, fecha: noche.fecha, lang })}`} className={buttonClass("violeta")}>
+    <div role="group" aria-labelledby={rotulo}>
+      <p id={rotulo} className="eyebrow text-text-muted">
         {esHoy ? (en ? "Remind me tonight" : "Avisame esta noche") : en ? "Remind me that night" : "Avisame esa noche"}
-      </a>
-      <p className="mt-2 max-w-[44ch] text-sm leading-5 text-text-muted">
+      </p>
+      {/* Enlaces comunes y no <Link>: uno sale a Google Calendar y el otro es un archivo, no pantallas de la app.
+          En un teléfono angosto van uno debajo del otro: lado a lado no entran en 375 px. */}
+      <div className="mt-3 flex flex-col gap-3 min-[30rem]:flex-row">
+        <a href={enlace("google")} target="_blank" rel="noopener" className={buttonClass("violeta")}>
+          Google Calendar
+        </a>
+        <a href={enlace("apple")} className={buttonClass("violeta")}>
+          {en ? "Apple Calendar" : "Calendario de Apple"}
+        </a>
+      </div>
+      {/* Un enlace a Google Calendar no puede fijar el aviso: solo el .ics lleva la alarma. */}
+      <p className="mt-3 max-w-[44ch] text-sm leading-5 text-text-muted">
         {en
-          ? `Downloads a calendar event: it starts at ${hora(inicio)} and alerts you ${ALARMA_MIN} minutes before (Argentina time).`
-          : `Baja un evento para tu calendario: empieza a las ${hora(inicio)} y te avisa ${ALARMA_MIN} minutos antes (hora de Argentina).`}
+          ? `Starts at ${hora(inicio)} (Argentina time). Apple alerts you ${ALARMA_MIN} minutes before; Google uses your default notification.`
+          : `Empieza a las ${hora(inicio)} (hora de Argentina). Apple te avisa ${ALARMA_MIN} minutos antes; Google, con el aviso que tengas por defecto.`}
       </p>
     </div>
   );
