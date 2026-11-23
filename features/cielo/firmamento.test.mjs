@@ -13,7 +13,6 @@ import {
   oscuridad,
   POLOS_GALACTICOS,
   proyectar,
-  recortarPoligono,
   tiraLocal,
   trazarRegion,
 } from "./firmamento.ts";
@@ -75,15 +74,7 @@ describe("proyección a pantalla", () => {
     assert.equal(proyectar(c, 20, 0), null);
   });
 
-  it("recorta polígonos que cruzan detrás del observador", () => {
-    const pts = [
-      [0, 0, 1],
-      [1, 0, -1],
-      [0, 1, 1],
-    ];
-    const r = recortarPoligono(pts, -0.2);
-    assert.ok(r.every((p) => p[2] >= -0.2 - 1e-9));
-    assert.equal(r.length, 4);
+  it("el centro de la vista queda justo al frente de la cámara", () => {
     assert.ok(enCamara(c, 20, 180)[2] > 0.999);
   });
 });
@@ -353,4 +344,86 @@ describe("Vía Láctea: lo que se rellena en pantalla es la región real", () =>
       assert.deepEqual(total.distintos.slice(0, 8), [], `${total.distintos.length} de ${total.dentro + total.fuera} puntos no coinciden`);
     });
   }
+
+  /** La mirada (rumbo y altura) hacia un vector local. */
+  const mirada = ([x, y, z]) => ({ az: Math.atan2(x, y) / RAD, alt: Math.asin(z) / RAD });
+
+  it("de espaldas al centro galáctico (el antípoda de la mirada cae dentro de la región), el relleno no queda al revés", () => {
+    const { anillos } = niveles.find((n) => n.nivel === 1);
+    const c = camara({ ...mirada(centroGalactico.map((v) => -v)), fov: 80 }, 375, 420);
+    const r = comparar(c, anillos, polos);
+    assert.ok(r.dentro > 0 && r.fuera > 0, JSON.stringify({ dentro: r.dentro, fuera: r.fuera }));
+    assert.deepEqual(r.distintos, []);
+  });
+
+  it("con un borde que pasa junto al antípoda de la mirada, o justo por él, sigue coincidiendo", () => {
+    const { anillos } = niveles.find((n) => n.nivel === 1);
+    const largo = anillos.reduce((a, b) => (b.length > a.length ? b : a));
+    const total = { dentro: 0, fuera: 0, distintos: [] };
+    const sumar = (vista, rotulo) => {
+      const r = comparar(camara({ ...vista, fov: 80 }, 375, 420), anillos, polos, rotulo);
+      total.dentro += r.dentro;
+      total.fuera += r.fuera;
+      total.distintos.push(...r.distintos);
+    };
+    for (let i = 0; i + 1 < largo.length / 3; i += 97) {
+      // De espaldas a un vértice del borde más largo, con la mirada corrida una décima de grado para cada lado.
+      const deEspaldas = mirada(vertice(largo, i).map((v) => -v));
+      for (const corrida of [-0.1, 0.1]) sumar({ az: deEspaldas.az, alt: deEspaldas.alt + corrida }, `vértice ${i}, corrida ${corrida}°`);
+      // Y de espaldas al punto medio de un tramo del borde: el borde pasa por el antípoda mismo.
+      const medio = vertice(largo, i).map((v, k) => -(v + largo[3 * (i + 1) + k]));
+      sumar(mirada(medio.map((v) => v / Math.hypot(...medio))), `medio del tramo ${i}`);
+    }
+    assert.ok(total.dentro > 50 && total.fuera > 500, JSON.stringify({ dentro: total.dentro, fuera: total.fuera }));
+    assert.deepEqual(total.distintos.slice(0, 8), [], `${total.distintos.length} puntos no coinciden`);
+  });
+
+  it("un vértice justo en el antípoda de la mirada no rompe el trazado", () => {
+    // Mirando al norte, al horizonte: el antípoda es el sur, [0, −1, 0]. Un triángulo con un vértice ahí y
+    // los otros dos al noreste y al noroeste, a media altura; sus lados, en pasos de medio grado.
+    const esquinas = [[0, -1, 0], [0.6, 0.64, 0.48], [-0.6, 0.64, 0.48]];
+    const triangulo = [];
+    esquinas.forEach((a, i) => {
+      const b = esquinas[(i + 1) % 3];
+      const pasos = Math.ceil(Math.acos(punto(a, b)) / (0.5 * RAD));
+      for (let j = 0; j < pasos; j++) {
+        const p = a.map((v, k) => v * Math.sin(((pasos - j) / pasos) * Math.acos(punto(a, b))) + b[k] * Math.sin((j / pasos) * Math.acos(punto(a, b))));
+        const largo = Math.hypot(...p);
+        triangulo.push(...p.map((v) => v / largo));
+      }
+    });
+    // El cenit queda dentro del triángulo; el norte (justo al frente) y el nadir, fuera.
+    const afuera = [0, 1, 0, 0, 0, -1];
+    const c = camara({ az: 0, alt: 0, fov: 80 }, 375, 420);
+    // Para esta cámara ese vértice no tiene dirección alrededor de la mirada: ni a la derecha ni arriba.
+    assert.deepEqual([punto(esquinas[0], c.derecha), punto(esquinas[0], c.arriba)].map(Math.abs), [0, 0]);
+    const trazo = registrador();
+    assert.equal(trazarRegion(trazo, c, [triangulo], afuera), true);
+    assert.ok(trazo.subtrazados.flat().every(Number.isFinite));
+    const r = comparar(c, [triangulo], afuera);
+    assert.ok(r.dentro > 0 && r.fuera > 0, JSON.stringify({ dentro: r.dentro, fuera: r.fuera }));
+    assert.deepEqual(r.distintos, []);
+  });
+
+  it("si no puede asegurar qué lado es el de adentro, no rellena", () => {
+    const { anillos } = niveles.find((n) => n.nivel === 1);
+    // Mirando entre el centro galáctico y el polo norte galáctico: los dos quedan delante.
+    const medio = centroGalactico.map((v, i) => v + norte[i]);
+    const c = camara({ ...mirada(medio.map((v) => v / Math.hypot(...medio))), fov: 80 }, 375, 420);
+    assert.equal(trazarRegion(registrador(), c, anillos, polos), true);
+    // Sin ningún punto de afuera, o con el único a la espalda.
+    assert.equal(trazarRegion(registrador(), c, anillos, []), false);
+    assert.equal(trazarRegion(registrador(), c, anillos, medio.map((v) => -v / Math.hypot(...medio))), false);
+    // Dos puntos «de afuera» que no están del mismo lado: uno es el centro galáctico, que está adentro.
+    assert.equal(trazarRegion(registrador(), c, anillos, [...norte, ...centroGalactico]), false);
+    assert.equal(trazarRegion(registrador(), c, anillos, [...centroGalactico, ...norte]), false);
+  });
+
+  it("con un campo visual disparatado (la pantalla no entra en el círculo límite), no rellena", () => {
+    const { anillos } = niveles.find((n) => n.nivel === 1);
+    for (const fov of [340, 0, Number.NaN]) {
+      assert.equal(trazarRegion(registrador(), camara({ az: 180, alt: 40, fov }, 375, 420), anillos, polos), false, `campo ${fov}`);
+    }
+    assert.equal(trazarRegion(registrador(), camara({ az: 180, alt: 40, fov: 80 }, 375, 420), anillos, polos), true);
+  });
 });

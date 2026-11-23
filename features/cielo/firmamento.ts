@@ -111,23 +111,6 @@ export function proyectar(c: Camara, alt: number, az: number) {
   return aPantalla(c, enCamara(c, alt, az));
 }
 
-/** Recorta un polígono en coordenadas de cámara contra el plano z = zMin (Sutherland–Hodgman). */
-export function recortarPoligono(puntos: [number, number, number][], zMin = -0.2): [number, number, number][] {
-  const salida: [number, number, number][] = [];
-  for (let i = 0; i < puntos.length; i++) {
-    const a = puntos[i];
-    const b = puntos[(i + 1) % puntos.length];
-    const aDentro = a[2] >= zMin;
-    const bDentro = b[2] >= zMin;
-    if (aDentro) salida.push(a);
-    if (aDentro !== bDentro) {
-      const t = (zMin - a[2]) / (b[2] - a[2]);
-      salida.push([a[0] + t * (b[0] - a[0]), a[1] + t * (b[1] - a[1]), zMin]);
-    }
-  }
-  return salida;
-}
-
 /**
  * Los polos galácticos, [AR, Dec] J2000 en grados (norte: 12 h 51,4 min, +27° 08′; el sur es su antípoda).
  * La Vía Láctea no llega hasta ahí: son la referencia de «afuera» de sus regiones.
@@ -158,32 +141,136 @@ export interface Trazo {
   rect(x: number, y: number, ancho: number, alto: number): void;
 }
 
+// Hasta dónde se proyecta un anillo tal cual: más lejos de la mirada que este ángulo (la estereográfica se va
+// al infinito en el antípoda), sus vértices se dejan sobre el círculo de ese ángulo.
+const ANGULO_LIMITE = 150 * RAD;
+const COS_LIMITE = Math.cos(ANGULO_LIMITE);
+/** Radio del círculo límite en la proyección, en unidades de `escala`. */
+const RADIO_LIMITE = 2 * Math.tan(ANGULO_LIMITE / 2);
+/** Sobre el círculo límite, dos puntos seguidos del trazado no se separan más que este ángulo: la recta entre ellos no se acerca a la pantalla. */
+const PASO_LIMITE = 30 * RAD;
+const COS_PASO = Math.cos(PASO_LIMITE);
+/** Un punto de afuera sirve de testigo si queda bien adentro del círculo límite: a menos de 120° de la mirada. */
+const COS_TESTIGO = Math.cos(ANGULO_LIMITE - PASO_LIMITE);
+/** Cuánto sobresale de la pantalla, en píxeles, el rectángulo que invierte el relleno. */
+const MARGEN_INVERSION = 16;
+
 /**
- * Agrega al trazado una región del cielo (para rellenar con la regla par-impar: los anillos interiores son
- * huecos). Cada anillo es una tira de vectores unitarios este-norte-arriba: x, y, z de cada vértice, seguidos.
- * Devuelve si hay que rellenar.
+ * Agrega al trazado una región del cielo, para rellenar con la regla par-impar (los anillos interiores son
+ * huecos). Cada anillo es una tira de vectores unitarios locales (ver `tiraLocal`); `afuera`, otra tira con
+ * puntos que se sabe que no son de la región. Devuelve si hay que rellenar: `false` cuando no puede asegurar
+ * qué lado es el de adentro, y en ese cuadro la región no se dibuja.
+ *
+ * Los anillos van enteros, sin recortar contra lo que se ve: un recorte une con una recta el punto donde el
+ * anillo sale de la vista con el punto donde vuelve a entrar, y si el anillo da la vuelta al cielo (la Vía
+ * Láctea) esa recta cruza la pantalla. Lo que queda más allá del círculo límite se deja sobre él, en su
+ * misma dirección: el anillo rodea la pantalla por afuera igual que el real. Así cada borde queda en su
+ * lugar, pero el relleno sale al revés cuando el antípoda de la mirada cae dentro de la región. Lo deciden
+ * los puntos de afuera: si el trazado los rellenaría, se suma un rectángulo que cubre la pantalla y lo invierte.
  */
-export function trazarRegion(trazo: Trazo, c: Camara, anillos: readonly ArrayLike<number>[]): boolean {
-  for (const anillo of anillos) {
-    const puntos: [number, number, number][] = [];
-    for (let i = 0; i < anillo.length; i += 3) {
-      const [x, y, z] = [anillo[i], anillo[i + 1], anillo[i + 2]];
-      puntos.push([
-        x * c.derecha[0] + y * c.derecha[1] + z * c.derecha[2],
-        x * c.arriba[0] + y * c.arriba[1] + z * c.arriba[2],
-        x * c.frente[0] + y * c.frente[1] + z * c.frente[2],
-      ]);
-    }
-    const recortado = recortarPoligono(puntos);
-    if (recortado.length < 3) continue;
-    recortado.forEach((p, i) => {
-      const q = aPantalla(c, p);
-      if (!q) return;
-      if (i === 0) trazo.moveTo(q.x, q.y);
-      else trazo.lineTo(q.x, q.y);
-    });
-    trazo.closePath();
+export function trazarRegion(trazo: Trazo, c: Camara, anillos: readonly ArrayLike<number>[], afuera: ArrayLike<number>): boolean {
+  const [dx, dy, dz] = c.derecha;
+  const [ax, ay, az] = c.arriba;
+  const [fx, fy, fz] = c.frente;
+  const cx = c.ancho / 2;
+  const cy = c.alto / 2;
+  const radio = RADIO_LIMITE * c.escala;
+  // La pantalla tiene que entrar holgada en el círculo límite (con un campo visual disparatado no entra).
+  if (!(Math.hypot(c.ancho, c.alto) < radio && radio < Infinity)) return false;
+
+  // Testigos: los puntos de afuera que quedan delante, ya en píxeles, y cuántas veces cruza el trazado la
+  // semirrecta que sale de cada uno hacia la derecha (impar: el trazado lo rellenaría).
+  const testigos: number[] = [];
+  for (let i = 0; i + 2 < afuera.length; i += 3) {
+    const z = afuera[i] * fx + afuera[i + 1] * fy + afuera[i + 2] * fz;
+    if (!(z >= COS_TESTIGO)) continue;
+    const k = (2 * c.escala) / (1 + z);
+    testigos.push(cx + (afuera[i] * dx + afuera[i + 1] * dy + afuera[i + 2] * dz) * k, cy - (afuera[i] * ax + afuera[i + 1] * ay + afuera[i + 2] * az) * k);
   }
+  if (testigos.length === 0) return false;
+  const cruces = new Array<number>(testigos.length / 2).fill(0);
+  const tramo = (xa: number, ya: number, xb: number, yb: number) => {
+    for (let t = 0; t < testigos.length; t += 2) {
+      const ty = testigos[t + 1];
+      if (ya > ty !== yb > ty && testigos[t] < xa + ((ty - ya) * (xb - xa)) / (yb - ya)) cruces[t >> 1]++;
+    }
+  };
+
+  for (const anillo of anillos) {
+    const n = anillo.length - (anillo.length % 3);
+    let empezado = false;
+    // El primer punto del anillo y el anterior del trazado; `lejos`: quedó sobre el círculo límite.
+    let x0 = 0;
+    let y0 = 0;
+    let lejos0 = false;
+    let xa = 0;
+    let ya = 0;
+    let lejosA = false;
+    for (let i = 0; i <= n; i += 3) {
+      // La última vuelta cierra el anillo en su primer vértice.
+      let x: number = x0;
+      let y: number = y0;
+      let lejos: boolean = lejos0;
+      if (i < n) {
+        const vx = anillo[i];
+        const vy = anillo[i + 1];
+        const vz = anillo[i + 2];
+        const z = vx * fx + vy * fy + vz * fz;
+        const px = vx * dx + vy * dy + vz * dz;
+        const py = vx * ax + vy * ay + vz * az;
+        lejos = z < COS_LIMITE;
+        let k: number;
+        if (lejos) {
+          const r = Math.sqrt(px * px + py * py);
+          // Justo en el antípoda de la mirada no hay dirección: el anillo sigue sin ese vértice.
+          if (r === 0) continue;
+          k = radio / r;
+        } else k = (2 * c.escala) / (1 + z);
+        x = cx + px * k;
+        y = cy - py * k;
+        if (!empezado) {
+          empezado = true;
+          x0 = xa = x;
+          y0 = ya = y;
+          lejos0 = lejosA = lejos;
+          trazo.moveTo(x, y);
+          continue;
+        }
+      } else if (!empezado) break;
+      if (lejos && lejosA) {
+        // Los dos sobre el círculo límite. Si están muy separados (el anillo pasa cerca del antípoda de la
+        // mirada), la recta entre ellos cortaría camino por la pantalla: se va por el círculo, por el lado corto.
+        const ux = xa - cx;
+        const uy = ya - cy;
+        const escalar = ux * (x - cx) + uy * (y - cy);
+        if (escalar < COS_PASO * radio * radio) {
+          const desde = Math.atan2(uy, ux);
+          const giro = Math.atan2(ux * (y - cy) - uy * (x - cx), escalar);
+          const pasos = Math.ceil(Math.abs(giro) / PASO_LIMITE);
+          for (let j = 1; j < pasos; j++) {
+            const xm = cx + radio * Math.cos(desde + (giro * j) / pasos);
+            const ym = cy + radio * Math.sin(desde + (giro * j) / pasos);
+            tramo(xa, ya, xm, ym);
+            trazo.lineTo(xm, ym);
+            xa = xm;
+            ya = ym;
+          }
+        }
+      }
+      tramo(xa, ya, x, y);
+      if (i < n) trazo.lineTo(x, y);
+      else trazo.closePath();
+      xa = x;
+      ya = y;
+      lejosA = lejos;
+    }
+  }
+
+  // Los testigos están afuera: si el trazado los rellenaría, quedó al revés. Y si no coinciden entre ellos,
+  // algo no cerró: mejor un cuadro sin la región que el cielo entero relleno.
+  const alReves = cruces[0] % 2 === 1;
+  for (const veces of cruces) if ((veces % 2 === 1) !== alReves) return false;
+  if (alReves) trazo.rect(-MARGEN_INVERSION, -MARGEN_INVERSION, c.ancho + 2 * MARGEN_INVERSION, c.alto + 2 * MARGEN_INVERSION);
   return true;
 }
 

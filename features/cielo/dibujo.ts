@@ -13,6 +13,7 @@ import {
   coloresCielo,
   matrizHorizonte,
   oscuridad,
+  POLOS_GALACTICOS,
   proyectar,
   radioEstrella,
   tiraLocal,
@@ -56,8 +57,10 @@ export interface Precalculo {
   estrellas: { alt: number; az: number; mag: number; color: string; fase: number; velocidad: number }[];
   lineas: { alt: number; az: number }[][];
   etiquetas: { id: string; nombre: string; alt: number; az: number }[];
-  /** Por nivel, sus anillos: de cada vértice, el vector unitario este-norte-arriba (x, y, z seguidos). */
+  /** Por nivel, sus anillos: cada uno, una tira de vectores unitarios locales (ver `tiraLocal`). */
   viaLactea: { nivel: number; anillos: Float64Array[] }[];
+  /** Los polos galácticos, en otra tira: dos puntos del cielo que no son de la Vía Láctea. */
+  polosGalacticos: Float64Array;
   yacana: { ojos: { alt: number; az: number }[]; etiqueta: { alt: number; az: number } };
 }
 
@@ -73,6 +76,7 @@ export function precalcular(location: SkyLocation, datetimeISO: string): Precalc
     lineas: catalogo.constelaciones.flatMap((c) => c.lineas.map((linea) => linea.map(h))),
     etiquetas: catalogo.constelaciones.map((c) => ({ id: c.id, nombre: c.nombre, ...h(c.etiqueta) })),
     viaLactea: catalogo.viaLactea.map((n) => ({ nivel: n.nivel, anillos: n.poligonos.map((p) => tiraLocal(m, p)) })),
+    polosGalacticos: tiraLocal(m, POLOS_GALACTICOS),
     yacana: { ojos: YACANA.ojos.map(h), etiqueta: h(YACANA.etiqueta) },
   };
 }
@@ -142,10 +146,11 @@ export function dibujarCielo(ctx: CanvasRenderingContext2D, s: EscenaCielo, { an
   // 2. Vía Láctea: capas apenas visibles que se suman donde es más densa.
   if (oscuro > 0) {
     for (const nivel of s.pre.viaLactea) {
-      // Un solo trazado por nivel con regla par-impar: los anillos interiores son huecos.
+      // Un solo trazado por nivel con regla par-impar: los anillos interiores son huecos. Si no se puede
+      // asegurar qué lado es el de adentro, ese nivel no se dibuja en este cuadro.
       ctx.fillStyle = `rgba(${TEXT}, ${0.04 * oscuro})`;
       ctx.beginPath();
-      if (trazarRegion(ctx, cam, nivel.anillos)) ctx.fill("evenodd");
+      if (trazarRegion(ctx, cam, nivel.anillos, s.pre.polosGalacticos)) ctx.fill("evenodd");
     }
   }
 
