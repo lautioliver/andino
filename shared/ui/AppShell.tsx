@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Suspense, type ReactNode } from "react";
 import { AndinoMark } from "./AndinoMark";
 import { LangToggle } from "./LangToggle";
+import { LuzRojaEncendida } from "./LuzRoja";
 import { BottomNav, Pie, TopNav } from "./NavLinks";
 
 export function AppShell({ children }: { children: ReactNode }) {
@@ -17,6 +18,7 @@ export function AppShell({ children }: { children: ReactNode }) {
             <Suspense>
               <TopNav />
             </Suspense>
+            <LuzRojaEncendida />
             <LangToggle />
           </div>
         </nav>

@@ -7,6 +7,7 @@ import { getPlace, places } from "@/data/places";
 import { type Lang, useLang } from "@/shared/i18n/lang";
 import { Badge } from "@/shared/ui/Badge";
 import { Button, LinkButton } from "@/shared/ui/Button";
+import { LuzRojaControl } from "@/shared/ui/LuzRoja";
 import { StatusMessage } from "@/shared/ui/StatusMessage";
 import { CelestialObjectCard } from "./CelestialObjectCard";
 import { DateTimePicker, type LugarElegido, LocationSelector } from "./CieloControls";
@@ -403,6 +404,8 @@ export function CieloExplorer() {
           </p>
         </div>
       )}
+
+      {resultado && <LuzRojaControl />}
 
       {resultado && (
         <div className="mt-6 grid gap-4 md:grid-cols-[minmax(0,1fr)_minmax(0,2fr)] md:items-center md:gap-12">
