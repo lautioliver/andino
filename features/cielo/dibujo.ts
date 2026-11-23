@@ -7,17 +7,17 @@ import type { SkyObject } from "@/shared/types";
 import { YACANA } from "./andino";
 import {
   aHorizonte,
-  aPantalla,
   type Camara,
   camara,
   colorEstrella,
   coloresCielo,
-  enCamara,
   matrizHorizonte,
   oscuridad,
+  POLOS_GALACTICOS,
   proyectar,
   radioEstrella,
-  recortarPoligono,
+  tiraLocal,
+  trazarRegion,
 } from "./firmamento";
 import type { SkyLocation } from "./motor";
 
@@ -57,7 +57,10 @@ export interface Precalculo {
   estrellas: { alt: number; az: number; mag: number; color: string; fase: number; velocidad: number }[];
   lineas: { alt: number; az: number }[][];
   etiquetas: { id: string; nombre: string; alt: number; az: number }[];
-  viaLactea: { nivel: number; poligonos: { alt: number; az: number }[][] }[];
+  /** Por nivel, sus anillos: cada uno, una tira de vectores unitarios locales (ver `tiraLocal`). */
+  viaLactea: { nivel: number; anillos: Float64Array[] }[];
+  /** Los polos galácticos, en otra tira: dos puntos del cielo que no son de la Vía Láctea. */
+  polosGalacticos: Float64Array;
   yacana: { ojos: { alt: number; az: number }[]; etiqueta: { alt: number; az: number } };
 }
 
@@ -72,7 +75,8 @@ export function precalcular(location: SkyLocation, datetimeISO: string): Precalc
     }),
     lineas: catalogo.constelaciones.flatMap((c) => c.lineas.map((linea) => linea.map(h))),
     etiquetas: catalogo.constelaciones.map((c) => ({ id: c.id, nombre: c.nombre, ...h(c.etiqueta) })),
-    viaLactea: catalogo.viaLactea.map((n) => ({ nivel: n.nivel, poligonos: n.poligonos.map((p) => p.map(h)) })),
+    viaLactea: catalogo.viaLactea.map((n) => ({ nivel: n.nivel, anillos: n.poligonos.map((p) => tiraLocal(m, p)) })),
+    polosGalacticos: tiraLocal(m, POLOS_GALACTICOS),
     yacana: { ojos: YACANA.ojos.map(h), etiqueta: h(YACANA.etiqueta) },
   };
 }
@@ -142,21 +146,11 @@ export function dibujarCielo(ctx: CanvasRenderingContext2D, s: EscenaCielo, { an
   // 2. Vía Láctea: capas apenas visibles que se suman donde es más densa.
   if (oscuro > 0) {
     for (const nivel of s.pre.viaLactea) {
-      // Un solo trazado por nivel con regla par-impar: los anillos interiores son huecos.
+      // Un solo trazado por nivel con regla par-impar: los anillos interiores son huecos. Si no se puede
+      // asegurar qué lado es el de adentro, ese nivel no se dibuja en este cuadro.
       ctx.fillStyle = `rgba(${TEXT}, ${0.04 * oscuro})`;
       ctx.beginPath();
-      for (const poligono of nivel.poligonos) {
-        const recortado = recortarPoligono(poligono.map((p) => enCamara(cam, p.alt, p.az)));
-        if (recortado.length < 3) continue;
-        recortado.forEach((p, i) => {
-          const q = aPantalla(cam, p);
-          if (!q) return;
-          if (i === 0) ctx.moveTo(q.x, q.y);
-          else ctx.lineTo(q.x, q.y);
-        });
-        ctx.closePath();
-      }
-      ctx.fill("evenodd");
+      if (trazarRegion(ctx, cam, nivel.anillos, s.pre.polosGalacticos)) ctx.fill("evenodd");
     }
   }
 

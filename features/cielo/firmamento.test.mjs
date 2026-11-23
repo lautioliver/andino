@@ -2,17 +2,22 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { describe, it } from "node:test";
+import { campoVisible } from "./camaraTrasera.ts";
 import {
   aHorizonte,
   camara,
   desplazarISO,
+  direccion,
   enCamara,
   matrizHorizonte,
   oscuridad,
+  POLOS_GALACTICOS,
   proyectar,
-  recortarPoligono,
+  tiraLocal,
+  trazarRegion,
 } from "./firmamento.ts";
 import { computeSky } from "./motor.ts";
+import { POSTAL } from "./postal.ts";
 
 const PURMAMARCA = { latitude: -23.744, longitude: -65.499 };
 const DEMO = "2026-11-22T22:00:00-03:00";
@@ -69,15 +74,7 @@ describe("proyección a pantalla", () => {
     assert.equal(proyectar(c, 20, 0), null);
   });
 
-  it("recorta polígonos que cruzan detrás del observador", () => {
-    const pts = [
-      [0, 0, 1],
-      [1, 0, -1],
-      [0, 1, 1],
-    ];
-    const r = recortarPoligono(pts, -0.2);
-    assert.ok(r.every((p) => p[2] >= -0.2 - 1e-9));
-    assert.equal(r.length, 4);
+  it("el centro de la vista queda justo al frente de la cámara", () => {
     assert.ok(enCamara(c, 20, 180)[2] > 0.999);
   });
 });
@@ -157,5 +154,343 @@ describe("catálogo", () => {
 
   it("la Cruz del Sur se llama así", () => {
     assert.equal(cat.constelaciones.find((c) => c.id === "Cru").nombre, "Cruz del Sur");
+  });
+});
+
+// --- Vía Láctea: lo que se rellena en la pantalla contra la región real, medida en la esfera ---
+
+const RAD = Math.PI / 180;
+const punto = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+const cruz = (a, b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+const vertice = (tira, i) => [tira[3 * i], tira[3 * i + 1], tira[3 * i + 2]];
+
+/** ¿Se cruzan los arcos de círculo máximo a→b y c→d? (los dos de menos de 180°). */
+function seCruzan(a, b, c, d) {
+  const planoAB = cruz(a, b);
+  const c1 = punto(planoAB, c);
+  const d1 = punto(planoAB, d);
+  if (c1 > 0 === d1 > 0) return false;
+  const planoCD = cruz(c, d);
+  const a2 = punto(planoCD, a);
+  const b2 = punto(planoCD, b);
+  if (a2 > 0 === b2 > 0) return false;
+  // Cada arco corta el plano del otro en un punto: se cruzan si es el mismo, y no su antípoda.
+  const enCD = [0, 1, 2].map((i) => c[i] * Math.abs(d1) + d[i] * Math.abs(c1));
+  const enAB = [0, 1, 2].map((i) => a[i] * Math.abs(b2) + b[i] * Math.abs(a2));
+  return punto(enCD, enAB) > 0;
+}
+
+/** Cuántas veces cruza los bordes de la región el arco de círculo máximo a→b. */
+function crucesDelArco(anillos, a, b) {
+  const plano = cruz(a, b);
+  const lado = (tira, i) => plano[0] * tira[3 * i] + plano[1] * tira[3 * i + 1] + plano[2] * tira[3 * i + 2] > 0;
+  let cruces = 0;
+  for (const tira of anillos) {
+    const n = tira.length / 3;
+    let antes = lado(tira, n - 1);
+    for (let i = 0; i < n; i++) {
+      const ahora = lado(tira, i);
+      // Solo un borde que pasa de un lado al otro del plano del arco puede cruzarlo.
+      if (ahora !== antes && seCruzan(a, b, vertice(tira, (i + n - 1) % n), vertice(tira, i))) cruces++;
+      antes = ahora;
+    }
+  }
+  return cruces;
+}
+
+/**
+ * La verdad, sin proyección: `p` está en la región si el arco de círculo máximo hasta un punto de afuera
+ * (el polo galáctico más cercano) cruza sus bordes una cantidad impar de veces.
+ */
+function dentroReal(anillos, p, polos) {
+  const polo = punto(p, vertice(polos, 0)) >= 0 ? vertice(polos, 0) : vertice(polos, 1);
+  return crucesDelArco(anillos, p, polo) % 2 === 1;
+}
+
+/** A menos de `grados` de un vértice del borde no se compara: ahí decide el redondeo (los bordes miden menos de 0,6°). */
+function pegadoAlBorde(anillos, p, grados = 0.5) {
+  const minimo = Math.cos(grados * RAD);
+  for (const tira of anillos) {
+    for (let i = 0; i < tira.length; i += 3) if (p[0] * tira[i] + p[1] * tira[i + 1] + p[2] * tira[i + 2] > minimo) return true;
+  }
+  return false;
+}
+
+/** Un trazado que anota lo que le piden, en vez de un lienzo: cada subtrazado, como x, y seguidos. */
+function registrador() {
+  const subtrazados = [];
+  return {
+    subtrazados,
+    moveTo: (x, y) => subtrazados.push([x, y]),
+    lineTo: (x, y) => subtrazados.at(-1).push(x, y),
+    closePath: () => {},
+    rect: (x, y, ancho, alto) => subtrazados.push([x, y, x + ancho, y, x + ancho, y + alto, x, y + alto]),
+  };
+}
+
+/** Lo que pintaría `fill("evenodd")` en el punto (x, y) de la pantalla. */
+function rellenoEn(subtrazados, x, y) {
+  let cruces = 0;
+  for (const s of subtrazados) {
+    for (let i = 0, j = s.length - 2; i < s.length; j = i, i += 2) {
+      if (s[i + 1] > y !== s[j + 1] > y && x < s[i] + ((y - s[i + 1]) * (s[j] - s[i])) / (s[j + 1] - s[i + 1])) cruces++;
+    }
+  }
+  return cruces % 2 === 1;
+}
+
+/** La dirección del cielo (vector local) que cae en el punto (x, y) de la pantalla: la estereográfica al revés. */
+function direccionEnPantalla(c, x, y) {
+  const X = (x - c.ancho / 2) / c.escala;
+  const Y = (c.alto / 2 - y) / c.escala;
+  const z = (4 - X * X - Y * Y) / (4 + X * X + Y * Y);
+  const k = (1 + z) / 2;
+  return [0, 1, 2].map((i) => X * k * c.derecha[i] + Y * k * c.arriba[i] + z * c.frente[i]);
+}
+
+/** Lo que `dibujarCielo` rellena de un nivel: el trazado, o nada si la función dice que no se rellene. */
+function trazar(c, anillos, afuera) {
+  const trazo = registrador();
+  return trazarRegion(trazo, c, anillos, afuera) ? trazo.subtrazados : [];
+}
+
+/**
+ * Compara, en una grilla de puntos de la pantalla, lo que se rellena con la región real. Devuelve cuántos
+ * puntos comparó de cada lado y cuáles no coinciden.
+ */
+function comparar(c, anillos, polos, rotulo = "", columnas = 6, filas = 8) {
+  const subtrazados = trazar(c, anillos, polos);
+  const r = { dentro: 0, fuera: 0, distintos: [] };
+  const mirar = (x, y) => {
+    const p = direccionEnPantalla(c, x, y);
+    if (pegadoAlBorde(anillos, p)) return;
+    const real = dentroReal(anillos, p, polos);
+    if (real) r.dentro++;
+    else r.fuera++;
+    if (rellenoEn(subtrazados, x, y) !== real) r.distintos.push(`${rotulo} (${Math.round(x)}, ${Math.round(y)}): ${real ? "falta relleno" : "relleno de más"}`);
+  };
+  for (let i = 0; i < columnas; i++) {
+    for (let j = 0; j < filas; j++) mirar(((i + 0.5) / columnas) * c.ancho, ((j + 0.5) / filas) * c.alto);
+  }
+  // Y el borde mismo de la pantalla: las esquinas y el medio de cada lado, un píxel hacia adentro.
+  for (const x of [1, c.ancho / 2, c.ancho - 1]) {
+    for (const y of [1, c.alto / 2, c.alto - 1]) if (x !== c.ancho / 2 || y !== c.alto / 2) mirar(x, y);
+  }
+  return r;
+}
+
+describe("Vía Láctea: lo que se rellena en pantalla es la región real", () => {
+  const cat = JSON.parse(readFileSync(new URL("../../data/cielo/catalogo.json", import.meta.url), "utf8"));
+  const TILCARA = { latitude: -23.5768, longitude: -65.3934 };
+  const m = matrizHorizonte(TILCARA, "2026-11-23T23:30:00-03:00");
+  const niveles = cat.viaLactea.map((n) => ({ nivel: n.nivel, anillos: n.poligonos.map((p) => tiraLocal(m, p)) }));
+  const polos = tiraLocal(m, POLOS_GALACTICOS);
+  const [norte, sur] = [vertice(polos, 0), vertice(polos, 1)];
+  const centroGalactico = vertice(tiraLocal(m, [[266.4, -29.0]]), 0);
+
+  it("la tira local de un punto es su dirección en el horizonte", () => {
+    const { alt, az } = aHorizonte(m, 101.287155, -16.716116);
+    assert.deepEqual([...tiraLocal(m, [[101.287155, -16.716116]])], direccion(alt, az));
+  });
+
+  it("la vuelta de pantalla a cielo deshace la proyección", () => {
+    const c = camara({ az: 200, alt: 35, fov: 80, giro: 25 }, 390, 844);
+    const q = proyectar(c, 50, 170);
+    const p = direccionEnPantalla(c, q.x, q.y);
+    direccion(50, 170).forEach((v, i) => assert.ok(Math.abs(v - p[i]) < 1e-12, `${p}`));
+  });
+
+  it("los polos galácticos, la referencia de «afuera», están lejos de todo borde y del mismo lado", () => {
+    // Un punto del ecuador galáctico cada 30° de longitud, desde el centro.
+    const haciaElCentro = centroGalactico.map((v, i) => v - punto(centroGalactico, norte) * norte[i]);
+    const perpendicular = cruz(norte, haciaElCentro);
+    for (const { nivel, anillos } of niveles) {
+      for (const polo of [norte, sur]) assert.equal(pegadoAlBorde(anillos, polo, 60), false, `nivel ${nivel}`);
+      for (let l = 0; l < 360; l += 30) {
+        const ecuador = haciaElCentro.map((v, i) => v * Math.cos(l * RAD) + perpendicular[i] * Math.sin(l * RAD));
+        // De polo a polo, un meridiano galáctico entra y sale de la región: cruza sus bordes un número par de veces.
+        assert.equal((crucesDelArco(anillos, norte, ecuador) + crucesDelArco(anillos, ecuador, sur)) % 2, 0, `nivel ${nivel}, longitud ${l}`);
+      }
+    }
+  });
+
+  it("control astronómico: el centro galáctico queda dentro del nivel más extendido", () => {
+    assert.equal(dentroReal(niveles.find((n) => n.nivel === 1).anillos, centroGalactico, polos), true);
+  });
+
+  // Los formatos en que se dibuja: la pantalla en el teléfono y en la computadora, «Ver con la cámara»
+  // (teléfono vertical y ladeado, con el campo de su cámara) y el cielo de la postal.
+  const FORMATOS = {
+    "teléfono (375 × 420, campo de 80°)": { ancho: 375, alto: 420, fov: 80 },
+    "computadora (1280 × 640, campo de 100°)": { ancho: 1280, alto: 640, fov: 100 },
+    "cámara vertical ladeada 25°": { ancho: 390, alto: 844, fov: campoVisible({ ancho: 1080, alto: 1920 }, { ancho: 390, alto: 844 }), giro: 25 },
+    "cámara con campo de 55°, casi acostada": { ancho: 390, alto: 844, fov: 55, giro: -70 },
+    "postal": { ancho: POSTAL.cielo.ancho / POSTAL.escalaCielo, alto: POSTAL.cielo.alto / POSTAL.escalaCielo, fov: POSTAL.campoCielo },
+  };
+
+  for (const [nombre, { ancho, alto, fov, giro }] of Object.entries(FORMATOS)) {
+    it(`${nombre}: en todos los rumbos (cada 30°) y a 5°, 40° y 80° de altura`, () => {
+      const total = { dentro: 0, fuera: 0, distintos: [] };
+      for (const alt of [5, 40, 80]) {
+        for (let az = 0; az < 360; az += 30) {
+          const c = camara({ az, alt, fov, giro }, ancho, alto);
+          for (const { nivel, anillos } of niveles) {
+            const r = comparar(c, anillos, polos, `nivel ${nivel}, rumbo ${az}, altura ${alt}`);
+            total.dentro += r.dentro;
+            total.fuera += r.fuera;
+            total.distintos.push(...r.distintos);
+          }
+        }
+      }
+      // Que la comparación no sea vacía: hay puntos de los dos lados.
+      assert.ok(total.dentro > 200 && total.fuera > 2000, JSON.stringify({ dentro: total.dentro, fuera: total.fuera }));
+      assert.deepEqual(total.distintos.slice(0, 8), [], `${total.distintos.length} de ${total.dentro + total.fuera} puntos no coinciden`);
+    });
+  }
+
+  /** La mirada (rumbo y altura) hacia un vector local. */
+  const mirada = ([x, y, z]) => ({ az: Math.atan2(x, y) / RAD, alt: Math.asin(z) / RAD });
+
+  it("de espaldas al centro galáctico (el antípoda de la mirada cae dentro de la región), el relleno no queda al revés", () => {
+    const { anillos } = niveles.find((n) => n.nivel === 1);
+    const c = camara({ ...mirada(centroGalactico.map((v) => -v)), fov: 80 }, 375, 420);
+    const r = comparar(c, anillos, polos);
+    assert.ok(r.dentro > 0 && r.fuera > 0, JSON.stringify({ dentro: r.dentro, fuera: r.fuera }));
+    assert.deepEqual(r.distintos, []);
+  });
+
+  it("con un borde que pasa junto al antípoda de la mirada, o justo por él, sigue coincidiendo", () => {
+    const { anillos } = niveles.find((n) => n.nivel === 1);
+    const largo = anillos.reduce((a, b) => (b.length > a.length ? b : a));
+    const total = { dentro: 0, fuera: 0, distintos: [] };
+    const sumar = (vista, rotulo) => {
+      const r = comparar(camara({ ...vista, fov: 80 }, 375, 420), anillos, polos, rotulo);
+      total.dentro += r.dentro;
+      total.fuera += r.fuera;
+      total.distintos.push(...r.distintos);
+    };
+    /** La mirada de espaldas al punto medio entre dos vértices: ese tramo del borde pasa por el antípoda mismo. */
+    const deEspaldasAlMedio = (a, b) => {
+      const medio = a.map((v, k) => -(v + b[k]));
+      return mirada(medio.map((v) => v / Math.hypot(...medio)));
+    };
+    for (let i = 0; i + 1 < largo.length / 3; i += 97) {
+      // De espaldas a un vértice del borde más largo, con la mirada corrida una décima de grado para cada lado.
+      const deEspaldas = mirada(vertice(largo, i).map((v) => -v));
+      for (const corrida of [-0.1, 0.1]) sumar({ az: deEspaldas.az, alt: deEspaldas.alt + corrida }, `vértice ${i}, corrida ${corrida}°`);
+      sumar(deEspaldasAlMedio(vertice(largo, i), vertice(largo, i + 1)), `medio del tramo ${i}`);
+    }
+    // Y el tramo que cierra cada anillo, del último vértice al primero (en los que no repiten el primero al final).
+    let cierres = 0;
+    for (const tira of anillos) {
+      const [primero, ultimo] = [vertice(tira, 0), vertice(tira, tira.length / 3 - 1)];
+      if (punto(primero, ultimo) > 1 - 1e-12) continue;
+      cierres++;
+      sumar(deEspaldasAlMedio(ultimo, primero), `cierre del anillo de ${tira.length / 3} vértices`);
+    }
+    assert.ok(cierres >= 3, `${cierres} anillos con tramo de cierre`);
+    assert.ok(total.dentro > 50 && total.fuera > 500, JSON.stringify({ dentro: total.dentro, fuera: total.fuera }));
+    assert.deepEqual(total.distintos.slice(0, 8), [], `${total.distintos.length} puntos no coinciden`);
+  });
+
+  it("un vértice justo en el antípoda de la mirada no rompe el trazado", () => {
+    // Mirando al norte, al horizonte: el antípoda es el sur, [0, −1, 0]. Un triángulo con un vértice ahí y
+    // los otros dos al noreste y al noroeste, a media altura; sus lados, en pasos de medio grado.
+    const esquinas = [[0, -1, 0], [0.6, 0.64, 0.48], [-0.6, 0.64, 0.48]];
+    const triangulo = [];
+    esquinas.forEach((a, i) => {
+      const b = esquinas[(i + 1) % 3];
+      const pasos = Math.ceil(Math.acos(punto(a, b)) / (0.5 * RAD));
+      for (let j = 0; j < pasos; j++) {
+        const p = a.map((v, k) => v * Math.sin(((pasos - j) / pasos) * Math.acos(punto(a, b))) + b[k] * Math.sin((j / pasos) * Math.acos(punto(a, b))));
+        const largo = Math.hypot(...p);
+        triangulo.push(...p.map((v) => v / largo));
+      }
+    });
+    // El cenit queda dentro del triángulo; el norte (justo al frente) y el nadir, fuera.
+    const afuera = [0, 1, 0, 0, 0, -1];
+    const c = camara({ az: 0, alt: 0, fov: 80 }, 375, 420);
+    // Para esta cámara ese vértice no tiene dirección alrededor de la mirada: ni a la derecha ni arriba.
+    assert.deepEqual([punto(esquinas[0], c.derecha), punto(esquinas[0], c.arriba)].map(Math.abs), [0, 0]);
+    const trazo = registrador();
+    assert.equal(trazarRegion(trazo, c, [triangulo], afuera), true);
+    assert.ok(trazo.subtrazados.flat().every(Number.isFinite));
+    const r = comparar(c, [triangulo], afuera);
+    assert.ok(r.dentro > 0 && r.fuera > 0, JSON.stringify({ dentro: r.dentro, fuera: r.fuera }));
+    assert.deepEqual(r.distintos, []);
+  });
+
+  it("una región que queda entera a la espalda no pinta nada", async () => {
+    // Mirando al norte, al horizonte: un triángulo alrededor del sur, con los vértices a 10° del antípoda.
+    // Sus tres lados dan la vuelta entera por el círculo límite: nueve puntos de más para tres vértices.
+    const triangulo = [0, 120, 240].flatMap((angulo) => {
+      const [seno, coseno] = [Math.sin(10 * RAD), Math.cos(10 * RAD)];
+      return [seno * Math.cos(angulo * RAD), -coseno, seno * Math.sin(angulo * RAD)];
+    });
+    const c = camara({ az: 0, alt: 0, fov: 80 }, 375, 420);
+    const trazo = registrador();
+    // Con el módulo recién cargado: que el lugar para esos puntos no dependa de un anillo más grande trazado antes.
+    const recienCargado = await import("./firmamento.ts?recien-cargado");
+    assert.equal(recienCargado.trazarRegion(trazo, c, [triangulo], [0, 1, 0]), true);
+    const numeros = trazo.subtrazados.flat();
+    assert.ok(numeros.length > 0 && numeros.every(Number.isFinite), `${numeros.length} números`);
+    for (let x = 1; x < 375; x += 31) {
+      for (let y = 1; y < 420; y += 38) assert.equal(rellenoEn(trazo.subtrazados, x, y), false, `(${x}, ${y})`);
+    }
+  });
+
+  it("saltear los puntos de más no cambia lo que se ve, tampoco con vértices muy separados", () => {
+    const c = camara({ az: 180, alt: 40, fov: 80 }, 375, 420);
+    // Un punto bien arriba de la pantalla, fuera de todos los anillos de prueba (que no pasan de y = −300).
+    const afuera = direccionEnPantalla(c, 187, -600);
+    let semilla = 1;
+    const azar = () => (semilla = (semilla * 48271) % 2147483647) / 2147483647;
+    const distintos = [];
+    for (let caso = 0; caso < 300; caso++) {
+      // Un anillo de 3 a 12 vértices puestos al azar en píxeles, dentro y fuera de la pantalla.
+      const anillo = Array.from({ length: 3 + Math.floor(azar() * 10) }, () => [-300 + azar() * 975, -300 + azar() * 1020]);
+      const trazo = registrador();
+      assert.equal(trazarRegion(trazo, c, [anillo.flatMap(([x, y]) => direccionEnPantalla(c, x, y))], afuera), true);
+      // Lo que se rellenaría con todos los vértices, sin saltear ninguno.
+      const entero = [anillo.flat()];
+      for (let x = 0.37; x < 375; x += 15) {
+        for (let y = 0.37; y < 420; y += 15) {
+          if (rellenoEn(trazo.subtrazados, x, y) !== rellenoEn(entero, x, y)) distintos.push(`caso ${caso} (${x}, ${y})`);
+        }
+      }
+    }
+    assert.deepEqual(distintos.slice(0, 8), [], `${distintos.length} puntos no coinciden`);
+  });
+
+  it("al lienzo no van los puntos de más que quedan fuera de la pantalla", () => {
+    const vertices = (anillos) => anillos.reduce((suma, tira) => suma + tira.length / 3, 0);
+    for (const { nivel, anillos } of niveles) {
+      const trazo = registrador();
+      assert.equal(trazarRegion(trazo, camara({ az: 180, alt: 40, fov: 80 }, 375, 420), anillos, polos), true);
+      const puntos = trazo.subtrazados.flat().length / 2;
+      assert.ok(puntos < vertices(anillos) / 2, `nivel ${nivel}: ${puntos} puntos para ${vertices(anillos)} vértices`);
+    }
+  });
+
+  it("si no puede asegurar qué lado es el de adentro, no rellena", () => {
+    const { anillos } = niveles.find((n) => n.nivel === 1);
+    // Mirando entre el centro galáctico y el polo norte galáctico: los dos quedan delante.
+    const medio = centroGalactico.map((v, i) => v + norte[i]);
+    const c = camara({ ...mirada(medio.map((v) => v / Math.hypot(...medio))), fov: 80 }, 375, 420);
+    assert.equal(trazarRegion(registrador(), c, anillos, polos), true);
+    // Sin ningún punto de afuera, o con el único a la espalda.
+    assert.equal(trazarRegion(registrador(), c, anillos, []), false);
+    assert.equal(trazarRegion(registrador(), c, anillos, medio.map((v) => -v / Math.hypot(...medio))), false);
+    // Dos puntos «de afuera» que no están del mismo lado: uno es el centro galáctico, que está adentro.
+    assert.equal(trazarRegion(registrador(), c, anillos, [...norte, ...centroGalactico]), false);
+    assert.equal(trazarRegion(registrador(), c, anillos, [...centroGalactico, ...norte]), false);
+  });
+
+  it("con un campo visual disparatado (la pantalla no entra en el círculo límite), no rellena", () => {
+    const { anillos } = niveles.find((n) => n.nivel === 1);
+    for (const fov of [340, 0, Number.NaN]) {
+      assert.equal(trazarRegion(registrador(), camara({ az: 180, alt: 40, fov }, 375, 420), anillos, polos), false, `campo ${fov}`);
+    }
+    assert.equal(trazarRegion(registrador(), camara({ az: 180, alt: 40, fov: 80 }, 375, 420), anillos, polos), true);
   });
 });
