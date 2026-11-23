@@ -126,7 +126,7 @@ Lo que antes era Pacha: ya no es un producto aparte, es la forma de llegar a la 
 - **Para observar:** horizonte despejado o con cerros, luz cercana, cómo llegar, cuidados (altura, frío). Solo datos con fuente; si no hay dato, se dice.
 - Explicación breve del lugar (2–4 frases), `Conocer más` y fuentes visibles.
 - Campo `Preguntá sobre este lugar…` con pregunta de seguimiento.
-- Advertencia: el cálculo no conoce nubes ni cerros cercanos. Sin datos meteorológicos no se promete cielo despejado.
+- Advertencia: las nubes vienen del pronóstico de Open-Meteo, que puede cambiar; el cálculo no conoce los cerros cercanos. Si una noche no tiene pronóstico, se dice y no se promete cielo despejado.
 - CTA `Mirar el cielo de esa noche` → `/cielo?placeId=…&fecha=…&hora=…`.
 
 ### 4.4 Cielo — Apuntá y Qué significa
@@ -217,7 +217,7 @@ La fuente de verdad es `app/globals.css`: `:root` con los valores claros de la t
 | Qué significa | «Qué estás viendo» |
 | Tu signo | «Dónde está tu signo esta noche» |
 | Simulación | «Posiciones calculadas para la fecha y hora seleccionadas.» |
-| Sin clima | «El cálculo no conoce las nubes: mirá el pronóstico antes de salir.» |
+| Sin pronóstico de nubes | La noche se muestra como antes de conocer las nubes y dice que no hay pronóstico para esa noche. |
 | Error | «No pudimos completar la consulta. Probá otra vez.» |
 
 ## 10. Entregables de diseño para la hackathon
