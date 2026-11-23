@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { jornada } from "../cielo/jornada.ts";
 import { computeSky, sunAltitudeDeg } from "../cielo/motor.ts";
+import { lineaDeLaNoche } from "../pacha/linea.ts";
 import {
   ALGO_NUBLADO_HASTA,
   DESPEJADO_HASTA,
@@ -12,10 +13,10 @@ import {
   hora,
   inicioDelCielo,
   leerOpenMeteo,
+  LUNA_FINA,
   mejorNoche,
   nocheDeCielo,
   nubosidadMedia,
-  PASO_MIN,
   puntaje,
   tramoMasLargo,
   ventanaDeNubes,
@@ -39,11 +40,11 @@ describe("una noche", () => {
     assert.ok(n.lunaIluminada > 0.95);
   });
 
-  it("la noche cerrada coincide con jornada.ts dentro del paso del barrido", () => {
+  it("la noche cerrada es el minuto en que cae la de jornada.ts", () => {
     for (const fecha of ["2026-11-22", "2026-12-07"]) {
       const n = nocheDeCielo(PURMAMARCA, fecha);
       const j = jornada(PURMAMARCA, fecha);
-      assert.ok(minutos(n.nocheCerrada, j.nocheCerrada) <= PASO_MIN, `${fecha}: ${n.nocheCerrada} vs ${j.nocheCerrada}`);
+      assert.ok(minutos(n.nocheCerrada, j.nocheCerrada) < 1, `${fecha}: ${n.nocheCerrada} vs ${j.nocheCerrada}`);
     }
   });
 
@@ -52,7 +53,7 @@ describe("una noche", () => {
     const sale = jornada(PURMAMARCA, "2026-11-29").luna.sale;
     assert.ok(n.franja, "no hubo franja");
     assert.equal(n.franja.desde, n.nocheCerrada);
-    assert.ok(minutos(n.franja.hasta, sale) <= PASO_MIN, `${n.franja.hasta} vs salida ${sale}`);
+    assert.ok(minutos(n.franja.hasta, sale) < 1, `${n.franja.hasta} vs salida ${sale}`);
   });
 
   it("en el medio de la franja el Sol está bajo −18° y la Luna bajo el horizonte (contra motor.ts)", () => {
@@ -68,7 +69,7 @@ describe("una noche", () => {
   it("con Luna creciente (14/12) la franja empieza cuando se pone la Luna y llega al alba", () => {
     const n = nocheDeCielo(PURMAMARCA, "2026-12-14");
     const sePone = jornada(PURMAMARCA, "2026-12-14").luna.sePone;
-    assert.ok(minutos(n.franja.desde, sePone) <= PASO_MIN, `${n.franja.desde} vs puesta ${sePone}`);
+    assert.ok(minutos(n.franja.desde, sePone) < 1, `${n.franja.desde} vs puesta ${sePone}`);
     assert.equal(n.franja.hasta, n.alba);
   });
 
@@ -89,11 +90,70 @@ describe("una noche", () => {
   });
 });
 
+describe("las horas de una noche, contra la línea de tiempo de la portada", () => {
+  // La portada muestra las dos cosas juntas: la línea de tiempo (linea.ts busca el instante exacto con
+  // astronomy-engine y NocheDePortada lo escribe con este formato, que no redondea) y las horas de «Cuándo».
+  const formato = new Intl.DateTimeFormat("es-AR", { timeZone: "America/Argentina/Jujuy", hour: "2-digit", minute: "2-digit", hourCycle: "h23" });
+  // La búsqueda de astronomy-engine tiene 0,1 s de tolerancia: si el instante cae a menos de eso de un
+  // minuto en punto, el minuto que muestra la línea de tiempo puede ser el vecino. En dos años de noches
+  // de las siete paradas pasa una vez: el alba del 5/2/2026 en Maimará (05:42:59,99).
+  const alFilo = (iso) => {
+    const segundos = (Date.parse(iso) / 1000) % 60;
+    return segundos < 0.1 || segundos > 59.9;
+  };
+
+  it("en todas las paradas, cada hora es la del mismo hecho en la línea de tiempo: cielo oscuro, alba, puesta y salida de la Luna", async () => {
+    const { places } = await import("../../data/places.ts");
+    const comparadas = { oscuro: 0, alba: 0, "puesta-luna": 0, "salida-luna": 0 };
+    for (const place of places) {
+      for (const fecha of fechasDesde("2026-11-22", 60)) {
+        const linea = lineaDeLaNoche(place, fecha);
+        const n = nocheDeCielo(place, fecha);
+        const igual = (deCuando, tipo) => {
+          const evento = linea.eventos.find((e) => e.tipo === tipo);
+          assert.ok(evento, `${place.id} ${fecha}: la línea de tiempo no tiene «${tipo}» y «Cuándo» da ${deCuando}`);
+          comparadas[tipo]++;
+          if (alFilo(evento.iso)) return;
+          assert.equal(hora(deCuando), formato.format(new Date(evento.iso)), `${place.id} ${fecha}, ${tipo}: ${deCuando} contra ${evento.iso}`);
+        };
+        igual(n.nocheCerrada, "oscuro");
+        igual(n.alba, "alba");
+        if (!n.franja) continue;
+        // La franja empieza al cerrarse la noche o cuando se pone la Luna, y termina al alba o cuando sale.
+        if (n.franja.desde !== n.nocheCerrada) igual(n.franja.desde, "puesta-luna");
+        if (n.franja.hasta !== n.alba) igual(n.franja.hasta, "salida-luna");
+      }
+    }
+    // Que el caso no se quede sin lo que compara: hay bordes de las cuatro clases.
+    for (const [tipo, veces] of Object.entries(comparadas)) assert.ok(veces >= places.length * 10, `${tipo}: ${veces} comparaciones`);
+  });
+
+  it("los minutos oscuros son la duración de la franja que se muestra", () => {
+    const noches = fechasDesde("2026-11-22", 30).map((fecha) => nocheDeCielo(PURMAMARCA, fecha));
+    for (const n of noches) {
+      const deLaFranja = n.franja ? minutos(n.franja.desde, n.franja.hasta) : 0;
+      assert.equal(n.minutosOscuros, deLaFranja, n.fecha);
+      assert.ok(Number.isInteger(n.minutosOscuros), `${n.fecha}: ${n.minutosOscuros}`);
+    }
+    assert.ok(noches.filter((n) => n.franja).length > 20, "este caso necesita noches con franja");
+  });
+
+  it("22/11 en Purmamarca: noche cerrada 21:14 y alba 05:02, como la línea de tiempo (no 21:15 y 05:05)", () => {
+    const n = nocheDeCielo(PURMAMARCA, "2026-11-22");
+    assert.equal(n.nocheCerrada, "2026-11-22T21:14:00-03:00");
+    assert.equal(n.alba, "2026-11-23T05:02:00-03:00");
+    assert.deepEqual(ventanaDeNubes(n), { desde: "2026-11-22T21:14:00-03:00", hasta: "2026-11-23T05:02:00-03:00" });
+  });
+});
+
 describe("la mejor noche del viaje", () => {
-  it("entre 22/11 y 15/12 elige la de Luna nueva y no la de Luna llena", () => {
+  it("entre 22/11 y 15/12 elige una noche de Luna casi nueva y no la de Luna llena", () => {
     const { noches, mejor } = mejorNoche(PURMAMARCA, fechasDesde("2026-11-22", 24));
     assert.equal(noches.length, 24);
-    assert.ok(mejor.lunaIluminada < 0.05, `${mejor.fecha}: ${mejor.lunaIluminada}`);
+    // Del 5 al 11/12 la Luna es tan fina que toda la noche cuenta como oscura. Al minuto esas noches ya
+    // no empatan (se acortan hacia el solsticio): gana la más larga, la del 5 (455 min), y no la de Luna nueva del 8 (453).
+    assert.equal(mejor.fecha, "2026-12-05");
+    assert.ok(mejor.lunaIluminada < LUNA_FINA, `${mejor.fecha}: ${mejor.lunaIluminada}`);
     assert.ok(noches.every((n) => n.minutosOscuros <= mejor.minutosOscuros));
   });
 
@@ -103,7 +163,8 @@ describe("la mejor noche del viaje", () => {
   });
 
   it("si empatan en minutos, gana la de Luna más fina", () => {
-    const { noches, mejor } = mejorNoche(PURMAMARCA, fechasDesde("2026-12-05", 3));
+    // 6 y 7/12: las dos con 454 minutos oscuros; la del 7 tiene la Luna más fina.
+    const { noches, mejor } = mejorNoche(PURMAMARCA, fechasDesde("2026-12-06", 2));
     assert.equal(new Set(noches.map((n) => n.minutosOscuros)).size, 1, "este caso necesita un empate");
     assert.equal(mejor.fecha, "2026-12-07");
   });
@@ -238,23 +299,23 @@ describe("las nubes del pronóstico", () => {
 });
 
 describe("una noche con pronóstico", () => {
-  // 29/11: franja oscura de 21:25 a 01:00, hasta que sale la Luna.
+  // 29/11: franja oscura de 21:20 a 00:56, hasta que sale la Luna.
   const FRANJA = ["2026-11-29T21:00:00-03:00", "2026-11-30T01:00:00-03:00"];
   const dosDias = (nubes) => pronostico("2026-11-29T00:00:00Z", 72, nubes);
 
   it("mira las nubes de la franja oscura, no las del resto de la noche", () => {
     const n = nocheDeCielo(PURMAMARCA, "2026-11-29", dosDias((ms) => (entre(ms, ...FRANJA) ? 10 : 90)));
-    assert.equal(n.minutosOscuros, 215);
+    assert.equal(n.minutosOscuros, 216);
     assert.equal(n.nubes, 10);
-    assert.equal(n.puntaje, 215 * 0.9);
+    assert.equal(n.puntaje, 216 * 0.9);
     assert.deepEqual(ventanaDeNubes(n), n.franja);
   });
 
   it("redondea la nubosidad a un entero y usa ese mismo número en el puntaje", () => {
-    // 35 minutos (21:25 a 22:00) con 0 % y 180 con 50 %: 41,86 %.
+    // 40 minutos (21:20 a 22:00) con 0 % y 176 con 50 %: 40,74 %.
     const n = nocheDeCielo(PURMAMARCA, "2026-11-29", dosDias((ms) => (entre(ms, "2026-11-29T21:00:00-03:00", "2026-11-29T22:00:00-03:00") ? 0 : 50)));
-    assert.equal(n.nubes, 42);
-    assert.equal(n.puntaje, puntaje(215, 42));
+    assert.equal(n.nubes, 41);
+    assert.equal(n.puntaje, puntaje(216, 41));
   });
 
   it("si la Luna no deja franja (22/11), mira las nubes de toda la noche cerrada", () => {
@@ -270,7 +331,7 @@ describe("una noche con pronóstico", () => {
     const hastaMedianoche = pronostico("2026-11-29T00:00:00Z", 27, () => 90);
     const n = nocheDeCielo(PURMAMARCA, "2026-11-29", hastaMedianoche);
     assert.equal(n.nubes, null);
-    assert.equal(n.puntaje, 215);
+    assert.equal(n.puntaje, 216);
   });
 
   it("sin pronóstico da lo mismo que antes de conocer las nubes", () => {
@@ -281,7 +342,7 @@ describe("una noche con pronóstico", () => {
 });
 
 describe("la mejor noche con nubes", () => {
-  // Del 24 al 30/11 la Luna mengua: la noche más oscura es la del 30 (250 min) y le sigue la del 29 (215).
+  // Del 24 al 30/11 la Luna mengua: la noche más oscura es la del 30 (251 min) y le sigue la del 29 (216).
   const SEMANA = fechasDesde("2026-11-24", 7);
   const NOCHE_DEL_30 = ["2026-11-30T18:00:00-03:00", "2026-12-01T08:00:00-03:00"];
   const semana = (nubes, horas = 9 * 24) => pronostico("2026-11-24T00:00:00Z", horas, nubes);
@@ -295,10 +356,10 @@ describe("la mejor noche con nubes", () => {
   });
 
   it("cuenta el producto, no solo las nubes: con pocas nubes sigue ganando la noche más larga", () => {
-    // 250 min × 90 % = 225, más que los 215 despejados del 29.
+    // 251 min × 90 % = 225,9, más que los 216 despejados del 29.
     const { mejor } = mejorNoche(PURMAMARCA, SEMANA, semana((ms) => (entre(ms, ...NOCHE_DEL_30) ? 10 : 0)));
     assert.equal(mejor.fecha, "2026-11-30");
-    assert.equal(mejor.puntaje, 225);
+    assert.equal(mejor.puntaje, 251 * 0.9);
   });
 
   it("una noche fuera del alcance del pronóstico compite como antes y queda sin nubes", () => {
@@ -335,7 +396,7 @@ describe("el recordatorio empieza con el cielo de esa noche", () => {
 
   it("si la Luna no deja franja, al cerrarse la noche; si no oscurece, null", () => {
     const llena = nocheDeCielo(PURMAMARCA, "2026-11-22");
-    assert.equal(inicioDelCielo(llena), "2026-11-22T21:15:00-03:00");
+    assert.equal(inicioDelCielo(llena), "2026-11-22T21:14:00-03:00");
     assert.equal(inicioDelCielo(nocheDeCielo({ latitude: -54.8, longitude: -68.3 }, "2026-12-21")), null);
   });
 
