@@ -92,7 +92,7 @@ ANDINO
 
 Las rutas actuales (`/`, `/explorar`, `/cielo`) se mantienen; si «Cuándo» o «Qué significa» necesitan pantalla propia, se agrega primero a este documento. Hoy «Cuándo» y «Tu signo» viven en la ficha (`EstaNoche`) y «Apuntá» en `/cielo`.
 
-**Navegación móvil del MVP:** `Inicio`, `De día`, `De noche`; marca ANDINO arriba. **Desktop:** navegación superior equivalente. No mostrar opciones vacías: un paso que no funciona en el teléfono real no aparece en la navegación.
+**Navegación móvil del MVP:** `Inicio`, `De día`, `De noche`; marca ANDINO arriba. En el teléfono van en un dock como el de Abra Tickets: una píldora oscura de vidrio que flota separada de los bordes y del área segura, oscura aunque la página sea clara, con un ícono de trazo y su rótulo por destino. El destino activo lleva su propia píldora más clara, tinta violeta clara y rótulo más pesado; con la luz roja, además, un borde. El pie de cada página reserva el lugar del dock. **Desktop:** navegación superior equivalente, sin dock. No mostrar opciones vacías: un paso que no funciona en el teléfono real no aparece en la navegación.
 
 **Contexto compartido:** `location`, `placeId?`, `datetime` y, para «Cuándo», las noches del viaje. Al pasar de la ficha al cielo, conservar lugar y la noche recomendada. Si no hay permiso GPS, seleccionar lugar manualmente.
 
@@ -180,7 +180,7 @@ Lo que antes era Pacha: ya no es un producto aparte, es la forma de llegar a la 
 
 ## 6. Tokens CSS
 
-La fuente de verdad es `app/globals.css`: `:root` con los valores claros de la tabla de §2 y `.oscuro` con los invertidos. Tailwind los expone como `bg-bg`, `text-text-muted`, `bg-puna`, `text-violeta-ink`, `bg-arena`, `rounded-control`, `rounded-card`, `shadow-glow-puna`, etc. (`@theme inline`). Componentes de apoyo: `.card` (tarjeta de Abra), `.acento` (degradado), `.eyebrow`, `.display`, `.headline`, `.link-arrow`.
+La fuente de verdad es `app/globals.css`: `:root` con los valores claros de la tabla de §2 y `.oscuro` con los invertidos. Tailwind los expone como `bg-bg`, `text-text-muted`, `bg-puna`, `text-violeta-ink`, `bg-arena`, `rounded-control`, `rounded-card`, `shadow-glow-puna`, etc. (`@theme inline`). Componentes de apoyo: `.card` (tarjeta de Abra), `.acento` (degradado), `.eyebrow`, `.display`, `.headline`, `.link-arrow`, `.dock` y `.dock-item` (dock del teléfono, con sus tokens `--dock`, `--dock-borde`, `--dock-tinta` y `--dock-activo`).
 
 ## 7. Movimiento y transición Tierra → Cielo
 
