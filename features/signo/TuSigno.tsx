@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useMemo, useState } from "react";
+import { Escuchar } from "@/features/escuchar/Escuchar";
 import { useLang } from "@/shared/i18n/lang";
 import type { AndinoPlace } from "@/shared/types";
 import { LinkButton } from "@/shared/ui/Button";
@@ -45,8 +46,10 @@ export function TuSigno({ place, fecha }: { place: AndinoPlace; fecha: string })
   const sol = resultado ? (en ? (NOMBRES_EN[resultado.sol.id] ?? resultado.sol.nombre) : resultado.sol.nombre) : "";
 
   return (
-    <div className="mt-12 rounded-card border border-border bg-surface-subtle p-5 md:p-6">
-      <p className="eyebrow text-text-muted">{en ? "Your sign in the sky" : "Tu signo en el cielo"}</p>
+    <div className="mt-12 rounded-card border border-border bg-surface-subtle p-5 md:p-6" data-escuchable>
+      <p className="eyebrow text-text-muted" data-leer>
+        {en ? "Your sign in the sky" : "Tu signo en el cielo"}
+      </p>
       <label htmlFor={id} className="lead mt-4 block text-text/85">
         {en ? "When is your birthday?" : "¿Cuándo es tu cumpleaños?"}
       </label>
@@ -60,7 +63,9 @@ export function TuSigno({ place, fecha }: { place: AndinoPlace; fecha: string })
 
       {resultado ? (
         <div className="mt-6 grid gap-4" aria-live="polite">
-          <p className="lead text-text/85">
+          {/* Se lee el título y el resultado, no la pregunta del cumpleaños. */}
+          <Escuchar clave={`${cumple} ${place.id} ${fecha}`} className="justify-self-start" />
+          <p className="lead text-text/85" data-leer>
             {en ? "According to the horoscope you're " : "Según el horóscopo sos "}
             <span className="text-violeta-ink">{signo}</span>.{" "}
             {resultado.coinciden ? (
@@ -76,7 +81,7 @@ export function TuSigno({ place, fecha }: { place: AndinoPlace; fecha: string })
               </>
             )}
           </p>
-          <p className="lead text-text/85">
+          <p className="lead text-text/85" data-leer>
             {resultado.momento
               ? en
                 ? `Tonight, the best time to look for ${signo} is at ${resultado.momento.hora}: to the ${rumbo(resultado.momento.posicion.az, lang)}, ${describirAltura(resultado.momento.posicion.alt, lang)}.`
@@ -85,7 +90,7 @@ export function TuSigno({ place, fecha }: { place: AndinoPlace; fecha: string })
                 ? `Tonight ${signo} doesn't rise high enough while the sky is dark: it's on the Sun's side. It's best seen at another time of year.`
                 : `Esta noche ${signo} no sube lo suficiente con el cielo oscuro: está del lado del Sol. Se ve mejor en otra época del año.`}
           </p>
-          <p className="text-sm leading-6 text-text-muted">
+          <p className="text-sm leading-6 text-text-muted" data-leer>
             {en
               ? "The horoscope dates were set about 2,000 years ago. Since then Earth's axis has shifted (precession), and today the Sun passes through each constellation almost a month later on average. It also crosses a thirteenth one, Ophiuchus. This is astronomy: it makes no predictions."
               : "Las fechas del horóscopo se fijaron hace unos 2.000 años. Desde entonces el eje de la Tierra se corrió (la precesión) y hoy el Sol pasa por cada constelación, en promedio, casi un mes más tarde. Además, cruza una decimotercera, Ofiuco. Esto es astronomía: no hace predicciones."}
