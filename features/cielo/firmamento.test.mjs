@@ -261,17 +261,20 @@ function trazar(c, anillos, afuera) {
 function comparar(c, anillos, polos, rotulo = "", columnas = 6, filas = 8) {
   const subtrazados = trazar(c, anillos, polos);
   const r = { dentro: 0, fuera: 0, distintos: [] };
+  const mirar = (x, y) => {
+    const p = direccionEnPantalla(c, x, y);
+    if (pegadoAlBorde(anillos, p)) return;
+    const real = dentroReal(anillos, p, polos);
+    if (real) r.dentro++;
+    else r.fuera++;
+    if (rellenoEn(subtrazados, x, y) !== real) r.distintos.push(`${rotulo} (${Math.round(x)}, ${Math.round(y)}): ${real ? "falta relleno" : "relleno de más"}`);
+  };
   for (let i = 0; i < columnas; i++) {
-    for (let j = 0; j < filas; j++) {
-      const x = ((i + 0.5) / columnas) * c.ancho;
-      const y = ((j + 0.5) / filas) * c.alto;
-      const p = direccionEnPantalla(c, x, y);
-      if (pegadoAlBorde(anillos, p)) continue;
-      const real = dentroReal(anillos, p, polos);
-      if (real) r.dentro++;
-      else r.fuera++;
-      if (rellenoEn(subtrazados, x, y) !== real) r.distintos.push(`${rotulo} (${Math.round(x)}, ${Math.round(y)}): ${real ? "falta relleno" : "relleno de más"}`);
-    }
+    for (let j = 0; j < filas; j++) mirar(((i + 0.5) / columnas) * c.ancho, ((j + 0.5) / filas) * c.alto);
+  }
+  // Y el borde mismo de la pantalla: las esquinas y el medio de cada lado, un píxel hacia adentro.
+  for (const x of [1, c.ancho / 2, c.ancho - 1]) {
+    for (const y of [1, c.alto / 2, c.alto - 1]) if (x !== c.ancho / 2 || y !== c.alto / 2) mirar(x, y);
   }
   return r;
 }
@@ -366,14 +369,26 @@ describe("Vía Láctea: lo que se rellena en pantalla es la región real", () =>
       total.fuera += r.fuera;
       total.distintos.push(...r.distintos);
     };
+    /** La mirada de espaldas al punto medio entre dos vértices: ese tramo del borde pasa por el antípoda mismo. */
+    const deEspaldasAlMedio = (a, b) => {
+      const medio = a.map((v, k) => -(v + b[k]));
+      return mirada(medio.map((v) => v / Math.hypot(...medio)));
+    };
     for (let i = 0; i + 1 < largo.length / 3; i += 97) {
       // De espaldas a un vértice del borde más largo, con la mirada corrida una décima de grado para cada lado.
       const deEspaldas = mirada(vertice(largo, i).map((v) => -v));
       for (const corrida of [-0.1, 0.1]) sumar({ az: deEspaldas.az, alt: deEspaldas.alt + corrida }, `vértice ${i}, corrida ${corrida}°`);
-      // Y de espaldas al punto medio de un tramo del borde: el borde pasa por el antípoda mismo.
-      const medio = vertice(largo, i).map((v, k) => -(v + largo[3 * (i + 1) + k]));
-      sumar(mirada(medio.map((v) => v / Math.hypot(...medio))), `medio del tramo ${i}`);
+      sumar(deEspaldasAlMedio(vertice(largo, i), vertice(largo, i + 1)), `medio del tramo ${i}`);
     }
+    // Y el tramo que cierra cada anillo, del último vértice al primero (en los que no repiten el primero al final).
+    let cierres = 0;
+    for (const tira of anillos) {
+      const [primero, ultimo] = [vertice(tira, 0), vertice(tira, tira.length / 3 - 1)];
+      if (punto(primero, ultimo) > 1 - 1e-12) continue;
+      cierres++;
+      sumar(deEspaldasAlMedio(ultimo, primero), `cierre del anillo de ${tira.length / 3} vértices`);
+    }
+    assert.ok(cierres >= 3, `${cierres} anillos con tramo de cierre`);
     assert.ok(total.dentro > 50 && total.fuera > 500, JSON.stringify({ dentro: total.dentro, fuera: total.fuera }));
     assert.deepEqual(total.distintos.slice(0, 8), [], `${total.distintos.length} puntos no coinciden`);
   });
@@ -403,6 +418,58 @@ describe("Vía Láctea: lo que se rellena en pantalla es la región real", () =>
     const r = comparar(c, [triangulo], afuera);
     assert.ok(r.dentro > 0 && r.fuera > 0, JSON.stringify({ dentro: r.dentro, fuera: r.fuera }));
     assert.deepEqual(r.distintos, []);
+  });
+
+  it("una región que queda entera a la espalda no pinta nada", async () => {
+    // Mirando al norte, al horizonte: un triángulo alrededor del sur, con los vértices a 10° del antípoda.
+    // Sus tres lados dan la vuelta entera por el círculo límite: nueve puntos de más para tres vértices.
+    const triangulo = [0, 120, 240].flatMap((angulo) => {
+      const [seno, coseno] = [Math.sin(10 * RAD), Math.cos(10 * RAD)];
+      return [seno * Math.cos(angulo * RAD), -coseno, seno * Math.sin(angulo * RAD)];
+    });
+    const c = camara({ az: 0, alt: 0, fov: 80 }, 375, 420);
+    const trazo = registrador();
+    // Con el módulo recién cargado: que el lugar para esos puntos no dependa de un anillo más grande trazado antes.
+    const recienCargado = await import("./firmamento.ts?recien-cargado");
+    assert.equal(recienCargado.trazarRegion(trazo, c, [triangulo], [0, 1, 0]), true);
+    const numeros = trazo.subtrazados.flat();
+    assert.ok(numeros.length > 0 && numeros.every(Number.isFinite), `${numeros.length} números`);
+    for (let x = 1; x < 375; x += 31) {
+      for (let y = 1; y < 420; y += 38) assert.equal(rellenoEn(trazo.subtrazados, x, y), false, `(${x}, ${y})`);
+    }
+  });
+
+  it("saltear los puntos de más no cambia lo que se ve, tampoco con vértices muy separados", () => {
+    const c = camara({ az: 180, alt: 40, fov: 80 }, 375, 420);
+    // Un punto bien arriba de la pantalla, fuera de todos los anillos de prueba (que no pasan de y = −300).
+    const afuera = direccionEnPantalla(c, 187, -600);
+    let semilla = 1;
+    const azar = () => (semilla = (semilla * 48271) % 2147483647) / 2147483647;
+    const distintos = [];
+    for (let caso = 0; caso < 300; caso++) {
+      // Un anillo de 3 a 12 vértices puestos al azar en píxeles, dentro y fuera de la pantalla.
+      const anillo = Array.from({ length: 3 + Math.floor(azar() * 10) }, () => [-300 + azar() * 975, -300 + azar() * 1020]);
+      const trazo = registrador();
+      assert.equal(trazarRegion(trazo, c, [anillo.flatMap(([x, y]) => direccionEnPantalla(c, x, y))], afuera), true);
+      // Lo que se rellenaría con todos los vértices, sin saltear ninguno.
+      const entero = [anillo.flat()];
+      for (let x = 0.37; x < 375; x += 15) {
+        for (let y = 0.37; y < 420; y += 15) {
+          if (rellenoEn(trazo.subtrazados, x, y) !== rellenoEn(entero, x, y)) distintos.push(`caso ${caso} (${x}, ${y})`);
+        }
+      }
+    }
+    assert.deepEqual(distintos.slice(0, 8), [], `${distintos.length} puntos no coinciden`);
+  });
+
+  it("al lienzo no van los puntos de más que quedan fuera de la pantalla", () => {
+    const vertices = (anillos) => anillos.reduce((suma, tira) => suma + tira.length / 3, 0);
+    for (const { nivel, anillos } of niveles) {
+      const trazo = registrador();
+      assert.equal(trazarRegion(trazo, camara({ az: 180, alt: 40, fov: 80 }, 375, 420), anillos, polos), true);
+      const puntos = trazo.subtrazados.flat().length / 2;
+      assert.ok(puntos < vertices(anillos) / 2, `nivel ${nivel}: ${puntos} puntos para ${vertices(anillos)} vértices`);
+    }
   });
 
   it("si no puede asegurar qué lado es el de adentro, no rellena", () => {
